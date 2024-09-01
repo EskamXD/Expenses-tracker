@@ -2,54 +2,55 @@ from django.db import models
 
 
 # Create your models here.
-class Expense(models.Model):
+from django.db import models
+
+class Receipt(models.Model):
+    payment_date = models.DateField()  # Nowe pole na przechowywanie daty otrzymanej z API
+    save_date = models.DateTimeField(auto_now_add=True)  # Data utworzenia paragonu
+
+    def __str__(self):
+        return f"Receipt {self.id} - {self.save_date}"
+
+class Expenses(models.Model):
     CATEGORY_CHOICES = [
-        ("paliwo", "Paliwo"),
-        ("wydatki_samochód", "Wydatki Samochód"),
+        ("fuel", "Paliwo"),
+        ("car_expenses", "Wydatki Samochód"),
         ("fastfood", "Fastfood"),
-        ("alkohol", "Alkohol"),
-        ("picie_jedzenie", "Picie & Jedzenie"),
-        ("chemia", "Chemia"),
-        ("ubrania", "Ubrania"),
-        ("elektronika_gry", "Elektronika & Gry"),
-        ("bilety_wejsciowki", "Bilety & Wejściówki"),
-        ("inne_zakupy", "Inne Zakupy"),
-        ("opis_zakupow", "Opis Zakupów"),
-        ("mieszkanie", "Mieszkanie"),
-        ("miesieczne_subskrypcje", "Miesięczne Subskrypcje"),
-        ("inne_cykliczne_wydatki", "Inne Cykliczne Wydatki"),
-        ("inwestycje_lokaty_oszczednosci", "Inwestycje, Lokaty & Oszczędności"),
-        ("inne", "Inne"),
-        ("opis_innych", "Opis Innych"),
+        ("alcohol", "Alkohol"),
+        ("food_drinks", "Picie & Jedzenie"),
+        ("chemistry", "Chemia"),
+        ("clothes", "Ubrania"),
+        ("electronics_games", "Elektronika & Gry"),
+        ("tickets_entrance", "Bilety & Wejściówki"),
+        ("other_shopping", "Inne Zakupy"),
+        ("flat_bills", "Mieszkanie"),
+        ("monthly_subscriptions", "Miesięczne Subskrypcje"),
+        ("other_cyclical_expenses", "Inne Cykliczne Wydatki"),
+        ("investments_savings", "Inwestycje, Lokaty & Oszczędności"),
+        ("other", "Inne"),
     ]
 
-    PAYER_CHOICES = [("K", "K"), ("A", "A")]
+    PAYER_CHOICES = [("kamil", "Kamil"), ("ania", "Ania")]
 
-    OWNER_CHOICES = [("K", "K"), ("A", "A"), ("Wspólne", "Wspólne")]
+    OWNER_CHOICES = [("kamil", "Kamil"), ("ania", "Ania"), ("common", "Wspólne")]
 
     amount = models.DecimalField(max_digits=10, decimal_places=2)
     category = models.CharField(max_length=50, choices=CATEGORY_CHOICES)
-    payer = models.CharField(max_length=1, choices=PAYER_CHOICES)
+    payer = models.CharField(max_length=50, choices=PAYER_CHOICES)
     owner = models.CharField(max_length=50, choices=OWNER_CHOICES)
-    date = models.DateTimeField(auto_now_add=True)
-    is_shared = models.BooleanField(
-        default=False
-    )  # Nowe pole, True dla wydatków wspólnych
+    receipt = models.ForeignKey(Receipt, related_name='expenses', on_delete=models.CASCADE)
 
     def __str__(self):
         return f"{self.amount} - {self.category} - {self.payer} - {self.owner}"
 
-
 class Income(models.Model):
     CATEGORY_CHOICES = [
-        ("na_studia", "Na studia"),
-        ("saldo_z_poprzedniego_miesiaca", "Saldo z poprzedniego miesiąca"),
-        ("przychod", "Przychód"),
-        ("przychod_rodzina", "Przychód rodzina"),
-        ("inwestycje_lokaty_oszczednosci", "Inwestycje, Lokaty & Oszczędności"),
-        ("zwrot", "Zwrot"),
-        ("inne", "Inne"),
-        ("opis", "Opis"),
+        ("for_study", "Na studia"),
+        ("work_income", "Przychód praca"),
+        ("family_income", "Przychód rodzina"),
+        ("investments_income", "Inwestycje, Lokaty & Oszczędności"),
+        ("money_back", "Zwrot"),
+        ("other", "Inne"),
     ]
 
     OWNER_CHOICES = [("K", "K"), ("A", "A")]
@@ -62,9 +63,8 @@ class Income(models.Model):
     def __str__(self):
         return f"{self.amount} - {self.category}"
 
-
 class Summary(models.Model):
-    owner = models.CharField(max_length=50, choices=Expense.OWNER_CHOICES)
+    owner = models.CharField(max_length=50, choices=Expenses.OWNER_CHOICES)
     total_income = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
     total_expenses = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
     balance = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
@@ -84,7 +84,7 @@ class Summary(models.Model):
 
         # Oblicz całkowite wydatki dla danego ownera
         self.total_expenses = (
-            Expense.objects.filter(owner=self.owner).aggregate(
+            Expenses.objects.filter(owner=self.owner).aggregate(
                 total=models.Sum("amount")
             )["total"]
             or 0.00

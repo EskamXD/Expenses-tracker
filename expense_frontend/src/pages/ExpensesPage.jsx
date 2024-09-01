@@ -6,6 +6,7 @@ import Tab from "react-bootstrap/Tab";
 import ExpensesForm from "../components/ExpensesForm";
 import ReceiptForm from "../components/ReceiptForm";
 import { Link } from "react-router-dom";
+import axios from "axios";
 
 const ExpensesPage = () => {
     const selectOptions = [
@@ -30,9 +31,16 @@ const ExpensesPage = () => {
     ];
 
     const [items, setItems] = useState([
-        { id: 1, value: "", category: "fuel", owner: "kamil" },
+        {
+            id: 1,
+            value: "",
+            category: "food_drinks",
+            owner: "kamil",
+            date: new Date().toISOString().split("T")[0],
+        },
     ]);
     const [payer, setPayer] = useState("kamil");
+    const [resetForm, setResetForm] = useState(false);
 
     const addItem = () => {
         const lastItemCategory = items[items.length - 1].category;
@@ -43,6 +51,7 @@ const ExpensesPage = () => {
                 value: "",
                 category: lastItemCategory,
                 owner: "kamil",
+                date: new Date().toISOString().split("T")[0],
             },
         ]);
     };
@@ -55,29 +64,46 @@ const ExpensesPage = () => {
         e.preventDefault();
 
         // Dane dla paragonu, traktujemy wszystkie elementy jako jeden paragon
-        const receiptData = items.map((item) => ({
-            category: item.category,
-            amount: item.value,
-            owner: item.owner,
-            payer: payer, // Zakładamy, że `payer` jest taki sam dla wszystkich elementów paragonu
-        }));
+        const receiptData = {
+            payment_date: items[0].date, // Użyj daty z pierwszego elementu jako daty paragonu
+            expenses: items.map((item) => ({
+                category: item.category,
+                amount: item.value,
+                owner: item.owner,
+                payer: payer,
+            })),
+        };
 
         try {
             // Wysłanie paragonu
-            const response = await axios.post("/api/expenses", receiptData);
+            console.log("Receipt data:", JSON.stringify(receiptData));
+            // alert("Receipt data has been sent to the server.");
+
+            const response = await axios.post(
+                "http://localhost:8000/api/receipt/",
+                receiptData
+            );
             console.log("Receipt response:", response.data);
 
             // Resetowanie formularza po udanym wysłaniu
-            setCategory("food");
-            setAmount("");
-            setOwner("kamil");
             setPayer("kamil");
-            setItems([{ id: 1, value: "", category: "food", owner: "kamil" }]);
+            setItems([
+                {
+                    id: 1,
+                    value: "",
+                    category: "food_drinks",
+                    owner: "kamil",
+                    date: new Date().toISOString().split("T")[0],
+                },
+            ]);
 
-            alert("Data has been successfully submitted.");
+            // alert("Data has been successfully submitted.");
+
+            // Send signal to reset form
+            setResetForm(true);
         } catch (error) {
             console.error("Error submitting data:", error);
-            alert("An error occurred while submitting the data.");
+            // alert("An error occurred while submitting the data.");
         }
     };
 
@@ -102,6 +128,8 @@ const ExpensesPage = () => {
                         setPayer={setPayer}
                         selectOptions={selectOptions}
                         handleSubmit={handleSubmit}
+                        resetForm={resetForm}
+                        setResetForm={setResetForm}
                     />
                 </Tab>
 
@@ -115,6 +143,8 @@ const ExpensesPage = () => {
                         addItem={addItem}
                         removeItem={removeItem}
                         handleSubmit={handleSubmit}
+                        resetForm={resetForm}
+                        setResetForm={setResetForm}
                     />
                 </Tab>
             </Tabs>

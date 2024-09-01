@@ -1,45 +1,28 @@
 from django.shortcuts import render
+from rest_framework import viewsets, generics
+from django_filters.rest_framework import DjangoFilterBackend
 
-# import view sets from the REST framework
-from rest_framework import viewsets
 
-# import the ExpenseSerializer from the serializer file
-from .serializers import ExpenseSerializer
-from .serializers import IncomeSerializer
-from .serializers import SummarySerializer
-
-# import the Expense model from the models file
-from .models import Expense
-from .models import Income
-from .models import Summary
+from .serializers import ExpensesSerializer, IncomeSerializer, SummarySerializer, ReceiptSerializer
+from .models import Expenses, Income, Summary, Receipt
+from .filters import ExpensesFilter
 
 
 # create a class for the Todo model viewsets
-class ExpenseView(viewsets.ModelViewSet):
-    # create a serializer class and
-    # assign it to the ExpenseSerializer class
-    serializer_class = ExpenseSerializer
-
-    # define a variable and populate it
-    # with the Expense list objects
-    queryset = Expense.objects.all()
-
+class ExpensesView(viewsets.ModelViewSet):
+    queryset = Expenses.objects.all()
+    serializer_class = ExpensesSerializer
+    filter_backends = [DjangoFilterBackend]
+    filterset_class = ExpensesFilter
 
 class IncomeView(viewsets.ModelViewSet):
-    # create a serializer class and
-    # assign it to the ExpenseSerializer class
+    queryset = Income.objects.all()
     serializer_class = IncomeSerializer
 
-    # define a variable and populate it
-    # with the Expense list objects
-    queryset = Income.objects.all()
-
-
 class SummaryView(viewsets.ModelViewSet):
-    # create a serializer class and
-    # assign it to the ExpenseSerializer class
-    serializer_class = SummarySerializer
-
-    # define a variable and populate it
-    # with the Expense list objects
     queryset = Summary.objects.all()
+    serializer_class = SummarySerializer
+class ReceiptCreateView(generics.CreateAPIView):
+    queryset = Receipt.objects.all()
+    serializer_class = ReceiptSerializer
+

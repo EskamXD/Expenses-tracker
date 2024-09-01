@@ -1,3 +1,18 @@
 .mr-1rem {
     margin-right: 1rem;
 }
+.ml-1rem {
+    margin-left: 1rem;
+}
+.mt-1rem {
+    margin-top: 1rem;
+}
+.mb-1rem {
+    margin-bottom: 1rem;
+}
+
+.content-left {
+    display: flex;
+    flex-direction: row;
+    justify-content: flex-end;
+}
