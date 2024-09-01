@@ -7,6 +7,7 @@ import DropdownButton from "react-bootstrap/DropdownButton";
 import Row from "react-bootstrap/Row";
 import Col from "react-bootstrap/Col";
 import SummaryTable from "../components/SummaryTable";
+import "../assets/styles/main.css";
 import axios from "axios";
 
 const SummaryPage = () => {
@@ -23,13 +24,15 @@ const SummaryPage = () => {
     const [selectedMonth, setSelectedMonth] = useState(
         new Date().getMonth() + 1
     ); // Domyślnie bieżący miesiąc
+    const [selectedYear, setSelectedYear] = useState(new Date().getFullYear()); // Domyślnie bieżący rok
 
     // Funkcja do pobierania wydatków z API
-    const fetchExpenses = async (month) => {
+    const fetchExpenses = async (month, year) => {
         setLoading(true);
+        console.log("fetchExpenses", month, year);
         try {
             const response = await axios.get(
-                `http://localhost:8000/api/expenses/?month=${month}`
+                `http://localhost:8000/api/expenses/?owner=${owner}&?month=${month}&?year=${year}`
             );
             const expenses = response.data;
 
@@ -63,7 +66,7 @@ const SummaryPage = () => {
 
     // UseEffect do pobierania danych przy montowaniu komponentu
     useEffect(() => {
-        fetchExpenses(selectedMonth);
+        fetchExpenses(selectedMonth, selectedYear);
     }, []);
 
     const sortExpenses = (expenses, key, direction) => {
@@ -121,7 +124,7 @@ const SummaryPage = () => {
     };
 
     useEffect(() => {
-        fetchExpenses(selectedMonth); // Pobierz dane dla bieżącego miesiąca na start
+        fetchExpenses(selectedMonth, selectedYear); // Pobierz dane dla bieżącego miesiąca na start
     }, []);
 
     // Funkcja pomocnicza do uzyskania nazwy miesiąca
@@ -149,13 +152,17 @@ const SummaryPage = () => {
                                     </Col>
                                     <Col className="content-left">
                                         <DropdownButton
-                                            id="dropdown-basic-button"
+                                            id="dropdown-basic-button-month"
                                             title={`Wybierz miesiąc: ${getMonthName(
                                                 selectedMonth
                                             )}`}
+                                            className="mr-1rem"
                                             onSelect={(month) => {
                                                 setSelectedMonth(month);
-                                                fetchExpenses(month); // Pobierz dane dla wybranego miesiąca
+                                                fetchExpenses(
+                                                    month,
+                                                    selectedYear
+                                                ); // Pobierz dane dla wybranego miesiąca
                                             }}>
                                             {[...Array(12)].map((_, index) => (
                                                 <Dropdown.Item
@@ -171,14 +178,44 @@ const SummaryPage = () => {
                                                 </Dropdown.Item>
                                             ))}
                                         </DropdownButton>
+                                        <DropdownButton
+                                            id="dropdown-basic-button-year"
+                                            title={`Wybierz rok: ${selectedYear}`}
+                                            onSelect={(year) => {
+                                                setSelectedYear(year);
+                                                fetchExpenses(
+                                                    selectedMonth,
+                                                    year
+                                                ); // Pobierz dane dla wybranego roku
+                                            }}>
+                                            {[...Array(5)].map((_, index) => (
+                                                <Dropdown.Item
+                                                    key={index}
+                                                    eventKey={
+                                                        new Date().getFullYear() -
+                                                        index
+                                                    }>
+                                                    {new Date().getFullYear() -
+                                                        index}
+                                                </Dropdown.Item>
+                                            ))}
+                                        </DropdownButton>
                                     </Col>
                                 </Row>
-                                <SummaryTable
-                                    expenses={kamilExpenses}
-                                    requestSort={requestSort}
-                                    getSortIndicator={getSortIndicator}
-                                    tabKey="kamil-expenses"
-                                />
+                                {loading ? (
+                                    <Spinner animation="border" role="status">
+                                        <span className="sr-only">
+                                            Ładowanie...
+                                        </span>
+                                    </Spinner>
+                                ) : (
+                                    <SummaryTable
+                                        expenses={kamilExpenses}
+                                        requestSort={requestSort}
+                                        getSortIndicator={getSortIndicator}
+                                        tabKey="kamil-expenses"
+                                    />
+                                )}
                             </Tab>
 
                             <Tab
