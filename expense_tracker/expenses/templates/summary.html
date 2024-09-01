@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="pl">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Podsumowanie Wydatków</title>
+</head>
+
+<body>
+    <h1>Podsumowanie Wydatków</h1>
+    <p>Suma wszystkich wydatków: {{ total }}</p>
+
+    <h2>Wydatki według kategorii</h2>
+    <ul>
+        {% for item in by_category %}
+        <li>{{ item.category }}: {{ item.total }}</li>
+        {% endfor %}
+    </ul>
+
+    <h2>Wydatki według osoby płacącej</h2>
+    <ul>
+        {% for item in by_payer %}
+        <li>{{ item.payer }}: {{ item.total }}</li>
+        {% endfor %}
+    </ul>
+
+    <h2>Wydatki według właściciela</h2>
+    <ul>
+        {% for item in by_owner %}
+        <li>{{ item.owner }}: {{ item.total }}</li>
+        {% endfor %}
+    </ul>
+
+    <a href="{% url 'index' %}">Dodaj nowy wydatek</a>
+</body>
+
+</html>
