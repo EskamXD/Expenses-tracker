@@ -18,7 +18,7 @@ import DropdownButton from "react-bootstrap/DropdownButton";
  *
  * @returns {JSX.Element} A dropdown component that allows users to select a month.
  */
-const MonthDropdown = ({ selectedMonth, onSelect }) => {
+const MonthDropdown = ({ selectedMonth, onSelect, disabled }) => {
     /**
      * @brief Gets the full month name from a month number.
      *
@@ -39,7 +39,8 @@ const MonthDropdown = ({ selectedMonth, onSelect }) => {
             id="dropdown-basic-button-month"
             title={`Wybierz miesiąc: ${getMonthName(selectedMonth)}`}
             className="mr-1rem"
-            onSelect={onSelect}>
+            onSelect={onSelect}
+            disabled={disabled}>
             {[...Array(12)].map((_, index) => (
                 <Dropdown.Item key={index + 1} eventKey={index + 1}>
                     {new Date(0, index).toLocaleString("default", {

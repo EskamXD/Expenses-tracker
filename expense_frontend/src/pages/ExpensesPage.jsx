@@ -115,6 +115,7 @@ const ExpensesPage = () => {
             <Tabs defaultActiveKey="addExpense" id="expenses-tabs">
                 <Tab eventKey="addExpense" title="Dodaj wydatek">
                     <UnifiedForm
+                        paymentDate={paymentDate}
                         setPaymentDate={setPaymentDate}
                         shop={shop}
                         setShop={setShop}
@@ -136,6 +137,7 @@ const ExpensesPage = () => {
 
                 <Tab eventKey="addReceipt" title="Dodaj paragon">
                     <UnifiedForm
+                        paymentDate={paymentDate}
                         setPaymentDate={setPaymentDate}
                         shop={shop}
                         setShop={setShop}

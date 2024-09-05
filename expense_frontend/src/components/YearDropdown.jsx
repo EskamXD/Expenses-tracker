@@ -21,12 +21,13 @@ import DropdownButton from "react-bootstrap/DropdownButton";
  *
  * @return {JSX.Element} A dropdown component for selecting a year.
  */
-const YearDropdown = ({ selectedYear, onSelect }) => {
+const YearDropdown = ({ selectedYear, onSelect, disabled }) => {
     return (
         <DropdownButton
             id="dropdown-basic-button-year"
             title={`Wybierz rok: ${selectedYear}`}
-            onSelect={onSelect}>
+            onSelect={onSelect}
+            disabled={disabled}>
             {[...Array(5)].map((_, index) => (
                 <Dropdown.Item
                     key={index}

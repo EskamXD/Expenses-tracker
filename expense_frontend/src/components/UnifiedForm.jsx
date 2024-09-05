@@ -42,6 +42,7 @@ import "../assets/styles/main.css";
  * @return {JSX.Element} A form component for managing transactions.
  */
 const UnifiedForm = ({
+    paymentDate,
     setPaymentDate,
     shop,
     setShop,
@@ -100,7 +101,7 @@ const UnifiedForm = ({
                 id={`${formId}-calendar`}
                 type="date"
                 className="mb-3 mt-1rem"
-                value={new Date().toISOString().split("T")[0]} // Ensuring form uses state for date
+                value={paymentDate} // Ensuring form uses state for date
                 onChange={handleDateChange}
             />
             {setShop && (

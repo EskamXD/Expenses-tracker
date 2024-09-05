@@ -109,6 +109,7 @@ const IncomePage = () => {
             <Tabs defaultActiveKey="addIncome" id="income-tabs">
                 <Tab eventKey="addIncome" title="Dodaj przychód">
                     <UnifiedForm
+                        paymentDate={paymentDate}
                         setPaymentDate={setPaymentDate}
                         setShop={null} // Not applicable for income
                         payer={payer}
