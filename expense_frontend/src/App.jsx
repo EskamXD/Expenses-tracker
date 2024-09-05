@@ -1,5 +1,5 @@
 import React from "react";
-import { Routes, Route, Link } from "react-router-dom";
+import { Routes, Route } from "react-router-dom";
 import ExpensesPage from "./pages/ExpensesPage";
 import HomePage from "./pages/HomePage";
 import IncomePage from "./pages/IncomePage";
@@ -7,6 +7,8 @@ import SummaryPage from "./pages/SummaryPage";
 
 import SiteNavbar from "./components/SiteNavbar";
 import Container from "react-bootstrap/Container";
+
+import "bootstrap/dist/css/bootstrap.min.css";
 
 const App = () => {
     return (

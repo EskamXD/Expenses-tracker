@@ -1,96 +1,55 @@
-// src/components/ReceiptForm.jsx
-import React, { useEffect } from "react";
-import Form from "react-bootstrap/Form";
-import Button from "react-bootstrap/Button";
-import Row from "react-bootstrap/Row";
-import Col from "react-bootstrap/Col";
-import PayerRadio from "./PayerRadio";
-import ReceiptItem from "./ReceiptItem";
+/**
+ * @file ReceiptForm.jsx
+ * @brief A React component for managing and submitting receipt items.
+ *
+ * This file defines the ReceiptForm component, which wraps the UnifiedForm component
+ * to handle receipt-specific logic, such as managing items, selecting the payer, and handling form submission.
+ */
 
+import React from "react";
+import UnifiedForm from "./UnifiedForm";
+
+/**
+ * @brief Renders a form for managing receipt items.
+ *
+ * The ReceiptForm component utilizes the UnifiedForm component to render and manage a list of receipt items.
+ * It handles user interactions such as adding, removing, and submitting receipt items, and selecting the payer.
+ *
+ * @param {Object[]} items - An array of receipt items.
+ * @param {Function} setItems - A function to update the list of receipt items.
+ * @param {string} payer - The current payer selected for the receipt.
+ * @param {Function} setPayer - A function to update the selected payer.
+ * @param {Function} handleSubmit - A function to handle form submission.
+ * @param {boolean} resetForm - A flag to indicate if the form should be reset.
+ * @param {Function} setResetForm - A function to reset the form state.
+ *
+ * @return {JSX.Element} A form component for managing receipt items.
+ */
 const ReceiptForm = ({
     items,
     setItems,
     payer,
     setPayer,
-    selectOptions,
-    addItem,
-    removeItem,
     handleSubmit,
     resetForm,
     setResetForm,
 }) => {
-    useEffect(() => {
-        // set today's date to date input
-        const today = new Date().toISOString().split("T")[0];
-        const calender = document.getElementById("expenses-calender");
-        calender.value = today;
-
-        // Ustaw datę w items
-        setItems(
-            items.map((item) => ({
-                ...item,
-                date: today,
-            }))
-        );
-    }, [setItems]);
-
-    useEffect(() => {
-        if (resetForm) {
-            setItems([
-                {
-                    id: 1,
-                    value: "",
-                    category: "food_drinks",
-                    owner: "kamil",
-                    date: new Date().toISOString().split("T")[0],
-                },
-            ]);
-            setResetForm(false);
-        }
-    }, [resetForm, setItems, setResetForm]);
-
-    const handleDateChange = (e) => {
-        const newDate = moment(new Date(e.target.value)).format("YYYY-MM-DD");
-        // console.log(newDate);
-        setItems(
-            items.map((item) => ({
-                ...item,
-                date: newDate,
-            }))
-        );
-    };
-
     return (
-        <form onSubmit={handleSubmit}>
-            <Form.Control
-                id="receipt-calender"
-                type="date"
-                className="mb-3 mt-1rem"
-                onChange={(e) => handleDateChange(e)}></Form.Control>
-            <PayerRadio payer={payer} setPayer={setPayer} />
-            <Button variant="outline-success" type="submit">
-                Zapisz paragon
-            </Button>
-            <Button
-                variant="outline-primary"
-                type="button"
-                onClick={addItem}
-                className="ml-1rem">
-                Dodaj rzecz
-            </Button>
-            <div className="mt-3">
-                {items.map((item) => (
-                    <ReceiptItem
-                        key={item.id}
-                        item={item}
-                        items={items}
-                        setItems={setItems}
-                        selectOptions={selectOptions}
-                        removeItem={removeItem}
-                    />
-                ))}
-            </div>
-        </form>
+        <UnifiedForm
+            items={items}
+            setItems={setItems}
+            payer={payer}
+            setPayer={setPayer}
+            handleSubmit={handleSubmit}
+            resetForm={resetForm}
+            setResetForm={setResetForm}
+            formId="receipt" /**< A unique identifier for the form. */
+            buttonLabel="Zapisz paragon" /**< Label for the form's submit button. */
+            showAddItemButton={
+                true
+            } /**< Determines if the "Add Item" button is shown. */
+            allowRemoveItem={true} /**< Determines if items can be removed. */
+        />
     );
 };
 

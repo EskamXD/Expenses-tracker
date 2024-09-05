@@ -1,109 +1,102 @@
-// src/pages/ExpensesPage.jsx
+/**
+ * @file ExpensesPage.jsx
+ * @brief A React component for managing and adding expense transactions.
+ *
+ * This file defines the ExpensesPage component, which allows users to add expense items
+ * and manage them through a unified form interface. It includes functionality for adding
+ * single expense items as well as multiple transactions under a single receipt.
+ */
+
 import React, { useState } from "react";
-import Breadcrumb from "react-bootstrap/Breadcrumb";
-import Tabs from "react-bootstrap/Tabs";
-import Tab from "react-bootstrap/Tab";
-import ExpensesForm from "../components/ExpensesForm";
-import ReceiptForm from "../components/ReceiptForm";
+import { Breadcrumb, Tab, Tabs } from "react-bootstrap";
 import { Link } from "react-router-dom";
 import axios from "axios";
+import UnifiedForm from "../components/UnifiedForm";
+import { selectExpensesOptions } from "../config/selectOption";
 
+/**
+ * @brief Manages expense-related forms and transactions.
+ *
+ * The ExpensesPage component provides tabs for adding individual expense items or
+ * creating a receipt with multiple transactions. It includes form handling logic,
+ * state management for form fields, and API communication for submitting transaction data.
+ *
+ * @return {JSX.Element} A component that renders the expense management interface.
+ */
 const ExpensesPage = () => {
-    const selectOptions = [
-        { value: "fuel", label: "Paliwo" },
-        { value: "car_expenses", label: "Wydatki Samochód" },
-        { value: "fastfood", label: "Fastfood" },
-        { value: "alcohol", label: "Alkohol" },
-        { value: "food_drinks", label: "Picie & Jedzenie" },
-        { value: "chemistry", label: "Chemia" },
-        { value: "clothes", label: "Ubrania" },
-        { value: "electronics_games", label: "Elektronika & Gry" },
-        { value: "tickets_entrance", label: "Bilety & Wejściówki" },
-        { value: "other_shopping", label: "Inne Zakupy" },
-        { value: "flat_bills", label: "Mieszkanie & rachunki" },
-        { value: "monthly_subscriptions", label: "Miesięczne Subskrypcje" },
-        { value: "other_cyclical_expenses", label: "Inne Cykliczne Wydatki" },
-        {
-            value: "investments_savings",
-            label: "Inwestycje, Lokaty & Oszczędności",
-        },
-        { value: "other", label: "Inne" },
-    ];
-
+    const [paymentDate, setPaymentDate] = useState(
+        new Date().toISOString().split("T")[0]
+    ); /**< State to manage the selected payment date. */
+    const [payer, setPayer] =
+        useState("kamil"); /**< State to manage the selected payer. */
     const [items, setItems] = useState([
         {
             id: 1,
-            value: "",
             category: "food_drinks",
+            value: "",
+            description: "",
+            quantity: "",
             owner: "kamil",
-            date: new Date().toISOString().split("T")[0],
         },
-    ]);
-    const [payer, setPayer] = useState("kamil");
-    const [resetForm, setResetForm] = useState(false);
+    ]); /**< State to manage the list of items in the form. */
+    const [shop, setShop] =
+        useState(""); /**< State to manage the shop name input. */
+    const [resetForm, setResetForm] =
+        useState(false); /**< Flag to signal form reset. */
 
-    const addItem = () => {
-        const lastItemCategory = items[items.length - 1].category;
-        setItems([
-            ...items,
-            {
-                id: items.length + 1,
-                value: "",
-                category: lastItemCategory,
-                owner: "kamil",
-                date: new Date().toISOString().split("T")[0],
-            },
-        ]);
-    };
-
-    const removeItem = (id) => {
-        setItems(items.filter((item) => item.id !== id));
-    };
-
+    /**
+     * @brief Handles the form submission for expenses.
+     *
+     * This function collects form data, prepares it for the receipt API, and sends
+     * the data to the server. It resets the form state upon successful submission.
+     *
+     * @param {Event} e - The form submission event.
+     */
     const handleSubmit = async (e) => {
         e.preventDefault();
 
-        // Dane dla paragonu, traktujemy wszystkie elementy jako jeden paragon
+        // Prepare receipt and transaction data
         const receiptData = {
-            payment_date: items[0].date, // Użyj daty z pierwszego elementu jako daty paragonu
-            expenses: items.map((item) => ({
+            payment_date: paymentDate,
+            payer: payer,
+            shop: shop,
+            transaction_type: "expense",
+            transactions: items.map((item) => ({
+                transaction_type: "expense",
                 category: item.category,
-                amount: item.value,
+                value: parseFloat(item.value.replace(",", ".")), // Replace comma with dot and convert to number
+                description: item.description,
+                quantity: item.quantity,
                 owner: item.owner,
-                payer: payer,
             })),
         };
 
         try {
-            // Wysłanie paragonu
             console.log("Receipt data:", JSON.stringify(receiptData));
-            // alert("Receipt data has been sent to the server.");
-
+            // Send receipt data to API
             const response = await axios.post(
-                "http://localhost:8000/api/receipt/",
+                "http://localhost:8000/api/receipts/",
                 receiptData
             );
-            console.log("Receipt response:", response.data);
+            console.log("Receipt response:", response);
 
-            // Resetowanie formularza po udanym wysłaniu
+            // Reset form after successful submission
             setPayer("kamil");
             setItems([
                 {
                     id: 1,
-                    value: "",
                     category: "food_drinks",
+                    value: "",
+                    description: "",
+                    quantity: "",
                     owner: "kamil",
-                    date: new Date().toISOString().split("T")[0],
                 },
             ]);
 
-            // alert("Data has been successfully submitted.");
-
-            // Send signal to reset form
-            setResetForm(true);
+            setResetForm(true); // Signal to reset form
         } catch (error) {
             console.error("Error submitting data:", error);
-            // alert("An error occurred while submitting the data.");
+            // Handle error appropriately
         }
     };
 
@@ -117,34 +110,48 @@ const ExpensesPage = () => {
             </Breadcrumb>
 
             <h1>Wydatki</h1>
-            <p>Tutaj możesz zarządzać swoimi wydatkami.</p>
+            <p>Dodaj swoje wydatki.</p>
 
-            <Tabs defaultActiveKey="add" id="expenses-tabs">
-                <Tab eventKey="add" title="Dodaj wydatek">
-                    <ExpensesForm
-                        items={items}
-                        setItems={setItems}
+            <Tabs defaultActiveKey="addExpense" id="expenses-tabs">
+                <Tab eventKey="addExpense" title="Dodaj wydatek">
+                    <UnifiedForm
+                        setPaymentDate={setPaymentDate}
+                        shop={shop}
+                        setShop={setShop}
                         payer={payer}
                         setPayer={setPayer}
-                        selectOptions={selectOptions}
+                        items={items}
+                        setItems={setItems}
                         handleSubmit={handleSubmit}
                         resetForm={resetForm}
                         setResetForm={setResetForm}
+                        formId="addExpense"
+                        buttonLabel="Zapisz wydatek"
+                        showQuantity={true}
+                        showAddItemButton={false}
+                        allowRemoveItem={false}
+                        selectOptions={selectExpensesOptions} // Pass expenses options
                     />
                 </Tab>
 
-                <Tab eventKey="receipt" title="Dodaj paragon">
-                    <ReceiptForm
-                        items={items}
-                        setItems={setItems}
+                <Tab eventKey="addReceipt" title="Dodaj paragon">
+                    <UnifiedForm
+                        setPaymentDate={setPaymentDate}
+                        shop={shop}
+                        setShop={setShop}
                         payer={payer}
                         setPayer={setPayer}
-                        selectOptions={selectOptions}
-                        addItem={addItem}
-                        removeItem={removeItem}
+                        items={items}
+                        setItems={setItems}
                         handleSubmit={handleSubmit}
                         resetForm={resetForm}
                         setResetForm={setResetForm}
+                        formId="addReceipt"
+                        buttonLabel="Zapisz paragon"
+                        showQuantity={true}
+                        showAddItemButton={true}
+                        allowRemoveItem={true}
+                        selectOptions={selectExpensesOptions} // Pass expenses options
                     />
                 </Tab>
             </Tabs>

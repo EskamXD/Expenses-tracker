@@ -1,46 +1,67 @@
-# import serializers from the REST framework
 from rest_framework import serializers
-
-# import the expense data model
-from .models import Expenses
-from .models import Income
-from .models import Summary
-from .models import Receipt
+from .models import Transaction, Receipt
 
 
-
-
-# create a serializer class
-
-class ExpensesSerializer(serializers.ModelSerializer):
-    payment_date = serializers.DateField(source='receipt.payment_date', read_only=True)
-
+class TransactionSerializer(serializers.ModelSerializer):
     class Meta:
-        model = Expenses
-        fields = ['id', 'amount', 'category', 'payer', 'owner', 'payment_date']  # Dodano 'payment_date
+        model = Transaction
+        fields = [
+            "id",
+            "save_date",
+            "category",
+            "value",
+            "description",
+            "quantity",
+            "owner",
+        ]
+
 
 class ReceiptSerializer(serializers.ModelSerializer):
-    expenses = ExpensesSerializer(many=True)  # obsługa wielu wydatków
+    transactions = TransactionSerializer(many=True)  # Handles multiple transactions
+
     class Meta:
         model = Receipt
-        fields = ['id', 'save_date','payment_date', 'expenses']
+        fields = [
+            "id",
+            "save_date",
+            "payment_date",
+            "payer",
+            "shop",
+            "transaction_type",
+            "transactions",
+        ]
 
     def create(self, validated_data):
-        expenses_data = validated_data.pop('expenses')
-        payment_date = validated_data.pop('payment_date')
-        receipt = Receipt.objects.create(payment_date=payment_date, **validated_data)
-        for expense_data in expenses_data:
-            Expenses.objects.create(receipt=receipt, **expense_data)
+        transactions_data = validated_data.pop("transactions")
+        receipt = Receipt.objects.create(**validated_data)
+
+        # Create or get transactions and associate with the receipt
+        transactions = []
+        for transaction_data in transactions_data:
+            transaction, created = Transaction.objects.get_or_create(**transaction_data)
+            transactions.append(transaction)
+
+        # Using set() to associate transactions with the receipt
+        receipt.transactions.set(transactions)
+
         return receipt
 
-class IncomeSerializer(serializers.ModelSerializer):
-    # create a meta class
-    class Meta:
-        model = Income
-        fields = ("id", "amount", "category", "owner", "date")
+    def update(self, instance, validated_data):
+        transactions_data = validated_data.pop("transactions", None)
 
-class SummarySerializer(serializers.ModelSerializer):
-    # create a meta class
-    class Meta:
-        model = Summary
-        fields = ("id", "owner", "total_income", "total_expenses", "balance", "date")
+        if transactions_data is not None:
+            transactions = []
+            for transaction_data in transactions_data:
+                transaction, created = Transaction.objects.get_or_create(
+                    **transaction_data
+                )
+                transactions.append(transaction)
+
+            # Using set() to update the associated transactions
+            instance.transactions.set(transactions)
+
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+
+        instance.save()
+        return instance

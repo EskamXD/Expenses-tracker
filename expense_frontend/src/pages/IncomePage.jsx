@@ -1,100 +1,96 @@
-// src/pages/ExpensesPage.jsx
+/**
+ * @file IncomePage.jsx
+ * @brief A React component for managing and adding income transactions.
+ *
+ * This file defines the IncomePage component, which allows users to add income items
+ * through a unified form interface. It includes functionality for adding individual income transactions.
+ */
+
 import React, { useState } from "react";
-import Breadcrumb from "react-bootstrap/Breadcrumb";
-import Tabs from "react-bootstrap/Tabs";
-import Tab from "react-bootstrap/Tab";
-import ExpensesForm from "../components/ExpensesForm";
-import ReceiptForm from "../components/ReceiptForm";
+import { Breadcrumb, Tab, Tabs } from "react-bootstrap";
 import { Link } from "react-router-dom";
 import axios from "axios";
+import UnifiedForm from "../components/UnifiedForm";
+import { selectIncomeOptions } from "../config/selectOption";
 
+/**
+ * @brief Manages income-related forms and transactions.
+ *
+ * The IncomePage component provides a tab for adding individual income items.
+ * It includes form handling logic, state management for form fields, and API communication
+ * for submitting income transaction data.
+ *
+ * @return {JSX.Element} A component that renders the income management interface.
+ */
 const IncomePage = () => {
-    const selectOptions = [
-        { value: "for_study", label: "Na studia" },
-        { value: "work_income", label: "Przychód praca" },
-        { value: "family_income", label: "Przychód rodzina" },
-        {
-            value: "investments_income",
-            label: "Inwestycje, Lokaty & Oszczędności",
-        },
-        { value: "money_back", label: "Zwrot" },
-        { value: "other", label: "Inne" },
-    ];
-
+    const [paymentDate, setPaymentDate] = useState(
+        new Date().toISOString().split("T")[0]
+    ); /**< State to manage the selected payment date. */
+    const [payer, setPayer] =
+        useState("kamil"); /**< State to manage the selected payer. */
     const [items, setItems] = useState([
         {
             id: 1,
-            value: "",
             category: "work_income",
+            value: "",
+            description: "",
             owner: "kamil",
-            date: new Date().toISOString().split("T")[0],
         },
-    ]);
-    const [payer, setPayer] = useState("kamil");
-    const [resetForm, setResetForm] = useState(false);
+    ]); /**< State to manage the list of items in the form. */
+    const [resetForm, setResetForm] =
+        useState(false); /**< Flag to signal form reset. */
 
-    const addItem = () => {
-        const lastItemCategory = items[items.length - 1].category;
-        setItems([
-            ...items,
-            {
-                id: items.length + 1,
-                value: "",
-                category: lastItemCategory,
-                owner: "kamil",
-                date: new Date().toISOString().split("T")[0],
-            },
-        ]);
-    };
-
-    const removeItem = (id) => {
-        setItems(items.filter((item) => item.id !== id));
-    };
-
+    /**
+     * @brief Handles the form submission for income transactions.
+     *
+     * This function collects form data, prepares it for the receipt API, and sends
+     * the data to the server. It resets the form state upon successful submission.
+     *
+     * @param {Event} e - The form submission event.
+     */
     const handleSubmit = async (e) => {
         e.preventDefault();
 
-        // Dane dla paragonu, traktujemy wszystkie elementy jako jeden paragon
+        // Prepare transaction data for income
         const receiptData = {
-            payment_date: items[0].date, // Użyj daty z pierwszego elementu jako daty paragonu
-            expenses: items.map((item) => ({
+            payment_date: paymentDate,
+            payer: payer,
+            shop: "", // Not applicable for income
+            transaction_type: "income",
+            transactions: items.map((item) => ({
+                transaction_type: "income",
                 category: item.category,
-                amount: item.value,
+                value: parseFloat(item.value.replace(",", ".")), // Replace comma with dot and convert to number
+                description: item.description,
+                quantity: 1,
                 owner: item.owner,
-                payer: payer,
             })),
         };
 
         try {
-            // Wysłanie paragonu
-            console.log("Receipt data:", JSON.stringify(receiptData));
-            // alert("Receipt data has been sent to the server.");
+            console.log("Transaction data:", JSON.stringify(receiptData));
 
             const response = await axios.post(
-                "http://localhost:8000/api/income/",
+                "http://localhost:8000/api/receipts/",
                 receiptData
             );
-            console.log("Receipt response:", response.data);
+            console.log("Transaction response:", response.data);
 
-            // Resetowanie formularza po udanym wysłaniu
+            // Reset form after successful submission
             setPayer("kamil");
             setItems([
                 {
                     id: 1,
+                    category: "work_income",
                     value: "",
-                    category: "food_drinks",
+                    description: "",
                     owner: "kamil",
-                    date: new Date().toISOString().split("T")[0],
                 },
             ]);
 
-            // alert("Data has been successfully submitted.");
-
-            // Send signal to reset form
-            setResetForm(true);
+            setResetForm(true); // Signal to reset form
         } catch (error) {
             console.error("Error submitting data:", error);
-            // alert("An error occurred while submitting the data.");
         }
     };
 
@@ -104,38 +100,30 @@ const IncomePage = () => {
                 <Breadcrumb.Item linkAs={Link} linkProps={{ to: "/" }}>
                     Strona główna
                 </Breadcrumb.Item>
-                <Breadcrumb.Item active>Wydatki</Breadcrumb.Item>
+                <Breadcrumb.Item active>Przychody</Breadcrumb.Item>
             </Breadcrumb>
 
-            <h1>Wydatki</h1>
-            <p>Tutaj możesz zarządzać swoimi wydatkami.</p>
+            <h1>Przychody</h1>
+            <p>Dodaj swoje przychody</p>
 
-            <Tabs defaultActiveKey="add" id="expenses-tabs">
-                <Tab eventKey="add" title="Dodaj wydatek">
-                    <ExpensesForm
-                        items={items}
-                        setItems={setItems}
+            <Tabs defaultActiveKey="addIncome" id="income-tabs">
+                <Tab eventKey="addIncome" title="Dodaj przychód">
+                    <UnifiedForm
+                        setPaymentDate={setPaymentDate}
+                        setShop={null} // Not applicable for income
                         payer={payer}
                         setPayer={setPayer}
-                        selectOptions={selectOptions}
+                        items={items}
+                        setItems={setItems}
                         handleSubmit={handleSubmit}
                         resetForm={resetForm}
                         setResetForm={setResetForm}
-                    />
-                </Tab>
-
-                <Tab eventKey="receipt" title="Dodaj paragon">
-                    <ReceiptForm
-                        items={items}
-                        setItems={setItems}
-                        payer={payer}
-                        setPayer={setPayer}
-                        selectOptions={selectOptions}
-                        addItem={addItem}
-                        removeItem={removeItem}
-                        handleSubmit={handleSubmit}
-                        resetForm={resetForm}
-                        setResetForm={setResetForm}
+                        formId="addIncome"
+                        buttonLabel="Zapisz przychód"
+                        showQuantity={false} // Quantity is not relevant for income
+                        showAddItemButton={false} // Only one income at a time
+                        allowRemoveItem={false} // Cannot remove the single item
+                        selectOptions={selectIncomeOptions} // Pass income options
                     />
                 </Tab>
             </Tabs>

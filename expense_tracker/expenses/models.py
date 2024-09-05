@@ -1,97 +1,57 @@
 from django.db import models
 
 
-# Create your models here.
-from django.db import models
-
-class Receipt(models.Model):
-    payment_date = models.DateField()  # Nowe pole na przechowywanie daty otrzymanej z API
-    save_date = models.DateTimeField(auto_now_add=True)  # Data utworzenia paragonu
-
-    def __str__(self):
-        return f"Receipt {self.id} - {self.save_date}"
-
-class Expenses(models.Model):
+class Transaction(models.Model):
     CATEGORY_CHOICES = [
         ("fuel", "Paliwo"),
-        ("car_expenses", "Wydatki Samochód"),
-        ("fastfood", "Fastfood"),
+        ("car_expenses", "Wydatki na samochód"),
+        ("fastfood", "Fast Food"),
         ("alcohol", "Alkohol"),
-        ("food_drinks", "Picie & Jedzenie"),
+        ("food_drinks", "Picie & jedzenie"),
         ("chemistry", "Chemia"),
         ("clothes", "Ubrania"),
-        ("electronics_games", "Elektronika & Gry"),
-        ("tickets_entrance", "Bilety & Wejściówki"),
-        ("other_shopping", "Inne Zakupy"),
-        ("flat_bills", "Mieszkanie"),
-        ("monthly_subscriptions", "Miesięczne Subskrypcje"),
-        ("other_cyclical_expenses", "Inne Cykliczne Wydatki"),
-        ("investments_savings", "Inwestycje, Lokaty & Oszczędności"),
+        ("electronics_games", "Elektornika & gry"),
+        ("tickets_entrance", "Bilety & wejściówki"),
+        ("other_shopping", "Inne zakupy"),
+        ("flat_bills", "Rachunki za mieszkanie"),
+        ("monthly_subscriptions", "Miesięczne subskrypcje"),
+        ("other_cyclical_expenses", "Inne cykliczne wydatki"),
+        ("investments_savings", "Inwestycje & oszczędności"),
         ("other", "Inne"),
+        ("for_study", "Na studia"),
+        ("work_income", "Przychód z pracy"),
+        ("family_income", "Przychód od rodziny"),
+        ("investments_income", "Przychód z inwestycji"),
+        ("money_back", "Zwrot pieniędzy"),
     ]
-
-    PAYER_CHOICES = [("kamil", "Kamil"), ("ania", "Ania")]
 
     OWNER_CHOICES = [("kamil", "Kamil"), ("ania", "Ania"), ("common", "Wspólne")]
 
-    amount = models.DecimalField(max_digits=10, decimal_places=2)
+    save_date = models.DateTimeField(auto_now_add=True)
     category = models.CharField(max_length=50, choices=CATEGORY_CHOICES)
-    payer = models.CharField(max_length=50, choices=PAYER_CHOICES)
+    value = models.DecimalField(max_digits=10, decimal_places=2)
+    description = models.CharField(max_length=100, blank=True, null=True)
+    quantity = models.DecimalField(
+        max_digits=10, decimal_places=0, blank=True, null=True
+    )
     owner = models.CharField(max_length=50, choices=OWNER_CHOICES)
-    receipt = models.ForeignKey(Receipt, related_name='expenses', on_delete=models.CASCADE)
 
     def __str__(self):
-        return f"{self.amount} - {self.category} - {self.payer} - {self.owner}"
+        return f"Transaction {self.id} - {self.category} - {self.value}"
 
-class Income(models.Model):
-    CATEGORY_CHOICES = [
-        ("for_study", "Na studia"),
-        ("work_income", "Przychód praca"),
-        ("family_income", "Przychód rodzina"),
-        ("investments_income", "Inwestycje, Lokaty & Oszczędności"),
-        ("money_back", "Zwrot"),
-        ("other", "Inne"),
+
+class Receipt(models.Model):
+    TRANSACTION_TYPE_CHOICES = [
+        ("expense", "Wydatki"),
+        ("income", "Przychody"),
     ]
 
-    OWNER_CHOICES = [("K", "K"), ("A", "A")]
-
-    amount = models.DecimalField(max_digits=10, decimal_places=2)
-    category = models.CharField(max_length=50, choices=CATEGORY_CHOICES)
-    owner = models.CharField(max_length=50, choices=OWNER_CHOICES)
-    date = models.DateTimeField(auto_now_add=True)
-
-    def __str__(self):
-        return f"{self.amount} - {self.category}"
-
-class Summary(models.Model):
-    owner = models.CharField(max_length=50, choices=Expenses.OWNER_CHOICES)
-    total_income = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
-    total_expenses = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
-    balance = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
-    date = models.DateTimeField(auto_now_add=True)
+    payment_date = models.DateField()
+    save_date = models.DateTimeField(auto_now_add=True)
+    payer = models.CharField(max_length=50, choices=Transaction.OWNER_CHOICES)
+    shop = models.CharField(max_length=100, blank=True, null=True)
+    transaction_type = models.CharField(max_length=10, choices=TRANSACTION_TYPE_CHOICES)
+    transactions = models.ManyToManyField(Transaction, related_name="receipts")
 
     def __str__(self):
-        return f"Summary for {self.owner} - {self.date.strftime('%Y-%m-%d')}"
-
-    def calculate_totals(self):
-        # Oblicz całkowite przychody dla danego ownera
-        self.total_income = (
-            Income.objects.filter(owner=self.owner).aggregate(
-                total=models.Sum("amount")
-            )["total"]
-            or 0.00
-        )
-
-        # Oblicz całkowite wydatki dla danego ownera
-        self.total_expenses = (
-            Expenses.objects.filter(owner=self.owner).aggregate(
-                total=models.Sum("amount")
-            )["total"]
-            or 0.00
-        )
-
-        # Oblicz bilans (dochód - wydatki)
-        self.balance = self.total_income - self.total_expenses
-
-        # Zapisz obliczenia do bazy danych
-        self.save()
+        return f"Receipt {self.id} - {self.payment_date} - {self.payer}"

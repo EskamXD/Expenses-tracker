@@ -1,23 +1,20 @@
 from django.urls import path, include
-from rest_framework import routers
-from drf_spectacular.views import SpectacularAPIView, SpectacularRedocView, SpectacularSwaggerView
-
+from rest_framework.routers import DefaultRouter
 from . import views
+from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 
-
-# create a router object
-router = routers.DefaultRouter()
-
-# register the router
-router.register(r"expenses", views.ExpensesView, "expenses")
-router.register(r"income", views.IncomeView, "income")
-router.register(r"summary", views.SummaryView, "summary")
+router = DefaultRouter()
+router.register(r"transactions", views.TransactionView, basename="transactions")
+router.register(r"receipts", views.ReceiptView, basename="receipts")
 
 urlpatterns = [
     path("api/", include(router.urls)),
-    path("api/receipt/", views.ReceiptCreateView.as_view(), name="receipt-create"),
-    path('api/schema/', SpectacularAPIView.as_view(), name='schema'),
-    # Optional UI:
-    path('api/schema/swagger-ui/', SpectacularSwaggerView.as_view(url_name='schema'), name='swagger-ui'),
-    path('api/schema/redoc/', SpectacularRedocView.as_view(url_name='schema'), name='redoc'),
+    path("api/receipts/", views.ReceiptCreateView.as_view(), name="receipt-create"),
+    path("api/schema/", SpectacularAPIView.as_view(), name="schema"),
+    path(
+        "api/schema/swagger-ui/",
+        SpectacularSwaggerView.as_view(url_name="schema"),
+        name="swagger-ui",
+    ),
+    # other paths
 ]
