@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import ReceiptModal from "./ReceiptModal";
-import { Button } from "react-bootstrap";
+import { Accordion, Button } from "react-bootstrap";
 import EditRoundedIcon from "@mui/icons-material/EditRounded";
 import { selectTranslationList } from "../config/selectOption";
 import "../assets/styles/main.css";
@@ -40,23 +40,33 @@ const ReceiptList = ({ list, transactionType, selectedOwner, setReload }) => {
                             </Button>
                         </div>
                     </div>
-                    {listItem.transactions.map((transaction) => (
-                        <div key={transaction.id}>
-                            <p>
-                                {selectTranslationList.find(
-                                    (option) =>
-                                        option.value === transaction.category
-                                )?.label || transaction.category}
-                            </p>
-                            <p>
-                                <strong>Opis:</strong> {transaction.description}
-                            </p>
-                            <p>
-                                <strong>Cena:</strong> {transaction.value} zł
-                            </p>
-                            <hr />
-                        </div>
-                    ))}
+                    <Accordion className="mb-3">
+                        <Accordion.Item eventKey="0">
+                            <Accordion.Header>Pełny paragon</Accordion.Header>
+                            <Accordion.Body>
+                                {listItem.transactions.map((transaction) => (
+                                    <div key={transaction.id}>
+                                        <p>
+                                            {selectTranslationList.find(
+                                                (option) =>
+                                                    option.value ===
+                                                    transaction.category
+                                            )?.label || transaction.category}
+                                        </p>
+                                        <p>
+                                            <strong>Opis:</strong>{" "}
+                                            {transaction.description}
+                                        </p>
+                                        <p>
+                                            <strong>Cena:</strong>{" "}
+                                            {transaction.value} zł
+                                        </p>
+                                        <hr />
+                                    </div>
+                                ))}
+                            </Accordion.Body>
+                        </Accordion.Item>
+                    </Accordion>
                     <ReceiptModal
                         listItem={listItem}
                         transactionType={transactionType}

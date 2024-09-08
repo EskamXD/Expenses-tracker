@@ -61,14 +61,21 @@ const SummaryDropdown = ({ selectedOwner, setSelectedOwner }) => {
                 }
             </Dropdown.Toggle>
             <Dropdown.Menu>
-                {Object.entries(selectSummaryOptions).map(([key, label]) => (
-                    <Dropdown.Item
-                        eventKey={key}
-                        key={key}
-                        onClick={() => handleSummaryChange(key)}>
-                        {label}
-                    </Dropdown.Item>
-                ))}
+                {Object.entries(selectSummaryOptions).map(([key, label]) => {
+                    return (
+                        <React.Fragment key={`fragment-${key}`}>
+                            {key === "all" && (
+                                <Dropdown.Divider key={`divider-${key}`} />
+                            )}
+                            <Dropdown.Item
+                                eventKey={key}
+                                key={key} // This is fine for the Dropdown.Item
+                                onClick={() => handleSummaryChange(key)}>
+                                {label}
+                            </Dropdown.Item>
+                        </React.Fragment>
+                    );
+                })}
             </Dropdown.Menu>
         </Dropdown>
     );

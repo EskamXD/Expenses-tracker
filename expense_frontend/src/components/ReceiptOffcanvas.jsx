@@ -46,7 +46,8 @@ const ReceiptOffcanvas = ({
             const filteredByCategory = response.data.filter((receipt) =>
                 receipt.transactions.some(
                     (transaction) =>
-                        transaction.category === selectedCategory &&
+                        (transaction.category === selectedCategory &&
+                            selectedOwner === "all") ||
                         transaction.owner === selectedOwner
                 )
             );

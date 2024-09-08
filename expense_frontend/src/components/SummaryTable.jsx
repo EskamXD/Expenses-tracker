@@ -116,23 +116,27 @@ const SummaryTable = ({
         const grouped = {};
 
         list.forEach((listItem) => {
-            listItem.transactions
-                .filter((transaction) => transaction.owner === selectedOwner)
-                .forEach((transaction) => {
-                    const key = `${transaction.category}-${listItem.payment_date}`;
+            listItem.transactions =
+                selectedOwner === "all"
+                    ? listItem.transactions
+                    : listItem.transactions.filter(
+                          (transaction) => transaction.owner === selectedOwner
+                      );
+            listItem.transactions.forEach((transaction) => {
+                const key = `${transaction.category}-${listItem.payment_date}`;
 
-                    if (!grouped[key]) {
-                        grouped[key] = {
-                            id: `${listItem.id}-${transaction.category}`, // Ensure unique ID
-                            category: transaction.category,
-                            value: parseFloat(transaction.value),
-                            payment_date: listItem.payment_date,
-                            description: transaction.description,
-                        };
-                    } else {
-                        grouped[key].value += parseFloat(transaction.value);
-                    }
-                });
+                if (!grouped[key]) {
+                    grouped[key] = {
+                        id: `${listItem.id}-${transaction.category}`, // Ensure unique ID
+                        category: transaction.category,
+                        value: parseFloat(transaction.value),
+                        payment_date: listItem.payment_date,
+                        description: transaction.description,
+                    };
+                } else {
+                    grouped[key].value += parseFloat(transaction.value);
+                }
+            });
         });
 
         setGroupedList(Object.values(grouped));

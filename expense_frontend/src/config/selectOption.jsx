@@ -7,6 +7,8 @@
  * income, and summary categories.
  */
 
+import { all } from "axios";
+
 /**
  * @brief Options for selecting expense categories.
  *
@@ -95,4 +97,5 @@ export const selectSummaryOptions = {
     kamil: "Kamil",
     ania: "Ania",
     common: "Wspólne",
+    all: "Wszystkie",
 };

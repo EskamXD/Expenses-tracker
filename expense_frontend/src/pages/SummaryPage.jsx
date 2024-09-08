@@ -13,7 +13,8 @@
 import React, { useState } from "react";
 import { Tab, Tabs } from "react-bootstrap";
 import SummaryTab from "../components/SummaryTab";
-import ChartTab from "../components/ChartTab.jsx";
+import ChartTab from "../components/ChartTab";
+import BalanceTab from "../components/BalanceTab";
 import "../assets/styles/main.css";
 
 /**
@@ -60,6 +61,9 @@ const SummaryPage = () => {
                 </Tab>
                 <Tab eventKey="charts" title="Wykresy">
                     <ChartTab />
+                </Tab>
+                <Tab eventKey="balance" title="Saldo">
+                    <BalanceTab />
                 </Tab>
             </Tabs>
         </div>

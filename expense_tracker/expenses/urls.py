@@ -16,5 +16,11 @@ urlpatterns = [
         SpectacularSwaggerView.as_view(url_name="schema"),
         name="swagger-ui",
     ),
+    path("api/monthly-balance/", views.monthly_balance, name="monthly-balance"),
+    path(
+        "api/fetch-monthly-transactions/",
+        views.fetch_monthly_transactions,
+        name="fetch-monthly-transactions",
+    ),
     # other paths
 ]

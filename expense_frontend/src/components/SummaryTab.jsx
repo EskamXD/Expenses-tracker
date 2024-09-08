@@ -22,7 +22,9 @@ const SummaryTab = ({ transactionType }) => {
         setLoading(true);
         try {
             const response = await axios.get(
-                `http://localhost:8000/api/receipts/?transaction_type=${transactionType}&owner=${owner}&month=${month}&year=${year}`
+                `http://localhost:8000/api/receipts/?transaction_type=${transactionType}${
+                    owner !== "all" ? `&owner=${owner}` : ""
+                }&month=${month}&year=${year}`
             );
             setItems(response.data);
             setItemsLoaded(true);

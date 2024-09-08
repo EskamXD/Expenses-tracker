@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from "react";
-import { Alert, Modal, Button } from "react-bootstrap";
+import { Form, Modal, Button } from "react-bootstrap";
 import axios from "axios";
 import ReceiptDetails from "./ReceiptDetails";
 import "../assets/styles/main.css";
+import PayerDropdown from "./PayerDropdown";
+import moment from "moment";
 
 const ReceiptModal = ({
     listItem,
@@ -14,18 +16,22 @@ const ReceiptModal = ({
 }) => {
     // Initialize transactions with an empty array to avoid undefined errors
     const [transactions, setTransactions] = useState([]);
+    const [newPayer, setNewPayer] = useState(null);
+    const [newPaymentDate, setNewPaymentDate] = useState(null);
 
     // Set transactions when the listItem prop changes
     useEffect(() => {
         if (listItem && listItem.transactions) {
             setTransactions(listItem.transactions);
+            setNewPayer(listItem.payer);
+            setNewPaymentDate(listItem.payment_date);
         }
     }, [listItem]);
 
     const handleSave = async () => {
         const receiptData = {
-            payment_date: listItem.payment_date,
-            payer: listItem.payer,
+            payment_date: newPaymentDate,
+            payer: newPayer,
             shop: listItem.shop,
             transaction_type: transactionType,
             transactions,
@@ -62,6 +68,11 @@ const ReceiptModal = ({
         setReload(true);
     };
 
+    const handleDateChange = (e) => {
+        const newDate = moment(e.target.value).format("YYYY-MM-DD");
+        setNewPaymentDate(newDate);
+    };
+
     return (
         <>
             <Modal
@@ -73,7 +84,20 @@ const ReceiptModal = ({
                 <Modal.Header closeButton>
                     <Modal.Title>Edit Receipt</Modal.Title>
                 </Modal.Header>
-                <Modal.Body>
+                <Modal.Body style={{ maxHeight: "70vh", overflowY: "scroll" }}>
+                    <div className="d-flex mb-3">
+                        <Form.Control
+                            id="modal-calendar"
+                            type="date"
+                            className="mr-1rem"
+                            value={newPaymentDate} // Ensuring form uses state for date
+                            onChange={handleDateChange}
+                        />
+                        <PayerDropdown
+                            payer={newPayer}
+                            setPayer={setNewPayer}
+                        />
+                    </div>
                     {transactions.length > 0 ? (
                         <ReceiptDetails
                             transactions={transactions}
