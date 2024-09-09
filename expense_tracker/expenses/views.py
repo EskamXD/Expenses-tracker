@@ -238,3 +238,137 @@ def fetch_monthly_transactions(request):
     except Exception as e:
         ## Return error message if an exception occurs
         return JsonResponse(data={"error": str(e)}, status=500)
+
+
+@api_view(["POST"])
+def import_database(request):
+    data = request.data
+    receipts = data.get("receipts", [])
+    transactions = data.get("transactions", [])
+
+    # Sprawdzenie czy dane są w poprawnym formacie
+    if not isinstance(receipts, list) or not isinstance(transactions, list):
+        return JsonResponse(
+            data={"error": "Data is not in the correct format"}, status=400
+        )
+
+    # Usunięcie duplikatów z przesłanych danych (na poziomie danych, nie bazy danych)
+    receipts = list({receipt["receipt_id"]: receipt for receipt in receipts}.values())
+    transactions = list(
+        {
+            transaction["transaction_id"]: transaction for transaction in transactions
+        }.values()
+    )
+
+    # Znalezienie istniejących rekordów w bazie danych
+    existing_receipt_ids = set(
+        Receipt.objects.filter(
+            receipt_id__in=[r["receipt_id"] for r in receipts]
+        ).values_list("receipt_id", flat=True)
+    )
+    existing_transaction_ids = set(
+        Transaction.objects.filter(
+            transaction_id__in=[t["transaction_id"] for t in transactions]
+        ).values_list("transaction_id", flat=True)
+    )
+
+    # Usunięcie istniejących rekordów z danych do zapisania
+    new_receipts = [r for r in receipts if r["receipt_id"] not in existing_receipt_ids]
+    new_transactions = [
+        t for t in transactions if t["transaction_id"] not in existing_transaction_ids
+    ]
+
+    # Zapisanie nowych rekordów do bazy danych
+    Receipt.objects.bulk_create([Receipt(**r) for r in new_receipts])
+    Transaction.objects.bulk_create([Transaction(**t) for t in new_transactions])
+
+    return JsonResponse(
+        data={
+            "message": "Data imported successfully",
+            "new_receipts_count": len(new_receipts),
+            "new_transactions_count": len(new_transactions),
+        },
+        status=201,
+    )
+
+
+@api_view(["GET"])
+def fetch_bar_persons(request):
+    ## Get owner, month, and year from the GET request
+    selected_month = int(request.GET.get("month"))
+    selected_year = int(request.GET.get("year"))
+    selected_category = request.GET.get("category")
+
+    CATEGORY_CHOICES = [
+        ("fuel", "Paliwo"),
+        ("car_expenses", "Wydatki na samochód"),
+        ("fastfood", "Fast Food"),
+        ("alcohol", "Alkohol"),
+        ("food_drinks", "Picie & jedzenie"),
+        ("chemistry", "Chemia"),
+        ("clothes", "Ubrania"),
+        ("electronics_games", "Elektornika & gry"),
+        ("tickets_entrance", "Bilety & wejściówki"),
+        ("other_shopping", "Inne zakupy"),
+        ("flat_bills", "Rachunki za mieszkanie"),
+        ("monthly_subscriptions", "Miesięczne subskrypcje"),
+        ("other_cyclical_expenses", "Inne cykliczne wydatki"),
+        ("investments_savings", "Inwestycje & oszczędności"),
+        ("other", "Inne"),
+    ]
+
+    try:
+        ## Check if the selected category is valid
+        if selected_category not in dict(CATEGORY_CHOICES).keys():
+            raise Exception("Invalid category")
+    except Exception as e:
+        ## Return error message if an exception occurs
+        return JsonResponse(
+            data={"error": str(e) + ", request_category: " + selected_category},
+            status=400,
+        )
+
+    try:
+        ## Fetch all expense receipts for the given owner, month, and year
+        expense_receipts = Receipt.objects.filter(
+            transaction_type="expense",
+            payment_date__month=selected_month,
+            payment_date__year=selected_year,
+        ).distinct()
+
+    except Exception as e:
+        ## Return error message if an exception occurs
+        return JsonResponse(
+            data={"error": str(e) + "expense/income receipts"}, status=500
+        )
+
+    try:
+        ## Process the expenses by persons and category, and compute sums.
+        #  @param receipts Receipts queryset to process.
+        #  @return dictionary perso: sum of transaction values.
+        def process_transactions(receipts):
+            persons_expense_sums = {}
+            for receipt in receipts:
+                for transaction in receipt.transactions.all():
+                    if transaction.category != selected_category:
+                        continue
+                    person = transaction.owner
+                    value = float(transaction.value)
+                    if person in persons_expense_sums:
+                        persons_expense_sums[person] += value
+                    else:
+                        persons_expense_sums[person] = value
+            return persons_expense_sums
+
+        ## Process expense transactions
+        persons_expense_sums = process_transactions(expense_receipts)
+
+        ## Return JSON response with cumulative sums for expenses and incomes
+        return JsonResponse(
+            data=persons_expense_sums,
+            status=200,
+        )
+
+    except Exception as e:
+        ## Return error message if an exception occurs
+        return JsonResponse(data={"error": str(e)}, status=500)

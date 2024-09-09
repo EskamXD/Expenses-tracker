@@ -22,5 +22,6 @@ urlpatterns = [
         views.fetch_monthly_transactions,
         name="fetch-monthly-transactions",
     ),
+    path("api/fetch-bar-persons/", views.fetch_bar_persons, name="fetch-bar-persons"),
     # other paths
 ]

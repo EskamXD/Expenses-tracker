@@ -4,6 +4,7 @@ import ExpensesPage from "./pages/ExpensesPage";
 import HomePage from "./pages/HomePage";
 import IncomePage from "./pages/IncomePage";
 import SummaryPage from "./pages/SummaryPage";
+import ImportExportPage from "./pages/ImportExportPage";
 
 import SiteNavbar from "./components/SiteNavbar";
 import Container from "react-bootstrap/Container";
@@ -20,6 +21,10 @@ const App = () => {
                     <Route path="/expenses" element={<ExpensesPage />} />
                     <Route path="/income" element={<IncomePage />} />
                     <Route path="/summary" element={<SummaryPage />} />
+                    <Route
+                        path="/import-export"
+                        element={<ImportExportPage />}
+                    />
                     {/* Możesz również dodać stronę domyślną, np. */}
                     <Route path="/" element={<HomePage />} />
                 </Routes>

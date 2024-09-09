@@ -8,11 +8,13 @@
  */
 
 import React, { useState, useEffect, useCallback } from "react";
-import { LineChart } from "@mui/x-charts";
+import { BarChart, LineChart } from "@mui/x-charts";
 import { createTheme, ThemeProvider } from "@mui/material/styles";
-import { Spinner, Col } from "react-bootstrap";
+import { Spinner, Col, Form } from "react-bootstrap";
 import SummaryListGroup from "./SummaryListGroup";
 import fetchMonthlyTransactions from "../api/fetchMonthlyTransactions";
+import fetchBarPesons from "../api/fetchBarPersons";
+import { selectExpensesOptions } from "../config/selectOption";
 
 /**
  * @brief Generates an array of dates for the selected month and year.
@@ -47,14 +49,18 @@ const ChartTab = ({ transactionType }) => {
     const [dailyIncomeSums, setDailyIncomeSums] = useState([]);
     const [dailyTrendLine, setDailyTrendLine] = useState([]);
     // const [previousMonthBalance, setPreviousMonthBalance] = useState(0);
-    const [dates, setDates] = useState([]);
     const [selectedOwner, setSelectedOwner] = useState("-");
     const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
     const [selectedMonth, setSelectedMonth] = useState(
         new Date().getMonth() + 1
     );
-    const [loading, setLoading] = useState(false);
+    const [selectedCategory, setSelectedCategory] = useState("all");
+    const [loadingLineChart, setLoadingLineChart] = useState(false);
+    const [loadingBarChart, setLoadingBarChart] = useState(false);
+
     const [itemsLoaded, setItemsLoaded] = useState(false);
+
+    const [barPersons, setBarPersons] = useState([]);
 
     const trendLine = () => {
         const monthDaysCount = new Date(
@@ -82,27 +88,32 @@ const ChartTab = ({ transactionType }) => {
      * and updates the chart with daily cumulative sums of expenses and incomes.
      */
     const fetchData = useCallback(async () => {
-        setLoading(true);
-        const allDates = generateDatesForSelectedMonth(
-            selectedYear,
-            selectedMonth
-        );
-
         try {
+            setLoadingLineChart(true);
+            setLoadingBarChart(true);
+
             const { linearExpenseSums, linearIncomeSums } =
                 await fetchMonthlyTransactions(
                     selectedOwner,
                     selectedMonth,
-                    selectedYear,
-                    allDates
+                    selectedYear
                 );
 
-            setDates(allDates);
+            const fetchedBarPersons = await fetchBarPesons(
+                selectedMonth,
+                selectedYear,
+                selectedCategory
+            );
+            console.log("asdasdasdasd", fetchedBarPersons);
+
             setDailyExpenseSums(linearExpenseSums);
             setDailyIncomeSums(linearIncomeSums);
+            setBarPersons(fetchedBarPersons);
             setItemsLoaded(true);
         } catch (error) {
             console.error("Error fetching monthly transactions:", error);
+        } finally {
+            setLoadingBarChart(false);
         }
     }, [selectedOwner, selectedMonth, selectedYear]);
 
@@ -121,13 +132,17 @@ const ChartTab = ({ transactionType }) => {
 
     useEffect(() => {
         if (itemsLoaded && dailyTrendLine.length > 0) {
-            setLoading(false);
+            setLoadingLineChart(false);
         }
     }, [itemsLoaded, dailyTrendLine]);
 
     const theme = createTheme({
         palette: { mode: "dark", scheme: "mangoFusionPalette" },
     });
+
+    const handleBarChartChange = (e) => {
+        setSelectedCategory(e.target.value);
+    };
 
     return (
         <div className="center-div-top">
@@ -141,39 +156,79 @@ const ChartTab = ({ transactionType }) => {
                     setSelectedMonth={setSelectedMonth}
                     itemsLoaded={itemsLoaded}
                 />
-                <div className="center-div">
-                    {loading ? (
-                        <Spinner animation="border" role="status">
-                            <span className="sr-only"></span>
-                        </Spinner>
-                    ) : (
+                <div className="center-div d-flex flex-column">
+                    {selectedOwner !== "-" && (
                         <ThemeProvider theme={theme}>
-                            <LineChart
-                                xAxis={[
-                                    {
-                                        scaleType: "point",
-                                        data: dates,
-                                        label: "Date",
-                                        color: "white",
-                                    },
-                                ]}
-                                series={[
-                                    {
-                                        data: dailyExpenseSums,
-                                        label: "Wydatki",
-                                    },
-                                    {
-                                        data: dailyIncomeSums,
-                                        label: "Przychody",
-                                    },
-                                    {
-                                        data: dailyTrendLine,
-                                        label: "Linia trendu",
-                                    },
-                                ]}
-                                height={500}
-                                grid={{ vertical: true, horizontal: true }}
-                            />
+                            {loadingLineChart ? (
+                                <Spinner animation="border" role="status">
+                                    <span className="sr-only"></span>
+                                </Spinner>
+                            ) : (
+                                <LineChart
+                                    xAxis={[
+                                        {
+                                            scaleType: "point",
+                                            data: generateDatesForSelectedMonth(
+                                                selectedYear,
+                                                selectedMonth
+                                            ),
+                                            label: "Date",
+                                            color: "white",
+                                        },
+                                    ]}
+                                    series={[
+                                        {
+                                            data: dailyExpenseSums,
+                                            label: "Wydatki",
+                                        },
+                                        {
+                                            data: dailyIncomeSums,
+                                            label: "Przychody",
+                                        },
+                                        {
+                                            data: dailyTrendLine,
+                                            label: "Linia trendu",
+                                        },
+                                    ]}
+                                    height={500}
+                                    grid={{ vertical: true, horizontal: true }}
+                                />
+                            )}
+                            <Form.Select
+                                id={`category-select`}
+                                className="mb-3"
+                                value={selectedCategory}
+                                onChange={(e) =>
+                                    handleBarChartChange(e.target.value)
+                                }>
+                                {selectExpensesOptions.map((option) => (
+                                    <option
+                                        key={option.value}
+                                        value={option.value}>
+                                        {option.label}
+                                    </option>
+                                ))}
+                            </Form.Select>
+                            {loadingBarChart ? (
+                                <Spinner animation="border" role="status">
+                                    <span className="sr-only"></span>
+                                </Spinner>
+                            ) : (
+                                <>
+                                    {/* <BarChart
+                                    xAxis={[
+                                        {
+                                            scaleType: "band",
+                                            data: [
+                                                barPersons.map(
+                                                    (person) => person.name
+                                                ),
+                                            ],
+                                            label: "Osoba",
+                                        },
+                                    ]}></BarChart> */}
+                                </>
+                            )}
                         </ThemeProvider>
                     )}
                 </div>
@@ -183,3 +238,4 @@ const ChartTab = ({ transactionType }) => {
 };
 
 export default ChartTab;
+
