@@ -4,6 +4,8 @@ import { ToastContainer } from "react-bootstrap";
 import ErrorOutlineIcon from "@mui/icons-material/ErrorOutline";
 import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutline";
 
+import ToastStatus from "./ToastStatus";
+
 /**
  * @brief A React component for displaying a toast notification.
  * @file Toaster.jsx
@@ -42,11 +44,12 @@ const Toaster = ({ type, header, message }) => {
     return (
         <ToastContainer
             className="p-3"
-            position="bottom-start"
+            position="position-static"
             style={{ zIndex: 1 }}>
             {toastArray &&
-                toastArray.map((toast) => (
+                toastArray.map((toast, index) => (
                     <ToastStatus
+                        key={index}
                         show={toast.show}
                         setShow={toast.setShow}
                         type={toast.type}
@@ -60,4 +63,3 @@ const Toaster = ({ type, header, message }) => {
 };
 
 export default Toaster;
-

@@ -1,30 +1,20 @@
-/**
- * @file ChartTab.jsx
- * @brief React component to display a line chart of monthly expenses and incomes.
- *
- * This component fetches the monthly transactions (expenses and incomes) for a selected owner, month, and year.
- * It displays a line chart summarizing the cumulative daily expenses and incomes over the selected time period.
- * The user can select the owner, month, and year from dropdowns, and the chart will update accordingly.
- */
-
 import React, { useState, useEffect, useCallback } from "react";
-import { BarChart, LineChart } from "@mui/x-charts";
+import { BarChart, LineChart, PieChart } from "@mui/x-charts";
 import { createTheme, ThemeProvider } from "@mui/material/styles";
-import { Spinner, Col, Form } from "react-bootstrap";
+import { Button, Col, Form, Spinner } from "react-bootstrap";
 import SummaryListGroup from "./SummaryListGroup";
-import fetchMonthlyTransactions from "../api/fetchMonthlyTransactions";
-import fetchBarPesons from "../api/fetchBarPersons";
-import { selectExpensesOptions } from "../config/selectOption";
+import {
+    fetchLineSums,
+    fetchBarPersons,
+    fetchBarShops,
+    fetchPieCategories,
+} from "../api/fetchCharts";
+import {
+    selectExpensesOptions,
+    selectSummaryOptions,
+} from "../config/selectOption";
+import LoadingChart from "./LoadingChart";
 
-/**
- * @brief Generates an array of dates for the selected month and year.
- *
- * This function returns an array of formatted dates (YYYY-MM-DD) for the entire selected month.
- *
- * @param {number} year - The selected year.
- * @param {number} month - The selected month (1-12).
- * @return {string[]} An array of formatted dates for the selected month.
- */
 const generateDatesForSelectedMonth = (year, month) => {
     const daysInMonth = new Date(year, month, 0).getDate();
     return Array.from({ length: daysInMonth }, (_, i) =>
@@ -32,35 +22,34 @@ const generateDatesForSelectedMonth = (year, month) => {
     );
 };
 
-/**
- * @brief A React component that fetches and displays a line chart of monthly transactions.
- *
- * This component fetches the daily expenses and incomes for a selected owner, month, and year.
- * It uses the fetched data to render a cumulative line chart. Users can select the owner,
- * month, and year via dropdowns, and the chart will update accordingly.
- *
- * @component
- * @param {Object} props - The component props.
- * @param {string} props.transactionType - Type of transaction ("expense" or "income") to filter data (not currently used).
- * @return {JSX.Element} The rendered chart component.
- */
 const ChartTab = ({ transactionType }) => {
-    const [dailyExpenseSums, setDailyExpenseSums] = useState([]);
-    const [dailyIncomeSums, setDailyIncomeSums] = useState([]);
-    const [dailyTrendLine, setDailyTrendLine] = useState([]);
-    // const [previousMonthBalance, setPreviousMonthBalance] = useState(0);
+    const [lineSumsExpenseXAxis, setLineSumsExpenseXAxis] = useState([]);
+    const [lineSumsIncomeXAxis, setLineSumsIncomeXAxis] = useState([]);
+    const [lineSumsTrendXAxis, setLineSumsTrendXAxis] = useState([]);
+    const [barPersonsNamesXAxis, setBarPersonsNamesXAxis] = useState([]);
+    const [barPersonsValueSeries, setBarPersonsValueSeries] = useState([]);
+    const [barShopsNamesXAxis, setBarShopsNamesXAxis] = useState([]);
+    const [barShopsValueSeries, setBarShopsValueSeries] = useState([]);
+    const [pieCategoriesValueSeries, setPieCategoriesValueSeries] = useState(
+        []
+    );
+
     const [selectedOwner, setSelectedOwner] = useState("-");
     const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
     const [selectedMonth, setSelectedMonth] = useState(
         new Date().getMonth() + 1
     );
-    const [selectedCategory, setSelectedCategory] = useState("all");
-    const [loadingLineChart, setLoadingLineChart] = useState(false);
-    const [loadingBarChart, setLoadingBarChart] = useState(false);
+    const [selectedCategories, setSelectedCategories] = useState([
+        "food_drinks",
+    ]);
+    const [loading, setLoading] = useState({
+        lineSumsChart: false,
+        barPersonsChart: false,
+        barShopsChart: false,
+        pieCategoriesChart: false,
+    });
 
     const [itemsLoaded, setItemsLoaded] = useState(false);
-
-    const [barPersons, setBarPersons] = useState([]);
 
     const trendLine = () => {
         const monthDaysCount = new Date(
@@ -68,56 +57,90 @@ const ChartTab = ({ transactionType }) => {
             selectedMonth,
             0
         ).getDate();
-        const trendLine = [];
-        const calculateMaximumDailySpendings =
-            Math.max(...dailyIncomeSums) / monthDaysCount;
-
-        for (let i = 0; i < monthDaysCount; i++) {
-            trendLine.push(
-                parseFloat(calculateMaximumDailySpendings * (i + 1)).toFixed(2)
-            );
-        }
-
-        return trendLine;
+        const maxDailySpendings =
+            Math.max(...lineSumsIncomeXAxis) / monthDaysCount;
+        return Array.from({ length: monthDaysCount }, (_, i) =>
+            parseFloat(maxDailySpendings * (i + 1)).toFixed(2)
+        );
     };
 
-    /**
-     * @brief Fetches transaction data and updates the chart.
-     *
-     * This function fetches monthly transaction data for the selected owner, month, and year,
-     * and updates the chart with daily cumulative sums of expenses and incomes.
-     */
     const fetchData = useCallback(async () => {
         try {
-            setLoadingLineChart(true);
-            setLoadingBarChart(true);
+            setLoading({
+                lineSumsChart: true,
+                barPersonsChart: true,
+                barShopsChart: true,
+                pieCategoriesChart: true,
+            });
 
-            const { linearExpenseSums, linearIncomeSums } =
-                await fetchMonthlyTransactions(
-                    selectedOwner,
-                    selectedMonth,
-                    selectedYear
-                );
-
-            const fetchedBarPersons = await fetchBarPesons(
+            const { linearExpenseSums, linearIncomeSums } = await fetchLineSums(
+                selectedOwner,
+                selectedMonth,
+                selectedYear
+            );
+            const fetchedBarPersons = await fetchBarPersons(
                 selectedMonth,
                 selectedYear,
-                selectedCategory
+                selectedCategories
             );
-            console.log("asdasdasdasd", fetchedBarPersons);
+            const fetchedBarShops = await fetchBarShops(
+                selectedOwner,
+                selectedMonth,
+                selectedYear
+            );
+            const fetchedPieCategories = await fetchPieCategories(
+                selectedOwner,
+                selectedMonth,
+                selectedYear
+            );
 
-            setDailyExpenseSums(linearExpenseSums);
-            setDailyIncomeSums(linearIncomeSums);
-            setBarPersons(fetchedBarPersons);
+            setLineSumsExpenseXAxis(linearExpenseSums);
+            setLineSumsIncomeXAxis(linearIncomeSums);
+            let tempArray = [];
+            setLineSumsTrendXAxis(
+                tempArray.fill(0, 0, linearExpenseSums.length)
+            );
+            setBarPersonsNamesXAxis(
+                fetchedBarPersons.map(
+                    (person) => selectSummaryOptions[person.payer]
+                )
+            );
+            setBarPersonsValueSeries(
+                fetchedBarPersons.map((person) =>
+                    parseFloat(person.expense_sum).toFixed(2)
+                )
+            );
+            setBarShopsNamesXAxis(fetchedBarShops.map((shop) => shop.shop));
+            setBarShopsValueSeries(
+                fetchedBarShops.map((shop) =>
+                    parseFloat(shop.expense_sum).toFixed(2)
+                )
+            );
+
+            setPieCategoriesValueSeries(
+                fetchedPieCategories.map((category, index) => ({
+                    id: index + 1,
+                    value: category.expense_sum,
+                    label:
+                        selectExpensesOptions[
+                            category.transactions__category
+                        ] || category.transactions__category,
+                }))
+            );
+
             setItemsLoaded(true);
         } catch (error) {
             console.error("Error fetching monthly transactions:", error);
         } finally {
-            setLoadingBarChart(false);
+            setLoading({
+                lineSumsChart: false,
+                barPersonsChart: false,
+                barShopsChart: false,
+                pieCategoriesChart: false,
+            });
         }
-    }, [selectedOwner, selectedMonth, selectedYear]);
+    }, [selectedOwner, selectedMonth, selectedYear, selectedCategories]);
 
-    // Pobieranie danych po zmianie wybranych opcji
     useEffect(() => {
         if (selectedOwner !== "-") {
             fetchData();
@@ -126,22 +149,22 @@ const ChartTab = ({ transactionType }) => {
 
     useEffect(() => {
         if (itemsLoaded) {
-            setDailyTrendLine(trendLine());
+            setLineSumsTrendXAxis(trendLine());
         }
-    }, [itemsLoaded, dailyIncomeSums]);
-
-    useEffect(() => {
-        if (itemsLoaded && dailyTrendLine.length > 0) {
-            setLoadingLineChart(false);
-        }
-    }, [itemsLoaded, dailyTrendLine]);
+    }, [itemsLoaded, lineSumsIncomeXAxis]);
 
     const theme = createTheme({
         palette: { mode: "dark", scheme: "mangoFusionPalette" },
     });
 
-    const handleBarChartChange = (e) => {
-        setSelectedCategory(e.target.value);
+    const handleBarChartCategoryChange = (category) => {
+        setSelectedCategories((prevSelected) => {
+            if (prevSelected.includes(category)) {
+                return prevSelected.filter((c) => c !== category);
+            } else {
+                return [...prevSelected, category];
+            }
+        });
     };
 
     return (
@@ -159,76 +182,141 @@ const ChartTab = ({ transactionType }) => {
                 <div className="center-div d-flex flex-column">
                     {selectedOwner !== "-" && (
                         <ThemeProvider theme={theme}>
-                            {loadingLineChart ? (
-                                <Spinner animation="border" role="status">
-                                    <span className="sr-only"></span>
-                                </Spinner>
-                            ) : (
-                                <LineChart
-                                    xAxis={[
-                                        {
-                                            scaleType: "point",
-                                            data: generateDatesForSelectedMonth(
-                                                selectedYear,
-                                                selectedMonth
-                                            ),
-                                            label: "Date",
-                                            color: "white",
-                                        },
-                                    ]}
-                                    series={[
-                                        {
-                                            data: dailyExpenseSums,
-                                            label: "Wydatki",
-                                        },
-                                        {
-                                            data: dailyIncomeSums,
-                                            label: "Przychody",
-                                        },
-                                        {
-                                            data: dailyTrendLine,
-                                            label: "Linia trendu",
-                                        },
-                                    ]}
-                                    height={500}
-                                    grid={{ vertical: true, horizontal: true }}
-                                />
-                            )}
-                            <Form.Select
-                                id={`category-select`}
-                                className="mb-3"
-                                value={selectedCategory}
-                                onChange={(e) =>
-                                    handleBarChartChange(e.target.value)
-                                }>
-                                {selectExpensesOptions.map((option) => (
-                                    <option
-                                        key={option.value}
-                                        value={option.value}>
-                                        {option.label}
-                                    </option>
-                                ))}
-                            </Form.Select>
-                            {loadingBarChart ? (
-                                <Spinner animation="border" role="status">
-                                    <span className="sr-only"></span>
-                                </Spinner>
-                            ) : (
-                                <>
-                                    {/* <BarChart
-                                    xAxis={[
-                                        {
-                                            scaleType: "band",
-                                            data: [
-                                                barPersons.map(
-                                                    (person) => person.name
+                            <LoadingChart
+                                isLoading={loading.lineSumsChart}
+                                chartComponent={
+                                    <LineChart
+                                        xAxis={[
+                                            {
+                                                scaleType: "point",
+                                                data: generateDatesForSelectedMonth(
+                                                    selectedYear,
+                                                    selectedMonth
                                                 ),
-                                            ],
-                                            label: "Osoba",
-                                        },
-                                    ]}></BarChart> */}
-                                </>
-                            )}
+                                                label: "Data",
+                                                color: "white",
+                                            },
+                                        ]}
+                                        series={[
+                                            {
+                                                data: lineSumsExpenseXAxis,
+                                                label: "Wydatki",
+                                            },
+                                            {
+                                                data: lineSumsIncomeXAxis,
+                                                label: "Przychody",
+                                            },
+                                            {
+                                                data: lineSumsTrendXAxis,
+                                                label: "Linia trendu",
+                                            },
+                                        ]}
+                                        height={500}
+                                        grid={{
+                                            vertical: true,
+                                            horizontal: true,
+                                        }}
+                                    />
+                                }
+                            />
+                            <div
+                                className="d-flex full-w align-items-center"
+                                style={{
+                                    alignSelf: "flex-end",
+                                    minHeight: "500px",
+                                }}>
+                                <LoadingChart
+                                    isLoading={loading.barShopsChart}
+                                    chartComponent={
+                                        <BarChart
+                                            xAxis={[
+                                                {
+                                                    scaleType: "band",
+                                                    data: barShopsNamesXAxis,
+                                                },
+                                            ]}
+                                            series={[
+                                                { data: barShopsValueSeries },
+                                            ]}
+                                            height={500}
+                                            grid={{
+                                                vertical: true,
+                                                horizontal: true,
+                                            }}
+                                        />
+                                    }
+                                />
+                            </div>
+                            <div className="d-flex full-w align-items-center">
+                                <Col>
+                                    <LoadingChart
+                                        isLoading={loading.barPersonsChart}
+                                        chartComponent={
+                                            <BarChart
+                                                xAxis={[
+                                                    {
+                                                        scaleType: "band",
+                                                        data: barPersonsNamesXAxis,
+                                                    },
+                                                ]}
+                                                series={[
+                                                    {
+                                                        data: barPersonsValueSeries,
+                                                    },
+                                                ]}
+                                                height={500}
+                                                width={400}
+                                                grid={{
+                                                    vertical: true,
+                                                    horizontal: true,
+                                                }}
+                                            />
+                                        }
+                                    />
+                                </Col>
+                                <Col>
+                                    {selectExpensesOptions.map((type) => (
+                                        <Form.Check // prettier-ignore
+                                            type="checkbox"
+                                            key={type.value}
+                                            id={type.value}
+                                            label={type.label}
+                                            onChange={() =>
+                                                handleBarChartCategoryChange(
+                                                    type.value
+                                                )
+                                            }
+                                            checked={selectedCategories.includes(
+                                                type.value
+                                            )}
+                                        />
+                                    ))}
+                                    <Button
+                                        variant="primary"
+                                        onClick={fetchData}>
+                                        Aktualizuj wykres
+                                    </Button>
+                                </Col>
+                            </div>
+                            <div className="d-flex full-w align-items-center">
+                                <LoadingChart
+                                    isLoading={loading.pieCategoriesChart}
+                                    chartComponent={
+                                        <PieChart
+                                            series={[
+                                                {
+                                                    data: pieCategoriesValueSeries,
+                                                },
+                                            ]}
+                                            height={500}
+                                            grid={{
+                                                vertical: true,
+                                                horizontal: true,
+                                            }}
+                                        />
+                                    }
+                                />
+                            </div>
                         </ThemeProvider>
                     )}
                 </div>
@@ -238,4 +326,3 @@ const ChartTab = ({ transactionType }) => {
 };
 
 export default ChartTab;
-

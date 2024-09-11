@@ -26,12 +26,12 @@ const BalanceTab = () => {
             if (selectedYear) params.year = selectedYear;
             if (selectedMonth) params.month = selectedMonth;
 
-            console.log(params);
+            // console.log(params);
 
             axios
                 .get("/api/monthly-balance/", { params })
                 .then((response) => {
-                    console.log(response);
+                    // console.log(response);
                     setBalanceData(response.data);
                     setItemsLoaded(true);
                     setLoading(false);

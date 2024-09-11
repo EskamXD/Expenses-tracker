@@ -65,3 +65,27 @@ class ReceiptSerializer(serializers.ModelSerializer):
 
         instance.save()
         return instance
+
+
+class PersonExpenseSerializer(serializers.Serializer):
+    payer = serializers.CharField()
+    expense_sum = serializers.FloatField()
+
+    class Meta:
+        fields = ["payer", "expense_sum"]
+
+
+class ShopExpenseSerializer(serializers.Serializer):
+    shop = serializers.CharField()
+    expense_sum = serializers.FloatField()
+
+    class Meta:
+        fields = ["shop", "expense_sum"]
+
+
+class CategoryPieExpenseSerializer(serializers.Serializer):
+    transactions__category = serializers.CharField()
+    expense_sum = serializers.FloatField()
+
+    class Meta:
+        fields = ["transactions__category", "expense_sum"]

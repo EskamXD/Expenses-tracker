@@ -21,48 +21,72 @@ const ImportExportPage = () => {
     // const [toYear, setToYear] = useState(currentYear);
 
     const [isDownloading, setIsDownloading] = useState(false);
-    const [successDownload, setSuccessDownload] = useState(false);
-    const [failedDownload, setFailedDownload] = useState(false);
     const [isUploading, setIsUploading] = useState(false);
-    const [successUpload, setSuccessUpload] = useState(false);
-    const [failedUpload, setFailedUpload] = useState(false);
+    const [showToast, setShowToast] = useState({
+        successDownload: false,
+        failedDownload: false,
+        successUpload: false,
+        failedUpload: false,
+    });
 
     const [toastArray, setToastArray] = useState([]);
 
     useEffect(() => {
-        let newToastArray = [];
-        if (successDownload) {
-            toastArray.push({
+        const newToastArray = [];
+
+        if (showToast.successDownload) {
+            newToastArray.push({
                 type: "success",
                 header: "Sukces",
                 message: "Dane zostały pomyślnie pobrane.",
             });
+
+            setTimeout(() => {
+                setShowToast({
+                    successDownload: false,
+                });
+            }, 5500);
         }
-        if (failedDownload) {
-            toastArray.push({
+        if (showToast.failedDownload) {
+            newToastArray.push({
                 type: "danger",
                 header: "Błąd",
                 message: "Błąd podczas pobierania danych.",
             });
+            setTimeout(() => {
+                setShowToast({
+                    failedDownload: false,
+                });
+            }, 5500);
         }
-        if (successUpload) {
-            toastArray.push({
+        if (showToast.successUpload) {
+            newToastArray.push({
                 type: "success",
                 header: "Sukces",
                 message: "Dane zostały pomyślnie zaimportowane.",
             });
+            setTimeout(() => {
+                setShowToast({
+                    successUpload: false,
+                });
+            }, 5500);
         }
-        if (failedUpload) {
-            toastArray.push({
+        if (showToast.failedUpload) {
+            newToastArray.push({
                 type: "danger",
                 header: "Błąd",
                 message: "Błąd podczas importowania danych.",
             });
+            setTimeout(() => {
+                setShowToast({
+                    failedUpload: false,
+                });
+            }, 5500);
         }
 
         console.log(newToastArray);
-        setToastArray(newToastArray);
-    }, [failedDownload, failedUpload, successDownload, successUpload]);
+        setToastArray(newToastArray); // Ustawiamy nową tablicę
+    }, [showToast]);
 
     const downloadJsonAsZip = async () => {
         setIsDownloading(true);
@@ -86,13 +110,17 @@ const ImportExportPage = () => {
             downloadLink.href = URL.createObjectURL(zipBlob);
             downloadLink.download = "data.zip";
             downloadLink.click();
-            setSuccessDownload(true);
+            setShowToast({
+                successDownload: true,
+            });
         } catch (error) {
             console.error(
                 "Błąd podczas pobierania lub tworzenia pliku ZIP:",
                 error
             );
-            setFailedDownload(true);
+            setShowToast({
+                failedDownload: true,
+            });
         } finally {
             setIsDownloading(false);
         }
@@ -133,10 +161,14 @@ const ImportExportPage = () => {
                 }
 
                 console.log("Dane zaimportowane pomyślnie");
-                setSuccessUpload(true);
+                setShowToast({
+                    successUpload: true,
+                });
             } catch (error) {
                 console.error("Błąd podczas importowania danych:", error);
-                setFailedUpload(true);
+                setShowToast({
+                    failedUpload: true,
+                });
             } finally {
                 setIsUploading(false);
             }
@@ -189,15 +221,6 @@ const ImportExportPage = () => {
                         disabled={isDownloading}>
                         {isDownloading ? "Pobieranie..." : "Eksportuj dane"}
                     </Button>
-                    <Button
-                        onClick={() => {
-                            setSuccessDownload(true);
-                            setSuccessUpload(true);
-                            setFailedDownload(true);
-                            setFailedUpload(true);
-                        }}>
-                        Ciągnij siurka
-                    </Button>
                 </Tab>
                 <Tab eventKey="import" title="Import">
                     <h2>Import</h2>
@@ -210,7 +233,7 @@ const ImportExportPage = () => {
                             onChange={(event) => handleFileUpload(event)} // Use onChange event
                         />
                     </Form.Group>
-                    {successUpload && (
+                    {showToast.successDownload && (
                         <Spinner animation="border" role="status">
                             <span className="visually-hidden">
                                 Ładowanie...
@@ -219,16 +242,21 @@ const ImportExportPage = () => {
                     )}
                 </Tab>
             </Tabs>
-            {toastArray.map((toast) => (
-                <Toaster
-                    type={toast.type}
-                    header={toast.header}
-                    message={toast.message}
-                />
-            ))}
+            <div
+                className="d-flex flex-column gap-3 position-absolute"
+                style={{ bottom: "140px", left: "30px", width: "500px" }}>
+                {toastArray.map((toast, index) => (
+                    <Toaster
+                        key={index}
+                        type={toast.type}
+                        header={toast.header}
+                        message={toast.message}
+                        setShowToast={setShowToast}
+                    />
+                ))}
+            </div>
         </div>
     );
 };
 
 export default ImportExportPage;
-

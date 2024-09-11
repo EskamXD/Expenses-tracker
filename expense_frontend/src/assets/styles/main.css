@@ -51,6 +51,20 @@
     justify-content: space-between;
     width: 100%;
 }
+.justify-end {
+    display: flex;
+    justify-content: flex-end;
+    width: 100%;
+}
+.align-end {
+    display: flex;
+    align-items: flex-end;
+    width: 100%;
+}
+
+.full-w {
+    width: 100%;
+}
 
 .modal-90w {
     max-width: none !important;

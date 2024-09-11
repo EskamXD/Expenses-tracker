@@ -18,10 +18,16 @@ urlpatterns = [
     ),
     path("api/monthly-balance/", views.monthly_balance, name="monthly-balance"),
     path(
-        "api/fetch-monthly-transactions/",
-        views.fetch_monthly_transactions,
-        name="fetch-monthly-transactions",
+        "api/fetch-line-sums/",
+        views.fetch_line_sums,
+        name="fetch-line-sums",
     ),
     path("api/fetch-bar-persons/", views.fetch_bar_persons, name="fetch-bar-persons"),
+    path("api/fetch-bar-shops/", views.fetch_bar_shops, name="fetch-bar-shops"),
+    path(
+        "api/fetch-pie-categories/",
+        views.fetch_pie_categories,
+        name="fetch-pie-categories",
+    ),
     # other paths
 ]
