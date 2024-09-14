@@ -37,7 +37,7 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
-    "expenses",
+    "expenses_api",
     "corsheaders",
     "rest_framework",
     "drf_spectacular",
@@ -106,10 +106,12 @@ AUTH_PASSWORD_VALIDATORS = [
 ]
 
 
+# AUTH_USER_MODEL = "expenses.User"
+
 # Internationalization
 # https://docs.djangoproject.com/en/5.1/topics/i18n/
 
-LANGUAGE_CODE = "en-us"
+LANGUAGE_CODE = "pl-pl"
 
 TIME_ZONE = "UTC"
 

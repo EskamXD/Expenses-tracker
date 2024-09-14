@@ -26,6 +26,9 @@ export const fetchLineSums = async (owner, month, year) => {
 
 export const fetchBarPersons = async (month, year, category) => {
     try {
+        console.log(
+            `http://localhost:8000/api/fetch-bar-persons/?month=${month}&year=${year}&category=${category}`
+        );
         // Wysyłanie żądania do backendu
         const response = await axios.get(
             `http://localhost:8000/api/fetch-bar-persons/`,

@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Button, Form, Spinner, Tab, Tabs } from "react-bootstrap";
 import JSZip from "jszip";
+import axios from "axios";
 
 import Toaster from "../components/Toaster";
 
@@ -93,7 +94,9 @@ const ImportExportPage = () => {
 
         try {
             // 1. Pobierz dane JSON z backendu
-            const response = await fetch("http://localhost:8000/api/receipts/");
+            const response = await axios.get(
+                "http://localhost:8000/api/receipts/"
+            );
             const jsonData = await response.json();
 
             // 2. Utwórz nowy plik ZIP
@@ -145,7 +148,7 @@ const ImportExportPage = () => {
                 console.log(JSON.stringify(json[0]));
 
                 // Now call fetchData after reading the file content
-                const response = await fetch(
+                const response = await axios.post(
                     "http://localhost:8000/api/receipts/",
                     {
                         method: "POST",
@@ -178,7 +181,7 @@ const ImportExportPage = () => {
     };
 
     return (
-        <div>
+        <>
             <h1>Import/Export</h1>
             <Tabs defaultActiveKey="export" id="import-export-tabs">
                 <Tab eventKey="export" title="Eksport">
@@ -255,7 +258,7 @@ const ImportExportPage = () => {
                     />
                 ))}
             </div>
-        </div>
+        </>
     );
 };
 

@@ -95,7 +95,7 @@ const IncomePage = () => {
     };
 
     return (
-        <div>
+        <>
             <Breadcrumb>
                 <Breadcrumb.Item linkAs={Link} linkProps={{ to: "/" }}>
                     Strona główna
@@ -128,7 +128,7 @@ const IncomePage = () => {
                     />
                 </Tab>
             </Tabs>
-        </div>
+        </>
     );
 };
 

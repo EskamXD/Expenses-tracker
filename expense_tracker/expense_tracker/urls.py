@@ -21,13 +21,10 @@ from django.contrib import admin
 from django.urls import path, include
 
 # import views from todo
-import expenses.urls
-
-
-
+import expenses_api.urls
 
 
 urlpatterns = [
     path("admin/", admin.site.urls),
-    path("", include(expenses.urls)),
+    path("api/", include(expenses_api.urls)),
 ]

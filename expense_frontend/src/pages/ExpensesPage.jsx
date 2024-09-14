@@ -101,7 +101,7 @@ const ExpensesPage = () => {
     };
 
     return (
-        <div>
+        <>
             <Breadcrumb>
                 <Breadcrumb.Item linkAs={Link} linkProps={{ to: "/" }}>
                     Strona główna
@@ -157,7 +157,7 @@ const ExpensesPage = () => {
                     />
                 </Tab>
             </Tabs>
-        </div>
+        </>
     );
 };
 

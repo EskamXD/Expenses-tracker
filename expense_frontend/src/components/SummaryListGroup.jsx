@@ -55,12 +55,14 @@ const SummaryListGroup = ({
     itemsLoaded,
 }) => (
     <ListGroup horizontal>
-        <ListGroup.Item>
-            <SummaryDropdown
-                selectedOwner={selectedOwner}
-                setSelectedOwner={setSelectedOwner}
-            />
-        </ListGroup.Item>
+        {selectedOwner && setSelectedOwner && (
+            <ListGroup.Item>
+                <SummaryDropdown
+                    selectedOwner={selectedOwner}
+                    setSelectedOwner={setSelectedOwner}
+                />
+            </ListGroup.Item>
+        )}
         <ListGroup.Item>
             <YearDropdown
                 selectedYear={selectedYear}
@@ -79,4 +81,3 @@ const SummaryListGroup = ({
 );
 
 export default SummaryListGroup;
-

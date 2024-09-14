@@ -47,9 +47,17 @@ const SiteNavbar = () => {
                         {/**< Link to the summary page. */}
                         Podsumowanie
                     </Link>
+                    <Link to="/bills" className="nav-link">
+                        {/**< Link to the flat bills page. */}
+                        Rachunki
+                    </Link>
                     <Link to="/import-export" className="nav-link">
                         {/**< Link to the import/export page. */}
                         Import/Export
+                    </Link>
+                    <Link to="/settings" className="nav-link">
+                        {/**< Link to the settings page. */}
+                        Ustawienia
                     </Link>
                 </Nav>
             </Container>
@@ -58,4 +66,3 @@ const SiteNavbar = () => {
 };
 
 export default SiteNavbar;
-
