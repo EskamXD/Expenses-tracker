@@ -26,15 +26,13 @@ import { selectSummaryOptions } from "../config/selectOption";
  * @return {JSX.Element} A dropdown component for selecting the owner of an item.
  */
 export const OwnerDropdown = ({ item = {}, items, setItems }) => {
+    const persons = localStorage.getItem("person");
     const [localOwner, setLocalOwner] = useState(
-        item.owner || "kamil"
+        item.owner || 1
     ); /**< State to manage the local owner if `setItems` is not provided. */
     const id = item.id
         ? item.id
         : 0; /**< Unique identifier for the item, default to 0 if not present. */
-    const owner =
-        item.owner ||
-        localOwner; /**< The current owner, using local state or item state. */
 
     /**
      * @brief Handles changing the owner of an item.
@@ -53,6 +51,7 @@ export const OwnerDropdown = ({ item = {}, items, setItems }) => {
                     el.id === id ? { ...el, owner: newOwner } : el
                 )
             );
+            setLocalOwner(newOwner);
         } else {
             // Update local state
             setLocalOwner(newOwner);
@@ -64,7 +63,7 @@ export const OwnerDropdown = ({ item = {}, items, setItems }) => {
             <Dropdown.Toggle variant="primary" id="dropdown-basic">
                 {
                     selectSummaryOptions[
-                        owner
+                        localOwner
                     ] /* < Display the current owner label from selectSummaryOptions. */
                 }
             </Dropdown.Toggle>
@@ -74,7 +73,7 @@ export const OwnerDropdown = ({ item = {}, items, setItems }) => {
                     <Dropdown.Item
                         eventKey={key}
                         key={key}
-                        onClick={() => handleOwnerChange(key)}>
+                        onClick={() => handleOwnerChange(parseInt(key))}>
                         {label}
                     </Dropdown.Item>
                 ))}
@@ -84,3 +83,4 @@ export const OwnerDropdown = ({ item = {}, items, setItems }) => {
 };
 
 export default OwnerDropdown;
+

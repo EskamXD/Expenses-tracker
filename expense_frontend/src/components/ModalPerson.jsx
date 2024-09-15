@@ -5,9 +5,14 @@ const ModalPerson = ({
     setShowModal,
     name,
     setName,
+    payer,
+    setPayer,
     handleSubmit,
     canCloseModal,
 }) => {
+    const handleChange = (e) => {
+        setPayer(e.target.checked);
+    };
     return (
         <Modal show={showModal} centered>
             <Modal.Header closeButton onClick={() => setShowModal(false)}>
@@ -25,7 +30,11 @@ const ModalPerson = ({
                             className="mb-3"
                         />
                         <Form.Check>
-                            <Form.Check.Input type="checkbox" />
+                            <Form.Check.Input
+                                type="checkbox"
+                                onChange={(e) => handleChange(e)}
+                                checked={payer} // Dodaj wartość stanu jako wartość kontrolowaną
+                            />
                             <Form.Check.Label>
                                 Zaznacz, jeśli chcesz dodać osobę jako płatnika
                                 do wspólnych rachunków
@@ -42,3 +51,4 @@ const ModalPerson = ({
 };
 
 export default ModalPerson;
+

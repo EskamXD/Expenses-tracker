@@ -31,7 +31,7 @@ export const addItem = (items, setItems) => {
             value: "",
             description: "",
             quantity: "",
-            owner: "kamil" /**< Default owner set to "kamil". */,
+            owner: 1 /**< Default owner set to "kamil". */,
             date: new Date()
                 .toISOString()
                 .split("T")[0] /**< Set current date as the date. */,
@@ -65,3 +65,4 @@ export const removeItem = (items, setItems, id) => {
 
     setItems(reIndexedItems);
 };
+

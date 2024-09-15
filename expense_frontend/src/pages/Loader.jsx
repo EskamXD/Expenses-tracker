@@ -1,39 +1,47 @@
 import React, { useState } from "react";
 import axios from "axios";
+import { Spinner } from "react-bootstrap";
 import ModalPerson from "../components/ModalPerson";
+import fetchPostPerson from "../api/fetchPostPerson";
+import "../assets/styles/main.css";
 
-const Loader = () => {
+const Loader = (setReload) => {
+    const [showModal, setShowModal] = useState(true);
     const [name, setName] = useState("");
+    const [payer, setPayer] = useState(false);
 
     // Obsługuje zdarzenie przesłania formularza
     const handleSubmit = async (e) => {
-        // e.preventDefault(); // Zapobiega domyślnemu działaniu formularza (przeładowanie strony)
-
-        try {
-            const response = await axios.post(
-                "http://localhost:8000/api/person/",
-                {
-                    name: name,
-                }
-            );
-            // Opcjonalnie, możesz wyczyścić formularz lub zamknąć modal
-            setName(""); // Wyczyść stan po udanym dodaniu
-        } catch (error) {
-            console.error(error);
-            alert("Wystąpił błąd podczas dodawania osoby.");
-        }
+        fetchPostPerson(
+            e,
+            name,
+            setName,
+            payer,
+            setPayer,
+            2000,
+            setShowModal,
+            setReload
+        );
     };
 
     return (
-        <ModalPerson
-            showModal={true}
-            setShowModal={true}
-            name={name}
-            setName={setName}
-            handleSubmit={handleSubmit}
-            canCloseModal={false}
-        />
+        <div className="center-div">
+            <Spinner animation="border" role="status">
+                <span className="visually-hidden">Loading...</span>
+            </Spinner>
+            <ModalPerson
+                showModal={showModal}
+                setShowModal={setShowModal}
+                name={name}
+                setName={setName}
+                payer={payer}
+                setPayer={setPayer}
+                handleSubmit={handleSubmit}
+                canCloseModal={false}
+            />
+        </div>
     );
 };
 
 export default Loader;
+

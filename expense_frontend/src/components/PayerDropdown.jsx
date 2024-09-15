@@ -25,12 +25,11 @@ import { selectSummaryOptions } from "../config/selectOption";
  * @return {JSX.Element} A dropdown component for selecting the payer of a transaction.
  */
 export const PayerDropdown = ({ payer, setPayer }) => {
+    const persons = localStorage.getItem("person");
+    // console.log(persons);
     const [localPayer, setLocalPayer] = useState(
-        payer || "kamil"
+        payer || 1
     ); /**< State to manage the local payer if `setPayer` is not provided. */
-    const payerHandler =
-        payer ||
-        localPayer; /**< The current payer, using local state or parent state. */
 
     /**
      * @brief Handles changing the payer of a transaction.
@@ -45,6 +44,7 @@ export const PayerDropdown = ({ payer, setPayer }) => {
         if (setPayer) {
             // Update state in parent component
             setPayer(newPayer);
+            setLocalPayer(newPayer);
         } else {
             // Update local state
             setLocalPayer(newPayer);
@@ -57,21 +57,26 @@ export const PayerDropdown = ({ payer, setPayer }) => {
                 Payer:{" "}
                 {
                     selectSummaryOptions[
-                        payerHandler
+                        localPayer
                     ] /**< Display the current payer label from selectSummaryOptions. */
                 }
+                {console.log(localPayer)}
             </Dropdown.Toggle>
 
             <Dropdown.Menu>
-                <Dropdown.Item onClick={() => handlePayerChange("kamil")}>
-                    Kamil
-                </Dropdown.Item>
-                <Dropdown.Item onClick={() => handlePayerChange("ania")}>
-                    Ania
-                </Dropdown.Item>
+                {JSON.parse(persons)
+                    .filter((person) => person.payer === true)
+                    .map((person) => (
+                        <Dropdown.Item
+                            key={person.id}
+                            onClick={() => handlePayerChange(person.id)}>
+                            {person.name}
+                        </Dropdown.Item>
+                    ))}
             </Dropdown.Menu>
         </Dropdown>
     );
 };
 
 export default PayerDropdown;
+

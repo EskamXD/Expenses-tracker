@@ -24,12 +24,10 @@ import { selectSummaryOptions } from "../config/selectOption";
  * @return {JSX.Element} A dropdown component for selecting a owner person.
  */
 const SummaryDropdown = ({ selectedOwner, setSelectedOwner }) => {
+    const persons = localStorage.getItem("person");
     const [localOwner, setLocalOwner] = useState(
-        selectedOwner || "kamil"
+        selectedOwner || 1
     ); /**< State to manage the local summary if `setSelectedSummary` is not provided. */
-    const summaryHandler =
-        selectedOwner ||
-        localOwner; /**< The current summary, using local state or parent state. */
 
     /**
      * @brief Handles changing the selected summary.
@@ -44,6 +42,7 @@ const SummaryDropdown = ({ selectedOwner, setSelectedOwner }) => {
         if (setSelectedOwner) {
             // Update state in parent component
             setSelectedOwner(newOwner);
+            setLocalOwner(newOwner);
         } else {
             // Update local state
             setLocalOwner(newOwner);
@@ -56,7 +55,7 @@ const SummaryDropdown = ({ selectedOwner, setSelectedOwner }) => {
                 Wybierz podsumowanie:{" "}
                 {
                     selectSummaryOptions[
-                        summaryHandler
+                        localOwner
                     ] /**< Display the current summary label from selectSummaryOptions. */
                 }
             </Dropdown.Toggle>
@@ -82,3 +81,4 @@ const SummaryDropdown = ({ selectedOwner, setSelectedOwner }) => {
 };
 
 export default SummaryDropdown;
+

@@ -2,11 +2,14 @@ import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { Button } from "react-bootstrap";
 import ModalPerson from "../components/ModalPerson";
+import fetchPostPerson from "../api/fetchPostPerson";
 
 const Settings = () => {
     const [personList, setPersonList] = useState([]);
     const [name, setName] = useState("");
+    const [payer, setPayer] = useState(false);
     const [showModal, setShowModal] = useState(false);
+    const [reload, setReload] = useState(false);
 
     useEffect(() => {
         const fetch = async () => {
@@ -17,28 +20,29 @@ const Settings = () => {
                 setPersonList(response.data);
             } catch (error) {
                 console.error(error);
+            } finally {
+                setReload(false);
             }
         };
         fetch();
+    }, [reload]);
+
+    useEffect(() => {
+        setReload(true);
     }, []);
 
     // Obsługuje zdarzenie przesłania formularza
     const handleSubmit = async (e) => {
-        // e.preventDefault(); // Zapobiega domyślnemu działaniu formularza (przeładowanie strony)
-
-        try {
-            const response = await axios.post(
-                "http://localhost:8000/api/person/",
-                {
-                    name: name,
-                }
-            );
-            // Opcjonalnie, możesz wyczyścić formularz lub zamknąć modal
-            setName(""); // Wyczyść stan po udanym dodaniu
-        } catch (error) {
-            console.error(error);
-            alert("Wystąpił błąd podczas dodawania osoby.");
-        }
+        fetchPostPerson(
+            e,
+            name,
+            setName,
+            payer,
+            setPayer,
+            500,
+            setShowModal,
+            setReload
+        );
     };
 
     return (
@@ -66,6 +70,8 @@ const Settings = () => {
                 setShowModal={setShowModal}
                 name={name}
                 setName={setName}
+                payer={payer}
+                setPayer={setPayer}
                 handleSubmit={handleSubmit}
                 canCloseModal={true}
             />
@@ -74,3 +80,4 @@ const Settings = () => {
 };
 
 export default Settings;
+

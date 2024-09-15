@@ -47,5 +47,5 @@ python manage.py runserver &
 
 # 5. Uruchomienie przeglądarki z aplikacją
 sleep 2  # Poczekaj chwilę, aby serwer mógł się uruchomić
-open "http://127.0.0.1:8000/"
+# open "http://127.0.0.1:8000/"
 echo "Aplikacja uruchomiona."

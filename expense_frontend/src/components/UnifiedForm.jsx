@@ -79,7 +79,7 @@ const UnifiedForm = ({
                     value: "",
                     description: "",
                     quantity: "",
-                    owner: "kamil",
+                    owner: 1,
                     paymentDate: new Date().toISOString().split("T")[0],
                 },
             ]);
@@ -155,3 +155,4 @@ const UnifiedForm = ({
 };
 
 export default UnifiedForm;
+

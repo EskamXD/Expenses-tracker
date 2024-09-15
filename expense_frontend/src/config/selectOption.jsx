@@ -7,8 +7,6 @@
  * income, and summary categories.
  */
 
-import { all } from "axios";
-
 /**
  * @brief Options for selecting expense categories.
  *
@@ -94,8 +92,9 @@ export const selectTranslationList = [
  * individual or common transactions.
  */
 export const selectSummaryOptions = {
-    kamil: "Kamil",
-    ania: "Ania",
-    common: "Wspólne",
-    all: "Wszystkie",
+    1: "Kamil",
+    2: "Ania",
+    99: "Wspólne",
+    100: "Wszystkie",
 };
+

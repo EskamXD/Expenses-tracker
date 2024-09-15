@@ -27,14 +27,14 @@ const IncomePage = () => {
         new Date().toISOString().split("T")[0]
     ); /**< State to manage the selected payment date. */
     const [payer, setPayer] =
-        useState("kamil"); /**< State to manage the selected payer. */
+        useState(1); /**< State to manage the selected payer. */
     const [items, setItems] = useState([
         {
             id: 1,
             category: "work_income",
             value: "",
             description: "",
-            owner: "kamil",
+            owner: 1,
         },
     ]); /**< State to manage the list of items in the form. */
     const [resetForm, setResetForm] =
@@ -77,14 +77,14 @@ const IncomePage = () => {
             console.log("Transaction response:", response.data);
 
             // Reset form after successful submission
-            setPayer("kamil");
+            setPayer(1);
             setItems([
                 {
                     id: 1,
                     category: "work_income",
                     value: "",
                     description: "",
-                    owner: "kamil",
+                    owner: 1,
                 },
             ]);
 
@@ -133,3 +133,4 @@ const IncomePage = () => {
 };
 
 export default IncomePage;
+

@@ -28,7 +28,7 @@ const ExpensesPage = () => {
         new Date().toISOString().split("T")[0]
     ); /**< State to manage the selected payment date. */
     const [payer, setPayer] =
-        useState("kamil"); /**< State to manage the selected payer. */
+        useState(1); /**< State to manage the selected payer. */
     const [items, setItems] = useState([
         {
             id: 1,
@@ -36,7 +36,7 @@ const ExpensesPage = () => {
             value: "",
             description: "",
             quantity: "",
-            owner: "kamil",
+            owner: 1,
         },
     ]); /**< State to manage the list of items in the form. */
     const [shop, setShop] =
@@ -81,7 +81,7 @@ const ExpensesPage = () => {
             console.log("Receipt response:", response);
 
             // Reset form after successful submission
-            setPayer("kamil");
+            setPayer(1);
             setItems([
                 {
                     id: 1,
@@ -89,7 +89,7 @@ const ExpensesPage = () => {
                     value: "",
                     description: "",
                     quantity: "",
-                    owner: "kamil",
+                    owner: 1,
                 },
             ]);
 
@@ -162,3 +162,4 @@ const ExpensesPage = () => {
 };
 
 export default ExpensesPage;
+
