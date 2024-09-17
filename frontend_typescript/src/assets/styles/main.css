@@ -1,0 +1,77 @@
+.mr-1rem {
+    margin-right: 1rem;
+}
+.ml-1rem {
+    margin-left: 1rem;
+}
+.mt-1rem {
+    margin-top: 1rem;
+}
+.mb-1rem {
+    margin-bottom: 1rem;
+}
+
+.pr-1rem {
+    padding-right: 1rem;
+}
+.pl-1rem {
+    padding-left: 1rem;
+}
+.pt-1rem {
+    padding-top: 1rem;
+}
+.pb-1rem {
+    padding-bottom: 1rem;
+}
+
+.content-left {
+    display: flex;
+    flex-direction: row;
+    justify-content: flex-end;
+}
+
+.center-div {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100%;
+    width: 100%;
+    min-height: 70vh;
+}
+
+.center-div-top {
+    display: flex;
+    height: 100%;
+    width: 100%;
+    min-height: 70vh;
+}
+
+.space-between {
+    display: flex;
+    justify-content: space-between;
+    width: 100%;
+}
+.justify-end {
+    display: flex;
+    justify-content: flex-end;
+    width: 100%;
+}
+.align-end {
+    display: flex;
+    align-items: flex-end;
+    width: 100%;
+}
+
+.full-w {
+    width: 100%;
+}
+
+.modal-90w {
+    max-width: none !important;
+    width: 90% !important;
+}
+
+.width-100 {
+    width: 100px !important;
+    max-width: 15ch !important;
+}

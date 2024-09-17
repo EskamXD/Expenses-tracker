@@ -41,9 +41,9 @@ class Item(models.Model):
     save_date = models.DateField(auto_now_add=True, null=True)
     category = models.CharField(max_length=255, choices=CATEGORY_CHOICES)
     value = models.DecimalField(max_digits=10, decimal_places=2)
-    description = models.CharField(max_length=255)
+    description = models.CharField(max_length=255, blank=True, null=True, default="")
     quantity = models.DecimalField(max_digits=10, decimal_places=0, default=1)
-    owners = models.JSONField(default=list)
+    owner = models.DecimalField(max_digits=10, decimal_places=0)
     description = models.CharField(max_length=255)
 
     def __str__(self):
@@ -59,7 +59,7 @@ class Receipt(models.Model):
     save_date = models.DateField(auto_now_add=True, null=True)
     payment_date = models.DateField()
     payer = models.DecimalField(max_digits=10, decimal_places=0, default=1)
-    shop = models.CharField(max_length=255)
+    shop = models.CharField(max_length=255, blank=True)
     transaction_type = models.CharField(max_length=255, choices=TRANSACTION_CHOICES)
     items = models.ManyToManyField(Item, related_name="receipts")
     payment_date = models.DateField()

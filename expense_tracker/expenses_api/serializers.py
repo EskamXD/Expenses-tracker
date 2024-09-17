@@ -11,24 +11,29 @@ class PersonSerializer(serializers.ModelSerializer):
 
 # Serializator dla Item
 class ItemSerializer(serializers.ModelSerializer):
-    owners = serializers.ListField(
-        child=serializers.IntegerField(),  # Lista identyfikatorów
-        required=False,  # To pole jest opcjonalne, jeśli chcesz, aby było opcjonalne
-        default=list,  # Ustawiamy domyślną wartość jako pustą listę
-    )
-
     class Meta:
         model = Item
-        fields = ["id", "category", "value", "description", "quantity", "owners"]
+        fields = ["id", "category", "value", "description", "quantity", "owner"]
 
 
 # Serializator dla Receipt
 class ReceiptSerializer(serializers.ModelSerializer):
+    # url = serializers.HyperlinkedIdentityField(
+    #     view_name="receipt-detail", read_only=True
+    # )
     items = ItemSerializer(many=True)  # Serializator dla itemów
 
     class Meta:
         model = Receipt
-        fields = ["id", "payment_date", "payer", "shop", "transaction_type", "items"]
+        fields = [
+            "id",
+            # "url",
+            "payment_date",
+            "payer",
+            "shop",
+            "transaction_type",
+            "items",
+        ]
 
     def create(self, validated_data):
         items_data = validated_data.pop("items", [])
@@ -56,3 +61,31 @@ class ReceiptSerializer(serializers.ModelSerializer):
             instance.items.add(item)
 
         return instance
+
+
+class PersonExpenseSerializer(serializers.Serializer):
+    payer = serializers.PrimaryKeyRelatedField(
+        queryset=Person.objects.all()
+    )  # Zmieniono na ID użytkownika
+    expense_sum = serializers.FloatField()
+
+    class Meta:
+        fields = ["payer", "expense_sum"]
+
+
+class ShopExpenseSerializer(serializers.Serializer):
+    shop = serializers.CharField()
+    expense_sum = serializers.FloatField()
+
+    class Meta:
+        fields = ["shop", "expense_sum"]
+
+
+class CategoryPieExpenseSerializer(serializers.Serializer):
+    category = serializers.CharField(
+        source="transactions__category"
+    )  # Poprawiona referencja
+    expense_sum = serializers.FloatField()
+
+    class Meta:
+        fields = ["category", "expense_sum"]
