@@ -36,6 +36,7 @@ class Item(models.Model):
         ("family_income", "Przychód od rodziny"),
         ("investments_income", "Przychód z inwestycji"),
         ("money_back", "Zwrot pieniędzy"),
+        ("last_month_balance", "Saldo z poprzedniego miesiąca"),
     ]
 
     save_date = models.DateField(auto_now_add=True, null=True)

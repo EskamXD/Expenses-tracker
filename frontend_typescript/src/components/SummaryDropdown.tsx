@@ -72,6 +72,13 @@ const SummaryDropdown: React.FC<SummaryDropdownProps> = ({
                         </React.Fragment>
                     );
                 })}
+                <Dropdown.Divider />
+                <Dropdown.Item
+                    eventKey="100"
+                    key="100"
+                    onClick={() => handleSummaryChange(100)}>
+                    Wszyscy
+                </Dropdown.Item>
             </Dropdown.Menu>
         </Dropdown>
     );

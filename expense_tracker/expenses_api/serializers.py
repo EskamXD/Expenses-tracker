@@ -13,7 +13,15 @@ class PersonSerializer(serializers.ModelSerializer):
 class ItemSerializer(serializers.ModelSerializer):
     class Meta:
         model = Item
-        fields = ["id", "category", "value", "description", "quantity", "owner"]
+        fields = [
+            "id",
+            "save_date",
+            "category",
+            "value",
+            "description",
+            "quantity",
+            "owner",
+        ]
 
 
 # Serializator dla Receipt
@@ -28,6 +36,7 @@ class ReceiptSerializer(serializers.ModelSerializer):
         fields = [
             "id",
             # "url",
+            "save_date",
             "payment_date",
             "payer",
             "shop",
@@ -50,14 +59,24 @@ class ReceiptSerializer(serializers.ModelSerializer):
 
     def update(self, instance, validated_data):
         items_data = validated_data.pop("items", [])
-
-        # Aktualizacja Receipt
         instance = super().update(instance, validated_data)
 
-        # Aktualizacja itemów
+        # Usuń istniejące itemy
         instance.items.clear()
+
         for item_data in items_data:
-            item, _ = Item.objects.get_or_create(**item_data)
+            # Szukaj itemu, który może być już w bazie
+            item, _ = Item.objects.get_or_create(
+                category=item_data["category"],
+                description=item_data["description"],
+                owner=item_data["owner"],
+                defaults={
+                    "value": item_data["value"],
+                    "quantity": item_data["quantity"],
+                },
+            )
+
+            # Dodaj item do Receipt
             instance.items.add(item)
 
         return instance

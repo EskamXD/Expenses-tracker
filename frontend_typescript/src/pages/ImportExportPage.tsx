@@ -1,5 +1,8 @@
 import { useEffect, useState } from "react";
-import { Button, Form, Tab, Tabs } from "react-bootstrap";
+import Button from "react-bootstrap/Button";
+import Form from "react-bootstrap/Form";
+import Tab from "react-bootstrap/Tab";
+import Tabs from "react-bootstrap/Tabs";
 import Spinner from "react-bootstrap/Spinner";
 import JSZip from "jszip";
 
@@ -114,7 +117,7 @@ const ImportExportPage = () => {
         fetchGetReceipts()
             .then((response) => {
                 const zip = new JSZip();
-                zip.file("data.json", JSON.stringify(response.data, null, 2));
+                zip.file("data.json", JSON.stringify(response, null, 2));
 
                 zip.generateAsync({ type: "blob" }).then((content) => {
                     const downloadLink = document.createElement("a");

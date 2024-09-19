@@ -39,14 +39,14 @@ const ReceiptModal: React.FC<ReceiptModalProps> = ({
 
     const handleSave = async () => {
         const receiptData: Receipt = {
-            id: receipt.id,
             payment_date: newPaymentDate,
             payer: newPayer,
             shop: newShop,
             transaction_type: transactionType,
             items: items,
         };
-        await fetchPutReceipt(receiptData);
+        console.log(JSON.stringify(receiptData));
+        await fetchPutReceipt(Number(receipt.id), receiptData);
         handleClose();
         setReload(true);
     };
@@ -82,12 +82,14 @@ const ReceiptModal: React.FC<ReceiptModalProps> = ({
                     <Modal.Title>Edytuj paragon</Modal.Title>
                 </Modal.Header>
                 <Modal.Body style={{ maxHeight: "70vh", overflowY: "scroll" }}>
-                    <Form.Control
-                        type="text"
-                        className="mb-3"
-                        value={newShop}
-                        onChange={handleShopChange}
-                    />
+                    {transactionType === "expense" && (
+                        <Form.Control
+                            type="text"
+                            className="mb-3"
+                            value={newShop}
+                            onChange={handleShopChange}
+                        />
+                    )}
                     <div className="d-flex mb-3">
                         <Form.Control
                             id="modal-calendar"

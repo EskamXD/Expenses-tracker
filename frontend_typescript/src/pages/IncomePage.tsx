@@ -38,7 +38,7 @@ const IncomePage = () => {
             category: "work_income",
             value: NaN,
             description: "",
-            quantity: NaN,
+            quantity: 0,
             owner: 1,
         },
     ]); /**< State to manage the list of items in the form. */
@@ -66,6 +66,8 @@ const IncomePage = () => {
             },
         ] as Receipt[];
 
+        console.log(JSON.stringify(receiptData));
+
         fetchPostReceipt(receiptData);
 
         // Reset form after successful submission
@@ -74,7 +76,7 @@ const IncomePage = () => {
                 category: "work_income",
                 value: NaN,
                 description: "",
-                quantity: NaN,
+                quantity: 0,
                 owner: 1,
             },
         ]);

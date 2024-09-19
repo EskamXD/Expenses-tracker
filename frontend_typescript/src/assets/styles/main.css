@@ -62,6 +62,21 @@
     width: 100%;
 }
 
+.align-left {
+    display: flex;
+    align-items: flex-start;
+}
+
+.align-center {
+    display: flex;
+    align-items: center;
+}
+
+.align-right {
+    display: flex;
+    align-items: flex-end;
+}
+
 .full-w {
     width: 100%;
 }
@@ -74,4 +89,8 @@
 .width-100 {
     width: 100px !important;
     max-width: 15ch !important;
+}
+
+.width-1rem {
+    width: 1rem !important;
 }

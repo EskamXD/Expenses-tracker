@@ -2,7 +2,8 @@ import datetime
 import calendar
 
 from django.core.exceptions import ValidationError
-from django.db.models import Sum
+from django.db import models
+from django.db.models import Sum, F, Case, When
 from django.http import JsonResponse
 
 from django_filters.rest_framework import DjangoFilterBackend
@@ -55,91 +56,12 @@ class ReceiptListCreateView(generics.ListCreateAPIView):
             serializer = ReceiptSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         serializer.save()
-        return Response(serializer.data)
+        return Response(serializer.data, status=201)
 
 
 class ReceiptUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Receipt.objects.all()
     serializer_class = ReceiptSerializer
-
-
-@extend_schema(
-    methods=["POST"],
-    request=ReceiptSerializer,
-    responses={201: ReceiptSerializer},
-)
-@api_view(["POST"])
-def import_database(request):
-    try:
-        data = request.data
-
-        # Walidacja formatu danych
-        if not isinstance(data, list):
-            return JsonResponse(
-                {"error": "Data is not in the correct format"}, status=400
-            )
-
-        receipts_data = data
-
-        # Pobranie ID istniejących rekordów
-        existing_receipt_ids = set(Receipt.objects.values_list("id", flat=True))
-        existing_transaction_ids = set(Item.objects.values_list("id", flat=True))
-
-        # Przetworzenie danych
-        new_receipts = []
-        new_items = []
-
-        for receipt_data in receipts_data:
-            receipt_id = receipt_data.get("id")
-            if receipt_id in existing_receipt_ids:
-                # Jeżeli paragon już istnieje, pominąć go
-                continue
-
-            # Przetwarzanie transakcji
-            items_data = receipt_data.get("items", [])
-            items_objects = []
-            for transaction_data in items_data:
-                transaction_id = transaction_data.get("id")
-                if transaction_id in existing_transaction_ids:
-                    # Jeżeli transakcja już istnieje, pominąć ją
-                    continue
-
-                # Walidacja i zapis nowej transakcji
-                serializer = ItemSerializer(data=transaction_data)
-                if serializer.is_valid():
-                    transaction = serializer.save()
-                    items_objects.append(transaction)
-                else:
-                    return JsonResponse(
-                        {"error": f"Invalid transaction data: {serializer.errors}"},
-                        status=400,
-                    )
-
-            # Walidacja i zapis nowego paragonu
-            receipt_data["items"] = [t.id for t in items_objects]
-            serializer = ReceiptSerializer(data=receipt_data)
-            if serializer.is_valid():
-                receipt = serializer.save()
-            else:
-                return JsonResponse(
-                    {"error": f"Invalid receipt data: {serializer.errors}"}, status=400
-                )
-
-            new_receipts.append(receipt)
-            new_items.extend(items_objects)
-
-        return JsonResponse(
-            data={
-                "message": "Data imported successfully",
-                "new_receipts_count": len(new_receipts),
-                "new_items_count": len(new_items),
-            },
-            status=201,
-        )
-    except Exception as e:
-        return JsonResponse({"error": f"Exception. {str(e)}"}, status=500)
-    except serializers.ValidationError as e:
-        return JsonResponse({"error": f"Serializer error. {str(e)}"}, status=400)
 
 
 @extend_schema(
@@ -412,7 +334,7 @@ def convert_sum_to_linear(daily_sums, all_dates):
     methods=["GET"],
     parameters=[
         OpenApiParameter(
-            name="owner", description="Selected owner ID", required=True, type=int
+            name="owner", description="Selected owner ID", required=False, type=int
         ),
         OpenApiParameter(
             name="month", description="Selected month", required=True, type=int
@@ -426,8 +348,8 @@ def convert_sum_to_linear(daily_sums, all_dates):
 @api_view(["GET"])
 def fetch_line_sums(request):
     try:
-        params = get_query_params(request, "owner", "month", "year")
-        selected_owner_id = params["owner"]
+        params = get_query_params(request, "month", "year")
+        selected_owner_id = request.GET.get("owner")
         selected_month = params["month"]
         selected_year = params["year"]
     except ValueError as e:
@@ -435,18 +357,20 @@ def fetch_line_sums(request):
 
     try:
         expense_receipts = Receipt.objects.filter(
-            items__owner=selected_owner_id,
             transaction_type="expense",
             payment_date__month=selected_month,
             payment_date__year=selected_year,
         ).distinct()
 
         income_receipts = Receipt.objects.filter(
-            items__owner=selected_owner_id,
             transaction_type="income",
             payment_date__month=selected_month,
             payment_date__year=selected_year,
         ).distinct()
+
+        if selected_owner_id:
+            expense_receipts = expense_receipts.filter(items__owner=selected_owner_id)
+            income_receipts = income_receipts.filter(items__owner=selected_owner_id)
 
         all_dates = get_all_dates_in_month(selected_year, selected_month)
         daily_expense_sums = process_items(expense_receipts)
@@ -478,7 +402,7 @@ def fetch_line_sums(request):
         ),
         OpenApiParameter(
             name="category",
-            description="Selected categories array",
+            description="Selected category",
             required=False,
             type=list,
         ),
@@ -496,6 +420,8 @@ def fetch_bar_persons(request):
         selected_month = params["month"]
         selected_year = params["year"]
         selected_categories = request.GET.getlist("category")
+
+        print(selected_categories)
     except ValueError as e:
         return handle_error(e, 400, "Invalid query parameters")
 
@@ -510,14 +436,35 @@ def fetch_bar_persons(request):
             payment_date__year=selected_year,
         ).distinct()
 
+        print(receipts)
+
         if selected_categories:
             receipts = receipts.filter(items__category__in=selected_categories)
 
+        print(receipts)
+
         persons_expense_sums = (
             receipts.values("payer")
-            .annotate(expense_sum=Sum("items__value"))
+            .annotate(
+                expense_sum=Sum(
+                    Case(
+                        When(
+                            items__owner=F("payer"), then=0
+                        ),  # If payer == owner, count as 0
+                        When(
+                            items__owner__isnull=False, then=F("items__value")
+                        ),  # Otherwise, sum the value
+                        default=0,  # Default to 0
+                        output_field=models.DecimalField(),  # Adjust the field type as needed
+                    )
+                )
+            )
             .order_by("-expense_sum")
         )
+
+        print(persons_expense_sums)
+        # serializer = ReceiptSerializer(receipts, many=True)
+        # return JsonResponse(serializer.data, safe=False, status=200)
 
         serializer = PersonExpenseSerializer(data=list(persons_expense_sums), many=True)
 
@@ -534,7 +481,7 @@ def fetch_bar_persons(request):
     methods=["GET"],
     parameters=[
         OpenApiParameter(
-            name="owner", description="Selected owner ID", required=True, type=int
+            name="owner", description="Selected owner ID", required=False, type=int
         ),
         OpenApiParameter(
             name="month", description="Selected month", required=True, type=int
@@ -553,8 +500,8 @@ def fetch_bar_persons(request):
 def fetch_bar_shops(request):
 
     try:
-        params = get_query_params(request, "owner", "month", "year")
-        selected_owner = params["owner"]
+        params = get_query_params(request, "month", "year")
+        selected_owner = request.GET.get("owner")
         selected_month = params["month"]
         selected_year = params["year"]
     except ValueError as e:
@@ -565,8 +512,6 @@ def fetch_bar_shops(request):
             transaction_type="expense",
             payment_date__month=selected_month,
             payment_date__year=selected_year,
-            items__owner=selected_owner,
-            shop__isnull=False,
             items__category__in=[
                 "fuel",
                 "car_expenses",
@@ -580,6 +525,9 @@ def fetch_bar_shops(request):
                 "other_shopping",
             ],
         ).distinct()
+
+        if selected_owner:
+            receipts = receipts.filter(items__owner=selected_owner)
 
         persons_expense_sums = (
             receipts.values("shop")
@@ -631,7 +579,7 @@ def fetch_pie_categories(request):
             payment_date__year=selected_year,
         ).distinct()
 
-        if selected_owner and selected_owner != "common":
+        if selected_owner and selected_owner != 99:
             receipts = receipts.filter(items__owner=selected_owner)
 
         category_expense_sums = (
@@ -653,6 +601,48 @@ def fetch_pie_categories(request):
         return handle_error(e, 400, "Invalid category")
     except Exception as e:
         return handle_error(e, 500, "Error while fetching pie categories")
+
+
+@extend_schema(
+    methods=["GET"],
+    parameters=[
+        OpenApiParameter(
+            name="owner", description="Selected owner", required=True, type=int
+        ),
+        OpenApiParameter(
+            name="month", description="Selected month", required=True, type=int
+        ),
+        OpenApiParameter(
+            name="year", description="Selected year", required=True, type=int
+        ),
+    ],
+    responses={
+        200: ReceiptSerializer(many=True),
+        400: OpenApiResponse(description="Bad request"),
+    },
+)
+@api_view(["GET"])
+def is_monthly_balance_saved(request):
+    try:
+        params = get_query_params(request, "owner", "month", "year")
+        selected_owner = params["owner"]
+        selected_month = params["month"]
+        selected_year = params["year"]
+
+        receipts = Receipt.objects.filter(
+            transaction_type="income",
+            payer=selected_owner,
+            payment_date__month=selected_month,
+            payment_date__year=selected_year,
+            items__category="last_month_balance",
+        ).distinct()
+
+        serializer = ReceiptSerializer(receipts, many=True)
+
+        return JsonResponse(serializer.data, safe=False, status=200)
+
+    except Exception as e:
+        return JsonResponse({"error": str(e)}, status=500)
 
 
 @extend_schema(

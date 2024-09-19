@@ -83,7 +83,7 @@ const ReceiptOffcanvas: React.FC<ReceiptOffcanvasProps> = ({
     return (
         <Offcanvas show={show} onHide={handleClose}>
             <Offcanvas.Header closeButton>
-                <Offcanvas.Title>Receipt Details</Offcanvas.Title>
+                <Offcanvas.Title>Szczegóły</Offcanvas.Title>
             </Offcanvas.Header>
             <Offcanvas.Body>
                 {loading ? (

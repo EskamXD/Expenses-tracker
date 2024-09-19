@@ -56,7 +56,7 @@ const ExpensesPage = () => {
                 payment_date: paymentDate,
                 payer: payer,
                 shop: "",
-                transaction_type: "income",
+                transaction_type: "expense",
                 items: items,
             },
         ] as Receipt[];

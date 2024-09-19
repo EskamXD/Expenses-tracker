@@ -62,11 +62,8 @@ export const OwnerDropdown: React.FC<OwnerDropdownProps> = ({
                     el.id === id ? { ...el, owner: newOwner } : el
                 )
             );
-            setLocalOwner(newOwner);
-        } else {
-            // Update local state
-            setLocalOwner(newOwner);
         }
+        setLocalOwner(newOwner);
     };
 
     return (

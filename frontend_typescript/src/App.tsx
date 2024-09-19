@@ -21,22 +21,16 @@ const App: React.FC = () => {
     const [reload, setReload] = useState(false);
 
     const fetchFunction = async () => {
-        try {
-            const response = await fetchGetPerson();
+        fetchGetPerson().then((response) => {
             setPerson(response);
-        } catch (error) {
-            console.error("Error fetching person:", error);
-        }
+            localStorage.setItem("person", JSON.stringify(response));
+        });
     };
 
     useEffect(() => {
         fetchFunction();
         setReload(false);
     }, [reload]);
-
-    useEffect(() => {
-        setReload(true);
-    }, []);
 
     return (
         <>

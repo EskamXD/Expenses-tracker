@@ -103,7 +103,7 @@ export const fetchGetReceipts = async (params?: Params) => {
             params: params,
         });
         if (response.status === 200) {
-            console.log(response.data);
+            // console.log(response.data);
             return response.data;
         } else {
             printStatus(response.status);
@@ -115,6 +115,8 @@ export const fetchGetReceipts = async (params?: Params) => {
 };
 
 export const fetchPostReceipt = async (receipt: Receipt[]) => {
+    console.log(receipt);
+    console.log(JSON.stringify(receipt));
     try {
         const response = await apiClient.post(`/receipts/`, receipt);
         if (response.status === 201) {
@@ -128,10 +130,10 @@ export const fetchPostReceipt = async (receipt: Receipt[]) => {
     }
 };
 
-export const fetchPutReceipt = async (receipt: Receipt) => {
+export const fetchPutReceipt = async (receiptId: number, receipt: Receipt) => {
     try {
         const response = await apiClient.put(
-            `/receipts/${receipt.id}/`,
+            `/receipts/${receiptId}/`,
             receipt
         );
         if (response.status === 200) {
@@ -177,6 +179,8 @@ export const fetchLineSums = async (params?: Params) => {
 };
 
 export const fetchBarPersons = async (params?: Params) => {
+    // console.log(params);
+    // console.log(qs.stringify(params, { arrayFormat: "repeat" }));
     try {
         const response = await apiClient.get(`/fetch/bar-persons/`, {
             params: params,
@@ -230,11 +234,14 @@ export const fetchPieCategories = async (params?: Params) => {
     }
 };
 
-export const fetchMonthlyBalance = async (params?: Params) => {
+export const fetchGetMonthlyBalance = async (params?: Params) => {
     try {
-        const response = await apiClient.get(`/fetch/monthly-balance/`, {
-            params: params,
-        });
+        const response = await apiClient.get(
+            `/fetch/is-monthly-balance-saved/`,
+            {
+                params: params,
+            }
+        );
 
         if (response.status === 200) {
             return response.data;

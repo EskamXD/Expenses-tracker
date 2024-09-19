@@ -42,10 +42,11 @@ const SummaryTab: React.FC<SummaryTabProps> = ({ transactionType }) => {
             setReceiptsLoaded(false);
             const params = {
                 transaction_type: transactionType,
-                owner: selectedOwner,
+                owner: selectedOwner !== 100 ? selectedOwner : undefined,
                 month: selectedMonth,
                 year: selectedYear,
             } as Params;
+            console.log(params);
             fetchFunction(params);
         }
 

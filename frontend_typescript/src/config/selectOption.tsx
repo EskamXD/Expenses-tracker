@@ -82,6 +82,7 @@ export const selectTranslationList = [
     { value: "family_income", label: "Przychód rodzina" },
     { value: "investments_income", label: "Inwestycje, Lokaty & Oszczędności" },
     { value: "money_back", label: "Zwrot" },
+    { value: "last_month_balance", label: "Saldo poprzedni miesiąc" },
 ];
 
 /**

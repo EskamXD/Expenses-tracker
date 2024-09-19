@@ -6,5 +6,8 @@ export const getPersonOption = (personId: number) => {
             .map((num) => selectPersonOptions[num] || num)
             .join(", ");
     }
+    if (personId === 100) {
+        return "Wszyscy";
+    }
     return selectPersonOptions[personId];
 };

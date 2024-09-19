@@ -137,7 +137,9 @@ const UnifiedForm: React.FC<UnifiedFormProps> = ({
                     placeholder="Sklep"
                     className="mb-3"
                     value={shop}
-                    onChange={(e) => setShop(e.target.value)}
+                    onChange={(e) => {
+                        if (setShop) setShop(e.target.value);
+                    }}
                 />
             )}
             <Row className="d-flex gap-2 space-between">
@@ -160,7 +162,7 @@ const UnifiedForm: React.FC<UnifiedFormProps> = ({
                     </Button>
                 </Col>
             </Row>
-            <div className="mt-3">
+            <div className="mt-3" key={"unified-form-main-div"}>
                 {items
                     .slice(0, !showAddItemButton ? 1 : items.length)
                     .map((item) => (
