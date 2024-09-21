@@ -23,7 +23,9 @@ const App: React.FC = () => {
     const fetchFunction = async () => {
         fetchGetPerson().then((response) => {
             setPerson(response);
-            localStorage.setItem("person", JSON.stringify(response));
+            if (response.length !== 0) {
+                localStorage.setItem("person", JSON.stringify(response));
+            }
         });
     };
 

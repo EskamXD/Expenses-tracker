@@ -1,6 +1,6 @@
 import qs from "qs";
 import apiClient from "./apiClient";
-import { Item, Params, Person, Receipt } from "../types";
+import { Params, Person, Receipt } from "../types";
 
 function printStatus(status: number) {
     switch (status) {
@@ -37,9 +37,14 @@ function printStatus(status: number) {
     }
 }
 
-export const fetchGetPerson = async () => {
+export const fetchGetPerson = async (id?: number) => {
     try {
-        const response = await apiClient.get(`/person/`);
+        let response;
+        if (id) {
+            response = await apiClient.get(`/person/${id}/`);
+        } else {
+            response = await apiClient.get(`/person/`);
+        }
         if (response.status === 200) {
             return response.data;
         } else {
@@ -52,11 +57,12 @@ export const fetchGetPerson = async () => {
 };
 
 export const fetchPostPerson = async (person: Person) => {
+    console.log(person);
+    console.log(JSON.stringify(person));
+    // alert();
     try {
-        const response = await apiClient.post(`/person/`, {
-            person,
-        });
-        if (response.status === 200) {
+        const response = await apiClient.post(`/person/`, person);
+        if (response.status === 201) {
             return response.data;
         } else {
             printStatus(response.status);
@@ -69,9 +75,7 @@ export const fetchPostPerson = async (person: Person) => {
 
 export const fetchPutPerson = async (person: Person) => {
     try {
-        const response = await apiClient.put(`/person/${person.id}/`, {
-            person,
-        });
+        const response = await apiClient.put(`/person/${person.id}/`, person);
         if (response.status === 200) {
             return response.data;
         } else {
@@ -131,6 +135,8 @@ export const fetchPostReceipt = async (receipt: Receipt[]) => {
 };
 
 export const fetchPutReceipt = async (receiptId: number, receipt: Receipt) => {
+    console.log(receipt);
+    console.log(JSON.stringify(receipt));
     try {
         const response = await apiClient.put(
             `/receipts/${receiptId}/`,
@@ -253,3 +259,4 @@ export const fetchGetMonthlyBalance = async (params?: Params) => {
         throw error;
     }
 };
+

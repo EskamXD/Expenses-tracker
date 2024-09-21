@@ -21,6 +21,7 @@ const Loader: React.FC<LoaderProps> = ({ setReload }) => {
         const person = {
             name: name,
             payer: payer,
+            owner: true,
         } as Person;
 
         fetchPostPerson(person).finally(() => {
@@ -48,3 +49,4 @@ const Loader: React.FC<LoaderProps> = ({ setReload }) => {
 };
 
 export default Loader;
+

@@ -144,6 +144,7 @@ const ImportExportPage = () => {
 
     const handleFileUpload = (e: any) => {
         setIsUploading(true);
+        console.log(e.target.files);
         e.preventDefault();
 
         const fileReader = new FileReader();
@@ -187,6 +188,8 @@ const ImportExportPage = () => {
                     setIsUploading(false);
                 });
         };
+
+        fileReader.readAsText(e.target.files[0]); // Read the uploaded file as text
     };
 
     return (
@@ -204,15 +207,25 @@ const ImportExportPage = () => {
                 </Tab>
                 <Tab eventKey="import" title="Import">
                     <h2>Import</h2>
-                    <Form.Group controlId="formFileMultiple" className="mb-3">
-                        <Form.Label>Wybierz pliki...</Form.Label>
-                        <Form.Control
-                            type="file"
-                            multiple={false} // Removed multiple to keep logic simple for now
-                            accept="application/json"
-                            onChange={(event) => handleFileUpload(event)} // Use onChange event
-                        />
-                    </Form.Group>
+                    <form>
+                        <Form.Group
+                            controlId="formFileMultiple"
+                            className="mb-3">
+                            <Form.Label>Wybierz pliki...</Form.Label>
+                            <Form.Control
+                                type="file"
+                                multiple={false} // Removed multiple to keep logic simple for now
+                                accept="application/json"
+                                onChange={(event) => handleFileUpload(event)} // Use onChange event
+                            />
+                        </Form.Group>
+                        {/* <Button
+                            variant="primary"
+                            disabled={isUploading}
+                            type="submit">
+                            {isUploading ? "Wysyłanie..." : "Importuj dane"}
+                        </Button> */}
+                    </form>
                     {showToast.successDownload && (
                         <Spinner animation="border" role="status">
                             <span className="visually-hidden">
@@ -239,3 +252,4 @@ const ImportExportPage = () => {
 };
 
 export default ImportExportPage;
+

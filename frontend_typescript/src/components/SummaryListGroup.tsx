@@ -14,8 +14,8 @@ import YearDropdown from "./YearDropdown";
 import MonthDropdown from "./MonthDropdown";
 
 interface SummaryListGroupProps {
-    selectedOwner: number;
-    setSelectedOwner: Function;
+    selectedOwner?: number;
+    setSelectedOwner?: Function;
     selectedYear: number;
     setSelectedYear: Dispatch<SetStateAction<number>>;
     selectedMonth: number;
@@ -79,3 +79,4 @@ const SummaryListGroup: React.FC<SummaryListGroupProps> = ({
 );
 
 export default SummaryListGroup;
+

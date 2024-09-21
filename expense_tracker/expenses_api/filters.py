@@ -22,6 +22,7 @@ class ReceiptFilter(filters.FilterSet):
     transaction_type = filters.CharFilter(
         field_name="transaction_type", lookup_expr="exact"
     )
+    category = filters.CharFilter(field_name="items__category", lookup_expr="exact")
 
     class Meta:
         model = Receipt

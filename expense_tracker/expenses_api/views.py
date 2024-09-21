@@ -1,9 +1,10 @@
 import datetime
 import calendar
+from collections import defaultdict
 
 from django.core.exceptions import ValidationError
-from django.db import models
-from django.db.models import Sum, F, Case, When
+from django.db.models import Sum
+from decimal import Decimal
 from django.http import JsonResponse
 
 from django_filters.rest_framework import DjangoFilterBackend
@@ -430,43 +431,48 @@ def fetch_bar_persons(request):
             for category in selected_categories:
                 validate_category(category)
 
-        receipts = Receipt.objects.filter(
-            transaction_type="expense",
-            payment_date__month=selected_month,
-            payment_date__year=selected_year,
-        ).distinct()
-
-        print(receipts)
-
-        if selected_categories:
-            receipts = receipts.filter(items__category__in=selected_categories)
-
-        print(receipts)
-
-        persons_expense_sums = (
-            receipts.values("payer")
-            .annotate(
-                expense_sum=Sum(
-                    Case(
-                        When(
-                            items__owner=F("payer"), then=0
-                        ),  # If payer == owner, count as 0
-                        When(
-                            items__owner__isnull=False, then=F("items__value")
-                        ),  # Otherwise, sum the value
-                        default=0,  # Default to 0
-                        output_field=models.DecimalField(),  # Adjust the field type as needed
-                    )
-                )
-            )
-            .order_by("-expense_sum")
+        # Pobierz wszystkie paragony z bazy danych (mogą to być wszystkie wydatki)
+        receipts = list(
+            Receipt.objects.filter(
+                transaction_type="expense",
+                payment_date__month=selected_month,
+                payment_date__year=selected_year,
+            ).prefetch_related("items")
         )
 
-        print(persons_expense_sums)
-        # serializer = ReceiptSerializer(receipts, many=True)
-        # return JsonResponse(serializer.data, safe=False, status=200)
+        print(f"Total Receipts Fetched: {len(receipts)}")
 
-        serializer = PersonExpenseSerializer(data=list(persons_expense_sums), many=True)
+        # Słownik do przechowywania sum wydatków według płatnika
+        persons_expense_sums = defaultdict(Decimal)
+
+        # Iterowanie przez każdy paragon
+        for receipt in receipts:
+            payer = receipt.payer
+            for item in receipt.items.all():
+                # Sprawdź, czy przedmiot należy do wybranych kategorii (jeśli istnieje filtr)
+                if selected_categories and item.category not in selected_categories:
+                    continue
+
+                # Sumowanie wartości tylko wtedy, gdy właściciel przedmiotu nie jest równy płatnikowi
+                if item.owner != payer:
+                    try:
+                        # Dodajemy wartość pozycji do odpowiedniego płatnika
+                        persons_expense_sums[payer] += Decimal(item.value)
+                    except (ValueError, TypeError):
+                        # Jeśli wartość nie jest prawidłowa, zignoruj ten wpis
+                        continue
+
+        # Posortowanie wyników według sumy wydatków (malejąco)
+        sorted_persons_expense_sums = sorted(
+            persons_expense_sums.items(), key=lambda x: x[1], reverse=True
+        )
+
+        # Przygotowanie danych do serializacji
+        serialized_data = [
+            {"payer": payer, "expense_sum": total}
+            for payer, total in sorted_persons_expense_sums
+        ]
+        serializer = PersonExpenseSerializer(data=serialized_data, many=True)
 
         if serializer.is_valid():
             return JsonResponse(serializer.data, safe=False, status=200)
@@ -498,44 +504,73 @@ def fetch_bar_persons(request):
 )
 @api_view(["GET"])
 def fetch_bar_shops(request):
-
     try:
         params = get_query_params(request, "month", "year")
-        selected_owner = request.GET.get("owner")
-        selected_month = params["month"]
-        selected_year = params["year"]
+        selected_owner = int(
+            request.GET.get("owner", 0)
+        )  # 0, jeśli owner nie jest podany
+        selected_month = int(params["month"])
+        selected_year = int(params["year"])
     except ValueError as e:
         return handle_error(e, 400, "Invalid query parameters")
 
     try:
-        receipts = Receipt.objects.filter(
-            transaction_type="expense",
-            payment_date__month=selected_month,
-            payment_date__year=selected_year,
-            items__category__in=[
-                "fuel",
-                "car_expenses",
-                "fastfood",
-                "alcohol",
-                "food_drinks",
-                "chemistry",
-                "clothes",
-                "electronics_games",
-                "tickets_entrance",
-                "other_shopping",
-            ],
-        ).distinct()
-
-        if selected_owner:
-            receipts = receipts.filter(items__owner=selected_owner)
-
-        persons_expense_sums = (
-            receipts.values("shop")
-            .annotate(expense_sum=Sum("items__value"))
-            .order_by("-expense_sum")
+        # Wyciągnięcie wszystkich paragonów typu "expense" z powiązanymi pozycjami (items)
+        receipts = (
+            Receipt.objects.prefetch_related("items")
+            .filter(transaction_type="expense")
+            .all()
         )
 
-        serializer = ShopExpenseSerializer(data=list(persons_expense_sums), many=True)
+        # Przykładowe kategorie, które nas interesują
+        categories = [
+            "fuel",
+            "car_expenses",
+            "fastfood",
+            "alcohol",
+            "food_drinks",
+            "chemistry",
+            "clothes",
+            "electronics_games",
+            "tickets_entrance",
+            "other_shopping",
+        ]
+
+        # Słownik przechowujący sumy wydatków dla sklepów
+        expense_sums_by_shop = defaultdict(float)
+
+        # Filtrowanie i sumowanie ręczne w Pythonie
+        for receipt in receipts:
+            # Konwersja daty płatności na obiekt datetime
+            payment_date = receipt.payment_date
+            if (
+                payment_date.year == selected_year
+                and payment_date.month == selected_month
+            ):
+                # Przetwarzanie tylko tych paragonów, które spełniają kryterium daty
+                for item in receipt.items.all():
+                    # Sprawdzenie kategorii i właściciela (jeśli został wybrany)
+                    if item.category in categories and (
+                        not selected_owner or item.owner == selected_owner
+                    ):
+                        try:
+                            # Dodajemy wartość do odpowiedniego sklepu
+                            value = float(item.value)
+                            expense_sums_by_shop[receipt.shop] += value
+                        except ValueError:
+                            # Jeśli wartość nie może być przekonwertowana na float, pomijamy ten wpis
+                            continue
+
+        # Sortowanie wyników według sumy wydatków (malejąco)
+        sorted_expense_sums = sorted(
+            expense_sums_by_shop.items(), key=lambda x: x[1], reverse=True
+        )
+
+        # Serializacja danych (zakładam, że ShopExpenseSerializer działa dla listy słowników)
+        serialized_data = [
+            {"shop": shop, "expense_sum": total} for shop, total in sorted_expense_sums
+        ]
+        serializer = ShopExpenseSerializer(data=serialized_data, many=True)
 
         if serializer.is_valid():
             return JsonResponse(serializer.data, safe=False, status=200)

@@ -14,6 +14,7 @@ import { selectPersonOptions } from "../config/selectOption";
 import { Person } from "../types";
 
 interface PayerDropdownProps {
+    label?: string;
     payer: number;
     setPayer?: Function;
 }
@@ -30,6 +31,7 @@ interface PayerDropdownProps {
  * @return {JSX.Element} A dropdown component for selecting the payer of a transaction.
  */
 export const PayerDropdown: React.FC<PayerDropdownProps> = ({
+    label,
     payer,
     setPayer,
 }) => {
@@ -37,6 +39,10 @@ export const PayerDropdown: React.FC<PayerDropdownProps> = ({
     const [localPayer, setLocalPayer] = useState(
         payer || 1
     ); /**< State to manage the local payer if `setPayer` is not provided. */
+
+    const localLabel = label
+        ? label
+        : "Płatnik"; /**< Default label for the dropdown. */
 
     /**
      * @brief Handles changing the payer of a transaction.
@@ -60,7 +66,7 @@ export const PayerDropdown: React.FC<PayerDropdownProps> = ({
     return (
         <Dropdown>
             <Dropdown.Toggle variant="primary" id="dropdown-payer">
-                Payer:{" "}
+                {localLabel}:{" "}
                 {
                     selectPersonOptions[
                         localPayer
@@ -84,3 +90,4 @@ export const PayerDropdown: React.FC<PayerDropdownProps> = ({
 };
 
 export default PayerDropdown;
+

@@ -65,3 +65,4 @@ const ModalPerson: React.FC<ModalPersonProps> = ({
 };
 
 export default ModalPerson;
+
