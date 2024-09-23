@@ -101,7 +101,6 @@ const UnifiedForm: React.FC<UnifiedFormProps> = ({
         if (resetForm) {
             setItems([
                 {
-                    id: 1,
                     category: "food_drinks",
                     value: "",
                     description: "",
@@ -138,6 +137,7 @@ const UnifiedForm: React.FC<UnifiedFormProps> = ({
                     className="mb-3"
                     value={shop}
                     onChange={(e) => {
+                        console.log(e.target.value);
                         if (setShop) setShop(e.target.value);
                     }}
                 />
@@ -182,3 +182,4 @@ const UnifiedForm: React.FC<UnifiedFormProps> = ({
 };
 
 export default UnifiedForm;
+

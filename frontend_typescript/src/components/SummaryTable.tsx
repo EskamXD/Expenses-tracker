@@ -116,19 +116,19 @@ const SummaryTable: React.FC<SummaryTableProps> = ({
                           (item: Item) => Number(item.owner) === selectedOwner
                       );
 
-            if (usedReceipts.includes(receipt.id)) {
+            if (usedReceipts.includes(Number(receipt.id))) {
                 console.warn("receipt already used");
                 return;
             }
 
             if (filteredItems.length !== 0) {
-                usedReceipts.push(receipt.id);
+                usedReceipts.push(Number(receipt.id));
 
                 filteredItems.forEach((item) => {
                     const key = `${item.category}-${receipt.payment_date}`;
 
                     // Konwersja wartości z walidacją
-                    const itemValue = parseFloat(item.value);
+                    const itemValue = Number(Number(item.value).toFixed(2));
                     if (isNaN(itemValue)) {
                         console.warn(`Nieprawidłowa wartość: ${item.value}`);
                         return; // Pomijaj elementy z nieprawidłową wartością
@@ -214,3 +214,4 @@ const SummaryTable: React.FC<SummaryTableProps> = ({
 };
 
 export default SummaryTable;
+

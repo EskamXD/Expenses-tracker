@@ -13,6 +13,7 @@ import UnifiedForm from "../components/UnifiedForm";
 import { selectIncomeOptions } from "../config/selectOption";
 import { Item, Receipt } from "../types";
 import { fetchPostReceipt } from "../services/apiService";
+import { validateAndEvaluate } from "../utils/valuesCheckExpression";
 
 /**
  * @brief Manages income-related forms and items.
@@ -36,7 +37,7 @@ const IncomePage = () => {
         {
             id: 1,
             category: "work_income",
-            value: NaN,
+            value: "",
             description: "",
             quantity: 0,
             owner: 1,
@@ -56,6 +57,18 @@ const IncomePage = () => {
     const handleSubmit = async (e: any) => {
         e.preventDefault();
 
+        try {
+            items.forEach((item: Item) => {
+                const result = validateAndEvaluate(item) as boolean;
+                if (!result) {
+                    throw new Error("Niepoprawne dane w formularzu.");
+                }
+            });
+        } catch (error) {
+            console.error(error);
+            return;
+        }
+
         const receiptData = [
             {
                 payment_date: paymentDate,
@@ -67,14 +80,13 @@ const IncomePage = () => {
         ] as Receipt[];
 
         console.log(JSON.stringify(receiptData));
-
         fetchPostReceipt(receiptData);
 
         // Reset form after successful submission
         setItems([
             {
                 category: "work_income",
-                value: NaN,
+                value: "",
                 description: "",
                 quantity: 0,
                 owner: 1,
@@ -124,3 +136,4 @@ const IncomePage = () => {
 };
 
 export default IncomePage;
+

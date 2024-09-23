@@ -14,6 +14,7 @@ import UnifiedForm from "../components/UnifiedForm";
 import { selectExpensesOptions } from "../config/selectOption";
 import { Item, Receipt } from "../types";
 import { fetchPostReceipt } from "../services/apiService";
+import { validateAndEvaluate } from "../utils/valuesCheckExpression";
 
 /**
  * @brief Manages expense-related forms and items.
@@ -31,7 +32,7 @@ const ExpensesPage = () => {
         {
             id: 1,
             category: "food_drinks",
-            value: 0,
+            value: "",
             description: "",
             quantity: 0,
             owner: 1,
@@ -51,30 +52,45 @@ const ExpensesPage = () => {
     const handleSubmit = async (e: any) => {
         e.preventDefault();
 
+        try {
+            items.forEach((item: Item) => {
+                const result = validateAndEvaluate(item) as boolean;
+                if (!result) {
+                    throw new Error("Niepoprawne dane w formularzu.");
+                }
+            });
+        } catch (error) {
+            console.error(error);
+            return;
+        }
+
         const receiptData = [
             {
                 payment_date: paymentDate,
                 payer: payer,
-                shop: "",
+                shop: shop,
                 transaction_type: "expense",
                 items: items,
             },
         ] as Receipt[];
 
-        fetchPostReceipt(receiptData);
-
-        // Reset form after successful submission
-        setItems([
-            {
-                category: "work_income",
-                value: NaN,
-                description: "",
-                quantity: NaN,
-                owner: 1,
-            },
-        ]);
-
-        setResetForm(true); // Signal to reset form
+        fetchPostReceipt(receiptData)
+            .then(() => {
+                // Reset form after successful submission
+                setItems([
+                    {
+                        category: "work_income",
+                        value: "",
+                        description: "",
+                        quantity: 0,
+                        owner: 1,
+                    },
+                ]);
+                setResetForm(true); // Signal to reset form
+            })
+            .catch((error) => {
+                console.error(error);
+            });
     };
 
     return (
@@ -141,3 +157,4 @@ const ExpensesPage = () => {
 };
 
 export default ExpensesPage;
+

@@ -8,7 +8,7 @@ export type Person = {
 export type Item = {
     id?: number;
     category: string;
-    value: number;
+    value: number | string;
     description: string;
     quantity: number;
     owner: number;
@@ -30,3 +30,4 @@ export type Params = {
     category?: string | string[];
     transaction_type?: string;
 };
+

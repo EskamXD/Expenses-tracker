@@ -11,6 +11,10 @@ class PersonSerializer(serializers.ModelSerializer):
 
 # Serializator dla Item
 class ItemSerializer(serializers.ModelSerializer):
+    def validate_value(self, value):
+        print(f"Received value: {value}")
+        return value
+
     class Meta:
         model = Item
         fields = [
@@ -67,6 +71,7 @@ class ReceiptSerializer(serializers.ModelSerializer):
         for item_data in items_data:
             # Szukaj itemu, który może być już w bazie
             item, _ = Item.objects.get_or_create(
+                id=item_data.get("id"),
                 category=item_data["category"],
                 description=item_data["description"],
                 owner=item_data["owner"],

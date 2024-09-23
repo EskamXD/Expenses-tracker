@@ -7,6 +7,7 @@ import moment from "moment";
 
 import { Item, Receipt } from "../types";
 import { fetchPutReceipt, fetchDeleteReceipt } from "../services/apiService";
+import { validateAndEvaluate } from "../utils/valuesCheckExpression";
 
 interface ReceiptModalProps {
     receipt: Receipt;
@@ -38,7 +39,15 @@ const ReceiptModal: React.FC<ReceiptModalProps> = ({
     }, [receipt]);
 
     const handleSave = async () => {
+        items.forEach((item: Item) => {
+            const result = validateAndEvaluate(item) as boolean;
+            if (!result) {
+                throw new Error("Niepoprawne dane w formularzu.");
+            }
+        });
+
         const receiptData: Receipt = {
+            id: receipt.id,
             payment_date: newPaymentDate,
             payer: newPayer,
             shop: newShop,
@@ -46,7 +55,12 @@ const ReceiptModal: React.FC<ReceiptModalProps> = ({
             items: items,
         };
         console.log(JSON.stringify(receiptData));
-        await fetchPutReceipt(Number(receipt.id), receiptData);
+        await fetchPutReceipt(Number(receipt.id), receiptData).then(
+            (response) => {
+                console.log(response);
+                console.log(JSON.stringify(response));
+            }
+        );
         handleClose();
         setReload(true);
     };
@@ -135,3 +149,4 @@ const ReceiptModal: React.FC<ReceiptModalProps> = ({
 };
 
 export default ReceiptModal;
+

@@ -54,6 +54,7 @@ const UnifiedItem: React.FC<UnifiedItemProps> = ({
         key: string,
         value: number | string
     ) => {
+        console.log("UnifiedItem update item", itemId, key, value);
         setItems((prevItems: Item[]) =>
             prevItems.map((el) =>
                 el.id === itemId ? { ...el, [key]: value } : el
@@ -70,7 +71,11 @@ const UnifiedItem: React.FC<UnifiedItemProps> = ({
                         className="mb-3"
                         value={item.category || ""}
                         onChange={(e) =>
-                            updateItem(item.id, "category", e.target.value)
+                            updateItem(
+                                Number(item.id),
+                                "category",
+                                e.target.value
+                            )
                         }>
                         {selectOptions.map((option) => (
                             <option key={option.value} value={option.value}>
@@ -81,11 +86,11 @@ const UnifiedItem: React.FC<UnifiedItemProps> = ({
                 </Col>
                 <Col className="width-100">
                     <Form.Control
-                        type="number"
+                        type="text"
                         placeholder="Kwota"
-                        value={item.value || 0}
+                        value={item.value}
                         onChange={(e) =>
-                            updateItem(item.id, "value", e.target.value)
+                            updateItem(Number(item.id), "value", e.target.value)
                         }
                     />
                 </Col>
@@ -95,7 +100,11 @@ const UnifiedItem: React.FC<UnifiedItemProps> = ({
                         placeholder="Opis/Nazwa"
                         value={item.description || ""}
                         onChange={(e) => {
-                            updateItem(item.id, "description", e.target.value);
+                            updateItem(
+                                Number(item.id),
+                                "description",
+                                e.target.value
+                            );
                         }}
                     />
                 </Col>
@@ -104,9 +113,13 @@ const UnifiedItem: React.FC<UnifiedItemProps> = ({
                         <Form.Control
                             type="number"
                             placeholder="Ilość"
-                            value={item.quantity || 0}
+                            value={item.quantity || ""}
                             onChange={(e: any) =>
-                                updateItem(item.id, "quantity", e.target.value)
+                                updateItem(
+                                    Number(item.id),
+                                    "quantity",
+                                    e.target.value
+                                )
                             }
                         />
                     </Col>
@@ -135,3 +148,4 @@ const UnifiedItem: React.FC<UnifiedItemProps> = ({
 };
 
 export default UnifiedItem;
+
