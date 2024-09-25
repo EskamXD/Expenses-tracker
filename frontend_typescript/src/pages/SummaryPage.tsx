@@ -1,55 +1,73 @@
-/**
- * @file SummaryPage.jsx
- * @brief A React component that displays a summary page with tabs for expenses, incomes, and charts.
- *
- * This component provides a summary interface with three tabs:
- * - "Wydatki" (Expenses): Displays a summary of expenses using the `SummaryTab` component.
- * - "Przychody" (Incomes): Displays a summary of incomes using the `SummaryTab` component.
- * - "Wykresy" (Charts): Displays charts using the `ChartTab` component.
- *
- * Users can switch between tabs to view either the expenses, incomes, or charts for the selected transaction type.
- */
-
 import { useState } from "react";
-import { Tab, Tabs } from "react-bootstrap";
+import { Tabs, Tab, Col } from "react-bootstrap";
 import SummaryTab from "../components/SummaryTab";
 import ChartTab from "../components/ChartTab";
 import BalanceTab from "../components/BalanceTab";
-import "../assets/styles/main.css";
+import SummaryListGroup from "../components/SummaryListGroup"; // Ensure you import this component
 
-/**
- * @brief A React component that renders the summary page with tabs for expenses, incomes, and charts.
- *
- * This component uses `Tabs` from react-bootstrap to allow the user to switch between viewing:
- * - Expenses (`SummaryTab` with transactionType "expense").
- * - Incomes (`SummaryTab` with transactionType "income").
- * - Charts (`ChartTab` to visualize expenses and incomes).
- *
- * @component
- * @returns {JSX.Element} The rendered SummaryPage component.
- *
- * @example
- * <SummaryPage />
- */
 const SummaryPage = () => {
+    const [tab, setTab] = useState("expense");
+    const [selectedOwner, setSelectedOwner] = useState<number>(-1);
+    const [selectedYear, setSelectedYear] = useState<number>(
+        new Date().getFullYear()
+    );
+    const [selectedMonth, setSelectedMonth] = useState<number>(
+        new Date().getMonth() + 1
+    );
+
     return (
-        <div>
-            <h1>Podsumowanie</h1>
-            <Tabs defaultActiveKey="expense" id="summary-tabs">
+        <Col className="pt-1rem" style={{ margin: "0", width: "100%" }}>
+            <div className="mb-3">
+                <SummaryListGroup
+                    selectedOwner={selectedOwner}
+                    setSelectedOwner={setSelectedOwner}
+                    selectedYear={selectedYear}
+                    setSelectedYear={setSelectedYear}
+                    selectedMonth={selectedMonth}
+                    setSelectedMonth={setSelectedMonth}
+                    itemsLoaded={true}
+                />
+            </div>
+            <Tabs
+                activeKey={tab}
+                id="summary-tabs"
+                onSelect={(t) => t && setTab(t)}>
                 <Tab eventKey="expense" title="Wydatki">
-                    <SummaryTab transactionType="expense" />
+                    <SummaryTab
+                        transactionType="expense"
+                        selectedOwner={selectedOwner}
+                        setSelectedOwner={setSelectedOwner}
+                        selectedYear={selectedYear}
+                        setSelectedYear={setSelectedYear}
+                        selectedMonth={selectedMonth}
+                        setSelectedMonth={setSelectedMonth}
+                    />
                 </Tab>
                 <Tab eventKey="income" title="Przychody">
-                    <SummaryTab transactionType="income" />
+                    <SummaryTab
+                        transactionType="income"
+                        selectedOwner={selectedOwner}
+                        selectedYear={selectedYear}
+                        selectedMonth={selectedMonth}
+                    />
                 </Tab>
                 <Tab eventKey="charts" title="Wykresy">
-                    <ChartTab />
+                    <ChartTab
+                        tab={tab}
+                        selectedOwner={selectedOwner}
+                        selectedYear={selectedYear}
+                        selectedMonth={selectedMonth}
+                    />
                 </Tab>
                 <Tab eventKey="balance" title="Saldo">
-                    <BalanceTab />
+                    <BalanceTab
+                        selectedOwner={selectedOwner}
+                        selectedYear={selectedYear}
+                        selectedMonth={selectedMonth}
+                    />
                 </Tab>
             </Tabs>
-        </div>
+        </Col>
     );
 };
 

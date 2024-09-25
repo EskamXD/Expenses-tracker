@@ -144,7 +144,7 @@ const ImportExportPage = () => {
 
     const handleFileUpload = (e: any) => {
         setIsUploading(true);
-        console.log(e.target.files);
+        // console.log(e.target.files);
         e.preventDefault();
 
         const fileReader = new FileReader();
@@ -217,6 +217,7 @@ const ImportExportPage = () => {
                                 multiple={false} // Removed multiple to keep logic simple for now
                                 accept="application/json"
                                 onChange={(event) => handleFileUpload(event)} // Use onChange event
+                                disabled={isUploading}
                             />
                         </Form.Group>
                         {/* <Button
@@ -252,4 +253,3 @@ const ImportExportPage = () => {
 };
 
 export default ImportExportPage;
-

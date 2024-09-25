@@ -10,7 +10,6 @@ from .views import (
     fetch_bar_persons,
     fetch_bar_shops,
     fetch_pie_categories,
-    is_monthly_balance_saved,
 )
 
 router = DefaultRouter()
@@ -35,9 +34,4 @@ urlpatterns = [
     path("fetch/bar-persons/", fetch_bar_persons, name="fetch-bar-persons"),
     path("fetch/bar-shops/", fetch_bar_shops, name="fetch-bar-shops"),
     path("fetch/pie-categories/", fetch_pie_categories, name="fetch-pie-categories"),
-    path(
-        "fetch/is-monthly-balance-saved/",
-        is_monthly_balance_saved,
-        name="is-monthly-balance-saved",
-    ),
 ]

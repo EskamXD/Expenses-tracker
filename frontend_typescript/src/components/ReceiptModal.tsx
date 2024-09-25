@@ -40,7 +40,10 @@ const ReceiptModal: React.FC<ReceiptModalProps> = ({
 
     const handleSave = async () => {
         items.forEach((item: Item) => {
-            const result = validateAndEvaluate(item) as boolean;
+            const result = validateAndEvaluate(item) as {
+                status: boolean;
+                message: string;
+            };
             if (!result) {
                 throw new Error("Niepoprawne dane w formularzu.");
             }
@@ -54,13 +57,8 @@ const ReceiptModal: React.FC<ReceiptModalProps> = ({
             transaction_type: transactionType,
             items: items,
         };
-        console.log(JSON.stringify(receiptData));
-        await fetchPutReceipt(Number(receipt.id), receiptData).then(
-            (response) => {
-                console.log(response);
-                console.log(JSON.stringify(response));
-            }
-        );
+        // console.log(JSON.stringify(receiptData));
+        await fetchPutReceipt(Number(receipt.id), receiptData);
         handleClose();
         setReload(true);
     };
@@ -96,14 +94,13 @@ const ReceiptModal: React.FC<ReceiptModalProps> = ({
                     <Modal.Title>Edytuj paragon</Modal.Title>
                 </Modal.Header>
                 <Modal.Body style={{ maxHeight: "70vh", overflowY: "scroll" }}>
-                    {transactionType === "expense" && (
-                        <Form.Control
-                            type="text"
-                            className="mb-3"
-                            value={newShop}
-                            onChange={handleShopChange}
-                        />
-                    )}
+                    <Form.Control
+                        type="text"
+                        className="mb-3"
+                        value={newShop}
+                        onChange={handleShopChange}
+                        placeholder="Sklep"
+                    />
                     <div className="d-flex mb-3">
                         <Form.Control
                             id="modal-calendar"
@@ -149,4 +146,3 @@ const ReceiptModal: React.FC<ReceiptModalProps> = ({
 };
 
 export default ReceiptModal;
-

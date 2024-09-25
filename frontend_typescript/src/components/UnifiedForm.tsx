@@ -29,8 +29,6 @@ interface UnifiedFormProps {
     items: Item[];
     setItems: Function;
     handleSubmit: FormEventHandler<HTMLFormElement>;
-    resetForm: boolean;
-    setResetForm: Function;
     formId: string;
     buttonLabel: string;
     showShop?: boolean;
@@ -55,8 +53,6 @@ interface UnifiedFormProps {
  * @param {Object[]} items - List of items to manage within the form.
  * @param {Function} setItems - Function to update the list of items.
  * @param {Function} handleSubmit - Function to handle form submission.
- * @param {boolean} resetForm - Flag to indicate if the form should be reset.
- * @param {Function} setResetForm - Function to reset the form state.
  * @param {string} formId - A unique identifier for the form.
  * @param {string} buttonLabel - The label text for the submit button.
  * @param {boolean} showQuantity - Whether to show the quantity input for each item.
@@ -76,8 +72,6 @@ const UnifiedForm: React.FC<UnifiedFormProps> = ({
     items,
     setItems,
     handleSubmit,
-    resetForm,
-    setResetForm,
     formId,
     buttonLabel,
     showShop = false,
@@ -96,22 +90,6 @@ const UnifiedForm: React.FC<UnifiedFormProps> = ({
             prevItems.map((item) => ({ ...item, paymentDate: today }))
         );
     }, [formId, setItems, setPaymentDate]);
-
-    useEffect(() => {
-        if (resetForm) {
-            setItems([
-                {
-                    category: "food_drinks",
-                    value: "",
-                    description: "",
-                    quantity: "",
-                    owner: 1,
-                    paymentDate: new Date().toISOString().split("T")[0],
-                },
-            ]);
-            setResetForm(false);
-        }
-    }, [resetForm, setItems, setResetForm]);
 
     const handleDateChange = (e: any) => {
         const newDate = moment(e.target.value).format("YYYY-MM-DD");
@@ -137,7 +115,7 @@ const UnifiedForm: React.FC<UnifiedFormProps> = ({
                     className="mb-3"
                     value={shop}
                     onChange={(e) => {
-                        console.log(e.target.value);
+                        // console.log(e.target.value);
                         if (setShop) setShop(e.target.value);
                     }}
                 />
@@ -165,9 +143,9 @@ const UnifiedForm: React.FC<UnifiedFormProps> = ({
             <div className="mt-3" key={"unified-form-main-div"}>
                 {items
                     .slice(0, !showAddItemButton ? 1 : items.length)
-                    .map((item) => (
+                    .map((item, index) => (
                         <UnifiedItem
-                            key={item.id}
+                            key={`item-${index}`} // Use a fallback if item.id is not availabl
                             item={item}
                             items={items}
                             setItems={setItems}
@@ -182,4 +160,3 @@ const UnifiedForm: React.FC<UnifiedFormProps> = ({
 };
 
 export default UnifiedForm;
-

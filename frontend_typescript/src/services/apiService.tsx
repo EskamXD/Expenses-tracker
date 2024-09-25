@@ -57,8 +57,8 @@ export const fetchGetPerson = async (id?: number) => {
 };
 
 export const fetchPostPerson = async (person: Person) => {
-    console.log(person);
-    console.log(JSON.stringify(person));
+    // console.log(person);
+    // console.log(JSON.stringify(person));
     // alert();
     try {
         const response = await apiClient.post(`/person/`, person);
@@ -102,9 +102,13 @@ export const fetchDeletePerson = async (person: Person) => {
 };
 
 export const fetchGetReceipts = async (params?: Params) => {
+    console.log(params);
     try {
         const response = await apiClient.get(`/receipts/`, {
             params: params,
+            paramsSerializer: (params) => {
+                return qs.stringify(params, { arrayFormat: "comma" });
+            },
         });
         if (response.status === 200) {
             // console.log(response.data);
@@ -119,8 +123,8 @@ export const fetchGetReceipts = async (params?: Params) => {
 };
 
 export const fetchPostReceipt = async (receipt: Receipt[]) => {
-    console.log(receipt);
-    console.log(JSON.stringify(receipt));
+    // console.log(receipt);
+    // console.log(JSON.stringify(receipt));
     try {
         const response = await apiClient.post(`/receipts/`, receipt);
         if (response.status === 201) {
@@ -135,8 +139,8 @@ export const fetchPostReceipt = async (receipt: Receipt[]) => {
 };
 
 export const fetchPutReceipt = async (receiptId: number, receipt: Receipt) => {
-    console.log(receipt);
-    console.log(JSON.stringify(receipt));
+    // console.log(receipt);
+    // console.log(JSON.stringify(receipt));
     try {
         const response = await apiClient.put(
             `/receipts/${receiptId}/`,
@@ -259,4 +263,3 @@ export const fetchGetMonthlyBalance = async (params?: Params) => {
         throw error;
     }
 };
-

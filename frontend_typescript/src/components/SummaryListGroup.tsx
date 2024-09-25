@@ -17,9 +17,9 @@ interface SummaryListGroupProps {
     selectedOwner?: number;
     setSelectedOwner?: Function;
     selectedYear: number;
-    setSelectedYear: Dispatch<SetStateAction<number>>;
+    setSelectedYear: Function;
     selectedMonth: number;
-    setSelectedMonth: Dispatch<SetStateAction<number>>;
+    setSelectedMonth: Function;
     itemsLoaded: boolean;
 }
 /**
@@ -79,4 +79,3 @@ const SummaryListGroup: React.FC<SummaryListGroupProps> = ({
 );
 
 export default SummaryListGroup;
-

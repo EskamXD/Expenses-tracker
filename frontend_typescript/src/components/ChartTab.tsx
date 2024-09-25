@@ -67,12 +67,19 @@ const trendLine = (
     );
 };
 
-const ChartTab = () => {
-    const [selectedOwner, setSelectedOwner] = useState(-1);
-    const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
-    const [selectedMonth, setSelectedMonth] = useState(
-        new Date().getMonth() + 1
-    );
+interface ChartTabProps {
+    tab: string;
+    selectedOwner: number;
+    selectedYear: number;
+    selectedMonth: number;
+}
+
+const ChartTab: React.FC<ChartTabProps> = ({
+    tab,
+    selectedOwner,
+    selectedYear,
+    selectedMonth,
+}) => {
     const [selectedCategories, setSelectedCategories] = useState([
         "fuel",
         "car_expenses",
@@ -160,16 +167,10 @@ const ChartTab = () => {
             selectedMonth
         );
         setDateValues(generatedDateValues);
-        // console.log(
-        //     response.linearExpenseSums.length,
-        //     response.linearIncomeSums.length,
-        //     trendValues.length,
-        //     generatedDateValues.length
-        // );
 
         const barShopsArray = trimShops(await fetchBarShops(params));
         setOtherShops(barShopsArray.otherShops);
-        console.log(barShopsArray);
+
         const barPersonsArray = await fetchBarPersons(params);
 
         if (trendValues)
@@ -193,12 +194,6 @@ const ChartTab = () => {
                 ],
             });
 
-        console.log(
-            barShopsArray.trimmedShops.map((shop: any) => ({
-                data: [shop.expense_sum],
-                label: shop.shop,
-            }))
-        );
         setBarShopsParams({
             series: [
                 {
@@ -228,10 +223,12 @@ const ChartTab = () => {
     }, [selectedOwner, selectedMonth, selectedYear, selectedCategories]);
 
     useEffect(() => {
-        if (selectedOwner !== -1) {
+        if (selectedOwner !== -1 && tab === "charts") {
             setItemsLoaded(false);
             fetchFunction();
         }
+
+        console.log("Selected owner changed", selectedOwner);
     }, [selectedOwner, selectedMonth, selectedYear]);
 
     useEffect(() => {
@@ -267,15 +264,6 @@ const ChartTab = () => {
     return (
         <div className="center-div-top">
             <Col className="pt-1rem" style={{ margin: "0", width: "100%" }}>
-                <SummaryListGroup
-                    selectedOwner={selectedOwner}
-                    setSelectedOwner={setSelectedOwner}
-                    selectedYear={selectedYear}
-                    setSelectedYear={setSelectedYear}
-                    selectedMonth={selectedMonth}
-                    setSelectedMonth={setSelectedMonth}
-                    itemsLoaded={itemsLoaded}
-                />
                 <div className="center-div d-flex flex-column">
                     {selectedOwner !== -1 && (
                         <ThemeProvider theme={theme}>
@@ -320,9 +308,15 @@ const ChartTab = () => {
 
                                         {otherShops.length > 0 && (
                                             <div className="justify-end">
+                                                <h4 className="mr-1rem">
+                                                    Inne sklepy{" "}
+                                                </h4>
                                                 <Button
                                                     id={`info-button-barShops`}
                                                     variant="light"
+                                                    style={{
+                                                        marginRight: "50px",
+                                                    }}
                                                     onClick={() =>
                                                         handleShowModalOther()
                                                     }>

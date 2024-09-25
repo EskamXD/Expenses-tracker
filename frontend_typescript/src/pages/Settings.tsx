@@ -66,7 +66,7 @@ const Settings = () => {
     };
 
     const showModalToPut = (ID: number) => {
-        console.log(ID);
+        // console.log(ID);
         fetchGetPerson(ID).then((response) => {
             setPersonID(response.id);
             setName(response.name);
@@ -115,4 +115,3 @@ const Settings = () => {
 };
 
 export default Settings;
-

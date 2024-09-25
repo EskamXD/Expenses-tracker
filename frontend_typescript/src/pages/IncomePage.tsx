@@ -43,8 +43,6 @@ const IncomePage = () => {
             owner: 1,
         },
     ]); /**< State to manage the list of items in the form. */
-    const [resetForm, setResetForm] =
-        useState(false); /**< Flag to signal form reset. */
 
     /**
      * @brief Handles the form submission for income items.
@@ -59,7 +57,10 @@ const IncomePage = () => {
 
         try {
             items.forEach((item: Item) => {
-                const result = validateAndEvaluate(item) as boolean;
+                const result = validateAndEvaluate(item) as {
+                    status: boolean;
+                    message: string;
+                };
                 if (!result) {
                     throw new Error("Niepoprawne dane w formularzu.");
                 }
@@ -79,12 +80,13 @@ const IncomePage = () => {
             },
         ] as Receipt[];
 
-        console.log(JSON.stringify(receiptData));
+        // console.log(JSON.stringify(receiptData));
         fetchPostReceipt(receiptData);
 
         // Reset form after successful submission
         setItems([
             {
+                id: 1,
                 category: "work_income",
                 value: "",
                 description: "",
@@ -92,8 +94,6 @@ const IncomePage = () => {
                 owner: 1,
             },
         ]);
-
-        setResetForm(true); // Signal to reset form
     };
 
     return (
@@ -119,11 +119,9 @@ const IncomePage = () => {
                         items={items}
                         setItems={setItems}
                         handleSubmit={handleSubmit}
-                        resetForm={resetForm}
-                        setResetForm={setResetForm}
                         formId="addIncome"
                         buttonLabel="Zapisz przychód"
-                        showShop={false} // Shop is not applicable for income
+                        showShop={true} // Shop is not applicable for income
                         showQuantity={false} // Quantity is not relevant for income
                         showAddItemButton={false} // Only one income at a time
                         allowRemoveItem={false} // Cannot remove the single item
@@ -136,4 +134,3 @@ const IncomePage = () => {
 };
 
 export default IncomePage;
-

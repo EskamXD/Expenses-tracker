@@ -54,7 +54,7 @@ const UnifiedItem: React.FC<UnifiedItemProps> = ({
         key: string,
         value: number | string
     ) => {
-        console.log("UnifiedItem update item", itemId, key, value);
+        // console.log("UnifiedItem update item", itemId, key, value);
         setItems((prevItems: Item[]) =>
             prevItems.map((el) =>
                 el.id === itemId ? { ...el, [key]: value } : el
@@ -148,4 +148,3 @@ const UnifiedItem: React.FC<UnifiedItemProps> = ({
 };
 
 export default UnifiedItem;
-

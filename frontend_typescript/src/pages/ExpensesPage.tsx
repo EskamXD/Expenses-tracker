@@ -39,7 +39,6 @@ const ExpensesPage = () => {
         },
     ]);
     const [shop, setShop] = useState(""); // prettier-ignore
-    const [resetForm, setResetForm] = useState(false); // prettier-ignore
 
     /**
      * @brief Handles the form submission for expenses.
@@ -54,13 +53,18 @@ const ExpensesPage = () => {
 
         try {
             items.forEach((item: Item) => {
-                const result = validateAndEvaluate(item) as boolean;
+                // console.log("handleSbumit", item);
+                const result = validateAndEvaluate(item) as {
+                    status: boolean;
+                    message: string;
+                };
                 if (!result) {
                     throw new Error("Niepoprawne dane w formularzu.");
                 }
             });
         } catch (error) {
             console.error(error);
+
             return;
         }
 
@@ -79,14 +83,15 @@ const ExpensesPage = () => {
                 // Reset form after successful submission
                 setItems([
                     {
-                        category: "work_income",
+                        id: 1,
+                        category: "food_drinks",
                         value: "",
                         description: "",
                         quantity: 0,
                         owner: 1,
                     },
                 ]);
-                setResetForm(true); // Signal to reset form
+                // setResetForm(true); // Signal to reset form
             })
             .catch((error) => {
                 console.error(error);
@@ -117,8 +122,6 @@ const ExpensesPage = () => {
                         items={items}
                         setItems={setItems}
                         handleSubmit={handleSubmit}
-                        resetForm={resetForm}
-                        setResetForm={setResetForm}
                         formId="addExpense"
                         buttonLabel="Zapisz wydatek"
                         showShop={true}
@@ -140,8 +143,6 @@ const ExpensesPage = () => {
                         items={items}
                         setItems={setItems}
                         handleSubmit={handleSubmit}
-                        resetForm={resetForm}
-                        setResetForm={setResetForm}
                         formId="addReceipt"
                         buttonLabel="Zapisz paragon"
                         showShop={true}
@@ -157,4 +158,3 @@ const ExpensesPage = () => {
 };
 
 export default ExpensesPage;
-

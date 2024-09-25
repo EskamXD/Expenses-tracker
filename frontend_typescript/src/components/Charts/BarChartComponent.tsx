@@ -22,7 +22,7 @@ const getColors = (countOf: number) => {
     for (let i = 0; i < countOf; i++) {
         colors.push(mangoFusionPaletteDark[i % mangoFusionPaletteDark.length]);
     }
-    console.log(colors);
+    // console.log(colors);
     return colors;
 };
 

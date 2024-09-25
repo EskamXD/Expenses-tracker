@@ -50,14 +50,17 @@ class ReceiptListCreateView(generics.ListCreateAPIView):
     filterset_class = ReceiptFilter
 
     def create(self, request, *args, **kwargs):
-        # Can accept list of objects
-        if isinstance(request.data, list):
-            serializer = ReceiptSerializer(data=request.data, many=True)
-        else:
-            serializer = ReceiptSerializer(data=request.data)
+        serializer = ReceiptSerializer(
+            data=request.data, many=isinstance(request.data, list)
+        )
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response(serializer.data, status=201)
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.filter_queryset(self.get_queryset())
+        serializer = ReceiptSerializer(queryset, many=True)
+        return Response(serializer.data)
 
 
 class ReceiptUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
@@ -636,48 +639,6 @@ def fetch_pie_categories(request):
         return handle_error(e, 400, "Invalid category")
     except Exception as e:
         return handle_error(e, 500, "Error while fetching pie categories")
-
-
-@extend_schema(
-    methods=["GET"],
-    parameters=[
-        OpenApiParameter(
-            name="owner", description="Selected owner", required=True, type=int
-        ),
-        OpenApiParameter(
-            name="month", description="Selected month", required=True, type=int
-        ),
-        OpenApiParameter(
-            name="year", description="Selected year", required=True, type=int
-        ),
-    ],
-    responses={
-        200: ReceiptSerializer(many=True),
-        400: OpenApiResponse(description="Bad request"),
-    },
-)
-@api_view(["GET"])
-def is_monthly_balance_saved(request):
-    try:
-        params = get_query_params(request, "owner", "month", "year")
-        selected_owner = params["owner"]
-        selected_month = params["month"]
-        selected_year = params["year"]
-
-        receipts = Receipt.objects.filter(
-            transaction_type="income",
-            payer=selected_owner,
-            payment_date__month=selected_month,
-            payment_date__year=selected_year,
-            items__category="last_month_balance",
-        ).distinct()
-
-        serializer = ReceiptSerializer(receipts, many=True)
-
-        return JsonResponse(serializer.data, safe=False, status=200)
-
-    except Exception as e:
-        return JsonResponse({"error": str(e)}, status=500)
 
 
 @extend_schema(
