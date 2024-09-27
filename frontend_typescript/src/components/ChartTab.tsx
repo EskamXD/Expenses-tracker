@@ -2,7 +2,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { Row, Col, Button } from "react-bootstrap";
 import Modal from "react-bootstrap/Modal";
-import SummaryListGroup from "./SummaryListGroup";
 import LoadingChart from "./LoadingChart";
 import LineChartComponent from "./Charts/LineChartComponent";
 import BarChartComponent from "./Charts/BarChartComponent";

@@ -36,11 +36,8 @@ const SummaryPage = () => {
                     <SummaryTab
                         transactionType="expense"
                         selectedOwner={selectedOwner}
-                        setSelectedOwner={setSelectedOwner}
                         selectedYear={selectedYear}
-                        setSelectedYear={setSelectedYear}
                         selectedMonth={selectedMonth}
-                        setSelectedMonth={setSelectedMonth}
                     />
                 </Tab>
                 <Tab eventKey="income" title="Przychody">

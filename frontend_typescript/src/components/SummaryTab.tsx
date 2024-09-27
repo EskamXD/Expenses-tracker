@@ -2,7 +2,6 @@ import { useState, useEffect } from "react";
 import { Col, Row } from "react-bootstrap";
 import Spinner from "react-bootstrap/Spinner";
 import SummaryTable from "./SummaryTable";
-import SummaryListGroup from "./SummaryListGroup";
 import { Receipt, Params } from "../types";
 import { fetchGetReceipts } from "../services/apiService";
 

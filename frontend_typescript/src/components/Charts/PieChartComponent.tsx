@@ -12,8 +12,8 @@ interface PieChartComponentProps {
 
 const PieChartComponent: React.FC<PieChartComponentProps> = ({
     pieCategoriesValueSeries,
-    highlightedItem,
-    setHighLightedItem,
+    // highlightedItem,
+    // setHighLightedItem,
 }) => {
     return (
         <PieChart
@@ -23,13 +23,13 @@ const PieChartComponent: React.FC<PieChartComponentProps> = ({
                 },
             ]}
             height={500}
-            grid={{
-                vertical: true,
-                horizontal: true,
-            }}
-            colors={mangoFusionPalette}
-            highlightedItem={highlightedItem}
-            onHighlightChange={setHighLightedItem}
+            // grid={{
+            //     vertical: true,
+            //     horizontal: true,
+            // }}
+            // colors={mangoFusionPalette}
+            // highlightedItem={highlightedItem}
+            // onHighlightChange={setHighLightedItem}
         />
     );
 };

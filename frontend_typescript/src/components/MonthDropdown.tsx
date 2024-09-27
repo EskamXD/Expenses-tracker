@@ -64,10 +64,7 @@ const MonthDropdown: React.FC<MonthDropdownProps> = ({
             onSelect={handleSelect}
             disabled={disabled}>
             {[...Array(12)].map((_, index) => (
-                <Dropdown.Item
-                    key={index + 1}
-                    eventKey={index + 1}
-                    selected={index + 1 === selectedMonth}>
+                <Dropdown.Item key={index + 1} eventKey={index + 1}>
                     {new Date(0, index).toLocaleString("default", {
                         month: "long",
                     })}

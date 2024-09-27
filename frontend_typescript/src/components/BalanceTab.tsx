@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import SummaryListGroup from "./SummaryListGroup";
 import Spinner from "react-bootstrap/Spinner";
 import {
     fetchGetReceipts,

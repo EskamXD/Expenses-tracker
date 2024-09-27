@@ -1,4 +1,4 @@
-const { app, BrowserWindow } = require("electron");
+import { app, BrowserWindow } from "electron";
 
 function createWindow() {
     const win = new BrowserWindow({
@@ -13,4 +13,3 @@ function createWindow() {
 }
 
 app.whenReady().then(createWindow);
-

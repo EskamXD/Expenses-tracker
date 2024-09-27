@@ -88,7 +88,7 @@ const FlatBills = () => {
     const handleSplitBill = async (receiptBill: Receipt, payer: number) => {
         setSendingBillUpdate(true);
         const billValue =
-            Math.round((receiptBill.items[0].value / 2) * 100) / 100;
+            Math.round((Number(receiptBill.items[0].value) / 2) * 100) / 100;
 
         const newPayerReceipt = {
             payment_date: receiptBill.payment_date,
@@ -257,4 +257,3 @@ const FlatBills = () => {
 };
 
 export default FlatBills;
-

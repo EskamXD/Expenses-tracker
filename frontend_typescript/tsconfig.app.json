@@ -20,6 +20,6 @@
         "noUnusedParameters": true,
         "noFallthroughCasesInSwitch": true
     },
-    "include": ["src", "src/services/apiClient.tsx"]
+    "include": ["src", "src/services/apiClient.tsx", "electron.ts"]
 }
 
