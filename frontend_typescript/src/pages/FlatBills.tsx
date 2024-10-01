@@ -78,6 +78,8 @@ const FlatBills = () => {
     };
 
     const handleShowEditSplitModal = (receiptBill: Receipt) => {
+        console.log("handleShowEditSplitModal", receiptBill);
+        console.log(newPayer);
         setSelectedBillReceipt(receiptBill);
     };
 
@@ -88,7 +90,7 @@ const FlatBills = () => {
     const handleSplitBill = async (receiptBill: Receipt, payer: number) => {
         setSendingBillUpdate(true);
         const billValue =
-            Math.round((receiptBill.items[0].value / 2) * 100) / 100;
+            Math.round((Number(receiptBill.items[0].value) / 2) * 100) / 100;
 
         const newPayerReceipt = {
             payment_date: receiptBill.payment_date,
@@ -196,7 +198,7 @@ const FlatBills = () => {
                 </>
             )}
             {/* Modal dla wybranego rachunku */}
-            {selectedBillReceipt && newPayer && (
+            {selectedBillReceipt && (
                 <Modal show onHide={handleCloseModal}>
                     <Modal.Header closeButton={!sendingBillUpdate}>
                         <Modal.Title>
@@ -207,7 +209,7 @@ const FlatBills = () => {
                     <Modal.Body>
                         <PayerDropdown
                             label="Nowy płatnik"
-                            payer={newPayer}
+                            payer={Number(newPayer)}
                             setPayer={setNewPayer}
                         />
                         <div className="mt-1rem">
@@ -257,4 +259,3 @@ const FlatBills = () => {
 };
 
 export default FlatBills;
-

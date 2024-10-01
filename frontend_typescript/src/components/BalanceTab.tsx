@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import SummaryListGroup from "./SummaryListGroup";
 import Spinner from "react-bootstrap/Spinner";
 import {
     fetchGetReceipts,
@@ -60,10 +59,24 @@ const BalanceTab: React.FC<BalanceTabProps> = ({
     }>({}); // shop: sum
 
     const calculateBalance = (response: lineSumsInterface) => {
-        const income = Number(response.linearIncomeSums.slice(-1)[0]) || 0;
-        const expense = Number(response.linearExpenseSums.slice(-1)[0]) || 0;
+        // Check if response and its properties are defined
+        const incomeSums = response.linearIncomeSums || [0];
+        const expenseSums = response.linearExpenseSums || [0];
+
+        // Get the last elements safely
+        const income = Number(incomeSums.slice(-1)[0]) || 0;
+        const expense = Number(expenseSums.slice(-1)[0]) || 0;
+
         return Math.round((income - expense) * 1e2) / 1e2;
     };
+
+    useEffect(() => {
+        // if (lastMonthBalanceData !== lastMonthServerBalanceData) {
+        //     setShowUpdateModal(true);
+        // } else if (isNaN(lastMonthBalanceData)) {
+        //     setShowAddModal(true);
+        // }
+    }, [lastMonthBalanceData]);
 
     useEffect(() => {
         // console.clear();
@@ -115,12 +128,6 @@ const BalanceTab: React.FC<BalanceTabProps> = ({
                 const lastMonthBalanceFromLineSums = calculateBalance(response);
 
                 setLastMonthBalanceData(lastMonthBalanceFromLineSums);
-
-                if (
-                    lastMonthBalanceFromLineSums !== lastMonthBalanceFromReceipt
-                ) {
-                    setShowUpdateModal(true);
-                }
             } else {
                 // Calculate balance from last month
                 const lastMonthParams: Params = {
@@ -131,7 +138,6 @@ const BalanceTab: React.FC<BalanceTabProps> = ({
                 response = fetchLineSums(lastMonthParams);
                 const lastMonthBalance = calculateBalance(response);
                 setLastMonthBalanceData(lastMonthBalance);
-                setShowAddModal(true);
             }
         }
 
