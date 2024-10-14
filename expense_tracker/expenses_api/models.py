@@ -25,6 +25,7 @@ class Item(models.Model):
         ("clothes", "Ubrania"),
         ("electronics_games", "Elektornika & gry"),
         ("tickets_entrance", "Bilety & wejściówki"),
+        ("delivery", "Dostawa"),
         ("other_shopping", "Inne zakupy"),
         ("flat_bills", "Rachunki za mieszkanie"),
         ("monthly_subscriptions", "Miesięczne subskrypcje"),
