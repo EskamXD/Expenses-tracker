@@ -69,6 +69,7 @@ export const selectTranslationList = [
     { value: "clothes", label: "Ubrania" },
     { value: "electronics_games", label: "Elektronika & Gry" },
     { value: "tickets_entrance", label: "Bilety & Wejściówki" },
+    { value: "delivery", label: "Dostawa" },
     { value: "other_shopping", label: "Inne Zakupy" },
     { value: "flat_bills", label: "Mieszkanie & rachunki" },
     { value: "monthly_subscriptions", label: "Miesięczne Subskrypcje" },

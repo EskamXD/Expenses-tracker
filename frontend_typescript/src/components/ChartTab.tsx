@@ -90,6 +90,7 @@ const ChartTab: React.FC<ChartTabProps> = ({
         "clothes",
         "electronics_games",
         "tickets_entrance",
+        "delivery",
         "other_shopping",
     ]);
     const [itemsLoaded, setItemsLoaded] = useState(false);
