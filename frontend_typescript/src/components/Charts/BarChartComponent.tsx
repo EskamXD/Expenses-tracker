@@ -30,7 +30,7 @@ const BarChartComponent: React.FC<BarChartComponentProps> = ({
     xAxisData,
     seriesData,
     height,
-    label,
+    // label,
 }) => {
     return (
         <BarChart

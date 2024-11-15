@@ -4,7 +4,7 @@
  */
 
 import { fetchGetReceipts } from "../services/apiService";
-import { Receipt } from "../types";
+import { Params, Receipt } from "../types";
 
 /**
  * @brief Funkcja pobierająca bilans za poprzedni miesiąc (suma przychodów - suma wydatków).
@@ -29,18 +29,18 @@ const previousMonthBalance = async (
             prevYear -= 1;
         }
 
-        const expenseResponse = await fetchGetReceipts(
-            "expense",
+        const expenseResponse = await fetchGetReceipts({
+            transaction_type: "expense",
             owner,
-            prevMonth,
-            prevYear
-        );
-        const incomeResponse = await fetchGetReceipts(
-            "income",
+            month: prevMonth,
+            year: prevYear,
+        } as Params);
+        const incomeResponse = await fetchGetReceipts({
+            transaction_type: "income",
             owner,
-            prevMonth,
-            prevYear
-        );
+            month: prevMonth,
+            year: prevYear,
+        } as Params);
 
         // Funkcja do sumowania wartości transakcji
         const sumItems = (data: Array<Receipt>) =>

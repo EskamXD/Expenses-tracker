@@ -80,7 +80,9 @@ export const PayerDropdown: React.FC<PayerDropdownProps> = ({
                     .map((person: Person) => (
                         <Dropdown.Item
                             key={person.id}
-                            onClick={() => handlePayerChange(person.id)}>
+                            onClick={() =>
+                                handlePayerChange(Number(person.id))
+                            }>
                             {person.name}
                         </Dropdown.Item>
                     ))}
@@ -90,4 +92,3 @@ export const PayerDropdown: React.FC<PayerDropdownProps> = ({
 };
 
 export default PayerDropdown;
-

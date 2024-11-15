@@ -115,9 +115,9 @@ const BalanceTab: React.FC<BalanceTabProps> = ({
                 setLastMonthServerBalanceData(
                     Number(response[0].items[0].value)
                 );
-                const lastMonthBalanceFromReceipt = Number(
-                    response[0].items[0].value
-                );
+                // const lastMonthBalanceFromReceipt = Number(
+                //     response[0].items[0].value
+                // );
                 // Check if balance from last month is the same as calculated
                 const lastMonthParams: Params = {
                     owner: selectedOwner,

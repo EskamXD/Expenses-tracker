@@ -25,9 +25,9 @@ import { validateAndEvaluate } from "../utils/valuesCheckExpression";
  * @return {JSX.Element} A component that renders the income management interface.
  */
 const IncomePage = () => {
-    const [receipt, setReceipt] = useState<Receipt[]>(
-        []
-    ); /**< State to manage the receipt data. */
+    // const [receipt, setReceipt] = useState<Receipt[]>(
+    //     []
+    // ); /**< State to manage the receipt data. */
     const [paymentDate, setPaymentDate] = useState(
         new Date().toISOString().split("T")[0]
     ); /**< State to manage the selected payment date. */
