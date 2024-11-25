@@ -32,6 +32,7 @@ const BarChartComponent: React.FC<BarChartComponentProps> = ({
     height,
     // label,
 }) => {
+    console.log(seriesData);
     return (
         <BarChart
             xAxis={[
@@ -40,7 +41,7 @@ const BarChartComponent: React.FC<BarChartComponentProps> = ({
                     data: xAxisData,
                     colorMap: {
                         type: "ordinal",
-                        colors: getColors(xAxisData.length),
+                        colors: getColors(xAxisData.length * 2),
                     },
                 },
             ]}

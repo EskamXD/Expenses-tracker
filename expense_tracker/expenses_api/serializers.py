@@ -91,10 +91,11 @@ class PersonExpenseSerializer(serializers.Serializer):
     payer = serializers.PrimaryKeyRelatedField(
         queryset=Person.objects.all()
     )  # Zmieniono na ID użytkownika
-    expense_sum = serializers.FloatField()
+    common = serializers.FloatField()
+    mutual = serializers.FloatField()
 
     class Meta:
-        fields = ["payer", "expense_sum"]
+        fields = ["payer", "common", "mutual"]
 
 
 class ShopExpenseSerializer(serializers.Serializer):

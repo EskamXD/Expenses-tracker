@@ -449,7 +449,9 @@ def fetch_bar_persons(request):
         print(f"Total Receipts Fetched: {len(receipts)}")
 
         # Słownik do przechowywania sum wydatków według płatnika
-        persons_expense_sums = defaultdict(Decimal)
+        persons_expense_sums = defaultdict(
+            lambda: {"common": Decimal(0), "mutual": Decimal(0)}
+        )
 
         # Iterowanie przez każdy paragon
         for receipt in receipts:
@@ -459,26 +461,37 @@ def fetch_bar_persons(request):
                 if selected_categories and item.category not in selected_categories:
                     continue
 
-                # Sumowanie wartości tylko wtedy, gdy właściciel przedmiotu nie jest równy płatnikowi
-                if item.owner != payer:
+                # Warunek 1: owner != payer and owner == 99
+                if item.owner != payer and item.owner == 99:
                     try:
-                        # Dodajemy wartość pozycji do odpowiedniego płatnika
-                        persons_expense_sums[payer] += Decimal(item.value)
+                        persons_expense_sums[payer]["common"] += Decimal(item.value)
                     except (ValueError, TypeError):
-                        # Jeśli wartość nie jest prawidłowa, zignoruj ten wpis
                         continue
 
-        # Posortowanie wyników według sumy wydatków (malejąco)
-        sorted_persons_expense_sums = sorted(
-            persons_expense_sums.items(), key=lambda x: x[1], reverse=True
-        )
+                # Warunek 2: owner != payer and owner != 99
+                if item.owner != payer and item.owner != 99:
+                    try:
+                        persons_expense_sums[payer]["mutual"] += Decimal(item.value)
+                    except (ValueError, TypeError):
+                        continue
 
-        # Przygotowanie danych do serializacji
+        # Przygotowanie danych do serializacji w odpowiednim formacie
         serialized_data = [
-            {"payer": payer, "expense_sum": total}
-            for payer, total in sorted_persons_expense_sums
+            {
+                "payer": (
+                    payer.id if hasattr(payer, "id") else payer
+                ),  # Użyj ID osoby lub klucza wprost
+                "common": float(values["common"]),
+                "mutual": float(values["mutual"]),
+            }
+            for payer, values in persons_expense_sums.items()
         ]
-        serializer = PersonExpenseSerializer(data=serialized_data, many=True)
+
+        serialized_data_sorted = sorted(serialized_data, key=lambda x: x["payer"])
+
+        print(f"Total Persons: {len(serialized_data)}")
+
+        serializer = PersonExpenseSerializer(data=serialized_data_sorted, many=True)
 
         if serializer.is_valid():
             return JsonResponse(serializer.data, safe=False, status=200)

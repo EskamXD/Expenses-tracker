@@ -23,6 +23,11 @@ import moment from "moment";
 import InfoRoundedIcon from "@mui/icons-material/InfoRounded";
 import "../assets/styles/main.css";
 
+interface BarPersonInterface {
+    payer: number;
+    common: number;
+    mutual: number;
+}
 interface ShopBarInterface {
     shop: string;
     expense_sum: number;
@@ -120,13 +125,16 @@ const ChartTab: React.FC<ChartTabProps> = ({
         series: [
             {
                 data: [0],
+                stack: [""],
             },
         ],
     });
     const [barPersonsParams, setBarPersonsParams] = useState({
         series: [
             {
+                // label: "",
                 data: [0],
+                stack: [""],
             },
         ],
     });
@@ -173,6 +181,7 @@ const ChartTab: React.FC<ChartTabProps> = ({
         setOtherShops(barShopsArray.otherShops);
 
         const barPersonsArray = await fetchBarPersons(params);
+        console.log("Bar persons array", barPersonsArray);
 
         if (trendValues)
             setLineSumsParams({
@@ -201,17 +210,37 @@ const ChartTab: React.FC<ChartTabProps> = ({
                     data: barShopsArray.trimmedShops.map(
                         (data: any) => data.expense_sum
                     ),
-                },
-            ],
-        });
-        setBarPersonsParams({
-            series: [
-                {
-                    data: barPersonsArray.map(
-                        (person: any) => person.expense_sum
+                    stack: barShopsArray.trimmedShops.map(
+                        (data: any) => data.shop
                     ),
                 },
             ],
+        });
+
+        const transformedData = [
+            {
+                data: barPersonsArray.map((person: any) =>
+                    Number(person.common)
+                ),
+                stack: barPersonsArray.map(
+                    (person: any) => selectPersonOptions[person.payer]
+                ),
+                label: "Wspólne",
+            },
+            {
+                data: barPersonsArray.map((person: any) =>
+                    Number(person.mutual)
+                ),
+                stack: barPersonsArray.map(
+                    (person: any) => selectPersonOptions[person.payer]
+                ),
+                label: "Wzajemne",
+            },
+        ];
+
+        // Przypisz dane do `setBarPersonsParams`
+        setBarPersonsParams({
+            series: transformedData,
         });
         setBarShopsNamesXAxis(
             barShopsArray.trimmedShops.map((shop: any) => shop.shop)
@@ -236,6 +265,7 @@ const ChartTab: React.FC<ChartTabProps> = ({
         if (selectedOwner !== -1) {
             setItemsLoaded(true);
         }
+        console.log(barPersonsParams);
     }, [lineSumsParams, barShopsParams, barPersonsParams]);
 
     useEffect(() => {
