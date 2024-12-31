@@ -1,8 +1,8 @@
 # Skrypt uruchamiający aplikację backendową (Django) i frontendową (PNPM) w różnych folderach
 
 # Ścieżki do folderów
-$backendFolder = "expense_tracker"
-$frontendFolder = "frontend_typescript"
+$backendFolder = "backend"
+$frontendFolder = "frontend"
 
 # Sekcja backendowa (Django)
 

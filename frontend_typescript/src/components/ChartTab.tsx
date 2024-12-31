@@ -23,11 +23,11 @@ import moment from "moment";
 import InfoRoundedIcon from "@mui/icons-material/InfoRounded";
 import "../assets/styles/main.css";
 
-interface BarPersonInterface {
-    payer: number;
-    common: number;
-    mutual: number;
-}
+// interface BarPersonInterface {
+//     payer: number;
+//     common: number;
+//     mutual: number;
+// }
 interface ShopBarInterface {
     shop: string;
     expense_sum: number;
