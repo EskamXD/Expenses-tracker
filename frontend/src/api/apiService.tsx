@@ -39,12 +39,7 @@ function printStatus(status: number) {
 
 export const fetchGetPerson = async (id?: number) => {
     try {
-        let response;
-        if (id) {
-            response = await apiClient.get(`/person/${id}/`);
-        } else {
-            response = await apiClient.get(`/person/`);
-        }
+        const response = await apiClient.get(`/person/${id ? id : ""}`);
         if (response.status === 200) {
             return response.data;
         } else {
@@ -57,9 +52,6 @@ export const fetchGetPerson = async (id?: number) => {
 };
 
 export const fetchPostPerson = async (person: Person) => {
-    // console.log(person);
-    // console.log(JSON.stringify(person));
-    // alert();
     try {
         const response = await apiClient.post(`/person/`, person);
         if (response.status === 201) {
@@ -68,6 +60,7 @@ export const fetchPostPerson = async (person: Person) => {
             printStatus(response.status);
         }
     } catch (error) {
+        console.warn(JSON.stringify(person));
         console.error(error);
         throw error;
     }
@@ -82,6 +75,7 @@ export const fetchPutPerson = async (person: Person) => {
             printStatus(response.status);
         }
     } catch (error) {
+        console.warn(JSON.stringify(person));
         console.error(error);
         throw error;
     }
@@ -133,6 +127,7 @@ export const fetchPostReceipt = async (receipt: Receipt[]) => {
             printStatus(response.status);
         }
     } catch (error) {
+        console.warn(JSON.stringify(receipt));
         console.error(error);
         throw error;
     }
@@ -152,6 +147,7 @@ export const fetchPutReceipt = async (receiptId: number, receipt: Receipt) => {
             printStatus(response.status);
         }
     } catch (error) {
+        console.warn(JSON.stringify(receipt));
         console.error(error);
         throw error;
     }

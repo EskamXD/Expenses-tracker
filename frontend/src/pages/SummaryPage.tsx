@@ -3,11 +3,11 @@ import { Tabs, Tab, Col } from "react-bootstrap";
 import SummaryTab from "../components/SummaryTab";
 import ChartTab from "../components/ChartTab";
 import BalanceTab from "../components/BalanceTab";
-import SummaryListGroup from "../components/SummaryListGroup"; // Ensure you import this component
+import SummaryFilters from "../components/SummaryFilters.tsx";
 
 const SummaryPage = () => {
     const [tab, setTab] = useState("expense");
-    const [selectedOwner, setSelectedOwner] = useState<number>(-1);
+    const [selectedOwner, setSelectedOwner] = useState<number[]>([-1]);
     const [selectedYear, setSelectedYear] = useState<number>(
         new Date().getFullYear()
     );
@@ -18,14 +18,14 @@ const SummaryPage = () => {
     return (
         <Col className="pt-1rem" style={{ margin: "0", width: "100%" }}>
             <div className="mb-3">
-                <SummaryListGroup
+                <SummaryFilters
                     selectedOwner={selectedOwner}
                     setSelectedOwner={setSelectedOwner}
                     selectedYear={selectedYear}
                     setSelectedYear={setSelectedYear}
                     selectedMonth={selectedMonth}
                     setSelectedMonth={setSelectedMonth}
-                    itemsLoaded={true}
+                    itemsLoaded={false}
                 />
             </div>
             <Tabs

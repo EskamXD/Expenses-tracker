@@ -1,53 +1,40 @@
-import { useState } from "react";
 import Dropdown from "react-bootstrap/Dropdown";
 import "../assets/styles/main.css";
 import { Person } from "../types";
 import { useGlobalContext } from "../context/GlobalContext";
 
 interface UnifiedDropdownProps {
-    label?: string;
-    payer?: number;
-    setPayer?: Function;
-    owner?: number[];
-    setOwner?: Function;
+    type: "payer" | "owner";
+    label: string | "";
+    personInDropdown: number | number[];
+    setPersonInDropdown: Function;
 }
 
 export const UnifiedDropdown: React.FC<UnifiedDropdownProps> = ({
+    type,
     label = "Wybierz",
-    payer,
-    setPayer,
-    owner = [],
-    setOwner,
+    personInDropdown,
+    setPersonInDropdown,
 }) => {
     const { persons } = useGlobalContext(); // Pobieranie danych z kontekstu
 
-    const [localPayer, setLocalPayer] = useState<number | undefined>(payer);
-    const [localOwners, setLocalOwners] = useState<number[]>(owner);
-
-    const handlePayerChange = (newPayer: number) => {
-        setLocalPayer(newPayer);
-        if (setPayer) setPayer(newPayer);
-    };
-
-    const handleOwnerChange = (ownerId: number) => {
-        const updatedOwners = localOwners.includes(ownerId)
-            ? localOwners.filter((id) => id !== ownerId)
-            : [...localOwners, ownerId];
-        setLocalOwners(updatedOwners);
-        if (setOwner) setOwner(updatedOwners);
+    const handleChange = (newPersonInDropdown: number) => {
+        setPersonInDropdown(newPersonInDropdown);
     };
 
     return (
         <Dropdown>
             <Dropdown.Toggle variant="primary" id="dropdown-unified">
                 {label}{" "}
-                {label === "Płatnik"
-                    ? persons.find((p) => p.id === localPayer)?.name
-                    : localOwners.length}
+                {type === "payer" &&
+                    persons.find((p) => p.id === personInDropdown)?.name}
+                {type === "owner" &&
+                    Array.isArray(personInDropdown) &&
+                    personInDropdown.length}
             </Dropdown.Toggle>
 
             <Dropdown.Menu>
-                {setPayer && payer !== undefined && (
+                {!Array.isArray(personInDropdown) && (
                     <>
                         {/* Payer Section */}
                         <Dropdown.Header>Wybierz płatnika</Dropdown.Header>
@@ -60,9 +47,11 @@ export const UnifiedDropdown: React.FC<UnifiedDropdownProps> = ({
                                             type="radio"
                                             name="payer"
                                             value={person.id}
-                                            checked={localPayer === person.id}
+                                            checked={
+                                                personInDropdown === person.id
+                                            }
                                             onChange={() =>
-                                                handlePayerChange(person.id)
+                                                handleChange(person.id)
                                             }
                                             style={{ marginRight: "8px" }}
                                         />
@@ -74,7 +63,7 @@ export const UnifiedDropdown: React.FC<UnifiedDropdownProps> = ({
                     </>
                 )}
 
-                {setOwner && owner !== undefined && (
+                {Array.isArray(personInDropdown) && (
                     <>
                         {/* Owners Section */}
                         <Dropdown.Header>Wybierz właścicieli</Dropdown.Header>
@@ -87,12 +76,10 @@ export const UnifiedDropdown: React.FC<UnifiedDropdownProps> = ({
                                     <input
                                         type="checkbox"
                                         value={person.id}
-                                        checked={localOwners.includes(
+                                        checked={personInDropdown.includes(
                                             person.id
                                         )}
-                                        onChange={() =>
-                                            handleOwnerChange(person.id)
-                                        }
+                                        onChange={() => handleChange(person.id)}
                                         style={{ marginRight: "8px" }}
                                     />
                                     {person.name}

@@ -14,7 +14,7 @@ interface UnifiedItemProps {
     formId: string;
     index: number;
     items: Item[];
-    setItems: Function;
+    setItems: React.Dispatch<React.SetStateAction<Item[]>>;
     updateItem: Function;
     removeItem: Function;
     showQuantity: boolean;
@@ -52,7 +52,7 @@ const UnifiedItem: React.FC<UnifiedItemProps> = ({
         formId === "expense-form" ? selectExpensesOptions : selectIncomeOptions;
 
     const item = items.find((item) => item.id === index);
-    console.log(items, index, item);
+    // console.log(items, index, item);
 
     if (!item) {
         return <></>;
@@ -70,7 +70,8 @@ const UnifiedItem: React.FC<UnifiedItemProps> = ({
                             updateItem(
                                 Number(item.id),
                                 "category",
-                                e.target.value
+                                e.target.value,
+                                setItems
                             )
                         }>
                         {selectOptions.map((option) => (
@@ -86,7 +87,12 @@ const UnifiedItem: React.FC<UnifiedItemProps> = ({
                         placeholder="Kwota"
                         value={item.value}
                         onChange={(e) =>
-                            updateItem(Number(item.id), "value", e.target.value)
+                            updateItem(
+                                Number(item.id),
+                                "value",
+                                e.target.value,
+                                setItems
+                            )
                         }
                     />
                 </Col>
@@ -99,7 +105,8 @@ const UnifiedItem: React.FC<UnifiedItemProps> = ({
                             updateItem(
                                 Number(item.id),
                                 "description",
-                                e.target.value
+                                e.target.value,
+                                setItems
                             );
                         }}
                     />
@@ -114,7 +121,8 @@ const UnifiedItem: React.FC<UnifiedItemProps> = ({
                                 updateItem(
                                     Number(item.id),
                                     "quantity",
-                                    e.target.value
+                                    e.target.value,
+                                    setItems
                                 )
                             }
                         />
@@ -122,10 +130,16 @@ const UnifiedItem: React.FC<UnifiedItemProps> = ({
                 )}
                 <Col style={{ maxWidth: "fit-content" }}>
                     <UnifiedDropdown
+                        type="owner"
                         label="Wybierz właścicieli"
-                        owner={item.owner}
-                        setOwner={(newOwners: number) =>
-                            updateItem(Number(item.id), "owners", newOwners)
+                        personInDropdown={item.owners}
+                        setPersonInDropdown={(newOwners: number[]) =>
+                            updateItem(
+                                Number(item.id),
+                                "owners",
+                                newOwners,
+                                setItems
+                            )
                         }
                     />
                 </Col>

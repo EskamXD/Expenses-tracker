@@ -45,7 +45,7 @@ class Item(models.Model):
     value = models.DecimalField(max_digits=10, decimal_places=2)
     description = models.CharField(max_length=255, blank=True, null=True, default="")
     quantity = models.DecimalField(max_digits=10, decimal_places=0, default=1)
-    owner = models.DecimalField(max_digits=10, decimal_places=0)
+    owners = models.JSONField(blank=False, default=list)
     description = models.CharField(max_length=255)
 
     def __str__(self):

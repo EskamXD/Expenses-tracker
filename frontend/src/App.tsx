@@ -12,21 +12,23 @@ import Loader from "./pages/Loader";
 import SiteNavbar from "./components/SiteNavbar";
 import Container from "react-bootstrap/Container";
 
-import { fetchGetPerson } from "./api/apiService";
+import { Params } from "./types.tsx";
+import { fetchGetPerson, fetchGetReceipts } from "./api/apiService";
 
 import { useGlobalContext } from "./context/GlobalContext";
 
+import "./App.css";
 import "bootstrap/dist/css/bootstrap.min.css";
 import { Spinner } from "react-bootstrap";
 
 const App: React.FC = () => {
     const [loading, setLoading] = useState(false);
 
-    const { persons, setPersons } = useGlobalContext();
+    const { persons, setPersons, setReceipts } = useGlobalContext();
 
     useEffect(() => {
-        console.log("App useEffect");
         setLoading(true);
+
         fetchGetPerson()
             .then((response) => {
                 response.length !== 0 ? setPersons(response) : setPersons([]);
@@ -35,6 +37,23 @@ const App: React.FC = () => {
                 setLoading(false);
             });
     }, []);
+
+    useEffect(() => {
+        setLoading(true);
+
+        const params = {
+            month: new Date().getMonth() + 1,
+            year: new Date().getFullYear(),
+        } as Params;
+
+        fetchGetReceipts(params)
+            .then((response) => {
+                response.length !== 0 ? setReceipts(response) : setReceipts([]);
+            })
+            .finally(() => {
+                setLoading(false);
+            });
+    }, [persons]);
 
     return (
         <>

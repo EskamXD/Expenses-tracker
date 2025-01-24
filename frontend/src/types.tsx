@@ -11,7 +11,7 @@ export type Item = {
     value: number | string;
     description: string;
     quantity: number;
-    owner: number[];
+    owners: number[];
 };
 
 export type Receipt = {
@@ -29,4 +29,9 @@ export type Params = {
     year?: number;
     category?: string | string[];
     transaction_type?: string;
+};
+
+export type Shops = {
+    id?: number;
+    name: string;
 };

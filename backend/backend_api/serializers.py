@@ -24,7 +24,7 @@ class ItemSerializer(serializers.ModelSerializer):
             "value",
             "description",
             "quantity",
-            "owner",
+            "owners",
         ]
 
 
@@ -74,7 +74,7 @@ class ReceiptSerializer(serializers.ModelSerializer):
                 id=item_data.get("id"),
                 category=item_data["category"],
                 description=item_data["description"],
-                owner=item_data["owner"],
+                owners=item_data["owners"],
                 defaults={
                     "value": item_data["value"],
                     "quantity": item_data["quantity"],

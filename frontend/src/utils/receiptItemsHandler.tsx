@@ -17,9 +17,17 @@ import { Item } from "../types";
  * It also initializes other fields to default values and sets the owner to "kamil" by default.
  *
  * @param {Object[]} items - The current list of items.
- * @param {Function} setItems - Function to update the list of items.
+ * @param {React.Dispatch<React.SetStateAction<Item[]>>} setItems - Function to update the list of items.
  */
-export const addItem = (items: Item[], setItems: Function) => {
+export const addItem = (
+    items: Item[],
+    setItems: React.Dispatch<React.SetStateAction<Item[]>>
+) => {
+    if (typeof setItems !== "function") {
+        console.error("setItems is not a valid function");
+        return;
+    }
+
     const lastItemCategory = items[items.length - 1].category;
     setItems([
         ...items,
@@ -28,9 +36,8 @@ export const addItem = (items: Item[], setItems: Function) => {
             category: lastItemCategory,
             value: "",
             description: "",
-            quantity: "1",
-            owner: [-1],
-            date: new Date().toISOString().split("T")[0],
+            quantity: 1,
+            owners: [],
         },
     ]);
 };
@@ -45,17 +52,41 @@ export const addItem = (items: Item[], setItems: Function) => {
  * @param {number} itemId - The ID of the item to update.
  * @param {string} key - The key of the item field to update.
  * @param {string|number} value - The new value to set for the specified field.
- * @param {Function} setItems - Function to update the list of items.
+ * @param {React.Dispatch<React.SetStateAction<Item[]>>} setItems - Function to update the list of items.
  */
 export const updateItem = (
     itemId: number,
     key: string,
-    value: number | string,
-    setItems: Function
+    value: string | number,
+    setItems: React.Dispatch<React.SetStateAction<Item[]>>
 ) => {
-    setItems((prevItems: Item[]) =>
-        prevItems.map((el) => (el.id === itemId ? { ...el, [key]: value } : el))
-    );
+    if (typeof setItems !== "function") {
+        console.error("setItems is not a valid function");
+        return;
+    }
+
+    setItems((prevItems: Item[]) => {
+        return prevItems.map((el) => {
+            if (el.id === itemId) {
+                if (key === "owners") {
+                    const currentOwners = Array.isArray(el[key])
+                        ? (el[key] as number[])
+                        : [];
+
+                    const newOwner = Number(value);
+
+                    const updatedOwners = currentOwners.includes(newOwner)
+                        ? currentOwners.filter((id) => id !== newOwner) // Usuń
+                        : [...currentOwners, newOwner]; // Dodaj
+
+                    return { ...el, [key]: updatedOwners };
+                }
+
+                return { ...el, [key]: value };
+            }
+            return el;
+        });
+    });
 };
 
 /**
@@ -66,10 +97,19 @@ export const updateItem = (
  * unique and sequential.
  *
  * @param {Object[]} items - The current list of items.
- * @param {Function} setItems - Function to update the list of items.
+ * @param {React.Dispatch<React.SetStateAction<Item[]>>} setItems - Function to update the list of items.
  * @param {number} id - The ID of the item to be removed.
  */
-export const removeItem = (items: Item[], setItems: Function, id: number) => {
+export const removeItem = (
+    items: Item[],
+    setItems: React.Dispatch<React.SetStateAction<Item[]>>,
+    id: number
+) => {
+    if (typeof setItems !== "function") {
+        console.error("setItems is not a valid function");
+        return;
+    }
+
     // Filter out the item to be removed
     const updatedItems = items.filter((item) => item.id !== id);
 

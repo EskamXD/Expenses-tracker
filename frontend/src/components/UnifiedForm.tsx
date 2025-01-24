@@ -18,7 +18,7 @@ import moment from "moment";
 import { Item, Receipt } from "../types";
 import { fetchPostReceipt } from "../api/apiService";
 import { validateAndEvaluate } from "../utils/valuesCheckExpression";
-import { v4 as uuidv4 } from "uuid";
+// import { v4 as uuidv4 } from "uuid";
 
 import "../assets/styles/main.css";
 
@@ -51,7 +51,7 @@ const UnifiedForm: React.FC<UnifiedFormProps> = ({
     const [paymentDate, setPaymentDate] = useState(
         new Date().toISOString().split("T")[0]
     );
-    const [payer, setPayer] = useState(1);
+    const [payer, setPayer] = useState(-1);
     const [shop, setShop] = useState("");
 
     // const [nextItemId, setNextItemId] = useState(2);
@@ -62,7 +62,7 @@ const UnifiedForm: React.FC<UnifiedFormProps> = ({
             value: "",
             description: "",
             quantity: 1,
-            owner: [-1],
+            owners: [],
         },
     ]);
 
@@ -114,7 +114,7 @@ const UnifiedForm: React.FC<UnifiedFormProps> = ({
                         value: "",
                         description: "",
                         quantity: 1,
-                        owner: [-1],
+                        owners: [],
                     },
                 ]);
                 // setResetForm(true); // Signal to reset form
@@ -150,15 +150,16 @@ const UnifiedForm: React.FC<UnifiedFormProps> = ({
                     }}
                 />
             )}
-            <Row className="d-flex gap-2 space-between">
-                <Col xs={2}>
+            <Row className="d-flex gap-2 space-between margin-0">
+                <Col xs={2} align="start" className="padding-0">
                     <UnifiedDropdown
+                        type="payer"
                         label="Płatnik"
-                        payer={payer}
-                        setPayer={setPayer}
+                        personInDropdown={payer}
+                        setPersonInDropdown={setPayer}
                     />
                 </Col>
-                <Col xs="auto">
+                <Col xs="auto" className="padding-0">
                     <Button
                         variant="primary"
                         type="button"
@@ -166,7 +167,7 @@ const UnifiedForm: React.FC<UnifiedFormProps> = ({
                         Dodaj rzecz
                     </Button>
                 </Col>
-                <Col xs="auto" align="end">
+                <Col xs="auto" align="end" className="padding-0">
                     <Button variant="success" type="submit">
                         {buttonLabel}
                     </Button>
