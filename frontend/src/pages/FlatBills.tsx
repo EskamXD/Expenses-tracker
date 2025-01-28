@@ -6,7 +6,7 @@ import {
     fetchPutReceipt,
 } from "../api/apiService";
 import { Params, Receipt, Item } from "../types";
-import SummaryListGroup from "../components/SummaryListGroup";
+import SummaryFilters from "../components/SummaryFilters.tsx";
 import CallSplitIcon from "@mui/icons-material/CallSplit";
 import PayerDropdown from "../components/PayerDropdown";
 import { getPersonOption } from "../utils/getPersonOption";
@@ -143,13 +143,7 @@ const FlatBills = () => {
                     ) : (
                         <p>Brak rachunków</p>
                     )}
-                    <SummaryListGroup
-                        selectedYear={selectedYear}
-                        setSelectedYear={setSelectedYear}
-                        selectedMonth={selectedMonth}
-                        setSelectedMonth={setSelectedMonth}
-                        itemsLoaded={!loading}
-                    />
+                    <SummaryFilters />
                     {receiptBills.length > 0 && (
                         <Table striped bordered hover className="mt-1rem">
                             <thead>
@@ -259,3 +253,4 @@ const FlatBills = () => {
 };
 
 export default FlatBills;
+

@@ -1,5 +1,8 @@
+from django.utils.timezone import now
+
 from rest_framework import serializers
-from .models import Person, Item, Receipt
+
+from .models import Person, Item, Receipt, RecentShop, ItemPrediction
 
 
 # Serializator dla PersonPayer
@@ -9,11 +12,10 @@ class PersonSerializer(serializers.ModelSerializer):
         fields = ["id", "name", "payer", "owner"]
 
 
-# Serializator dla Item
 class ItemSerializer(serializers.ModelSerializer):
-    def validate_value(self, value):
-        print(f"Received value: {value}")
-        return value
+    owners = serializers.PrimaryKeyRelatedField(
+        many=True, queryset=Person.objects.all()
+    )
 
     class Meta:
         model = Item
@@ -27,19 +29,31 @@ class ItemSerializer(serializers.ModelSerializer):
             "owners",
         ]
 
+    def create(self, validated_data):
+        owners_data = validated_data.pop("owners", [])
+        item = Item.objects.create(**validated_data)
+        item.owners.set(owners_data)
+        return item
 
-# Serializator dla Receipt
+    def update(self, instance, validated_data):
+        owners_data = validated_data.pop("owners", [])
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+        instance.save()
+        instance.owners.set(owners_data)
+        return instance
+
+
 class ReceiptSerializer(serializers.ModelSerializer):
-    # url = serializers.HyperlinkedIdentityField(
-    #     view_name="receipt-detail", read_only=True
-    # )
-    items = ItemSerializer(many=True)  # Serializator dla itemów
+    payer = serializers.PrimaryKeyRelatedField(
+        queryset=Person.objects.filter(payer=True)
+    )
+    items = ItemSerializer(many=True)
 
     class Meta:
         model = Receipt
         fields = [
             "id",
-            # "url",
             "save_date",
             "payment_date",
             "payer",
@@ -50,41 +64,82 @@ class ReceiptSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         items_data = validated_data.pop("items", [])
+        receipt = Receipt.objects.create(**validated_data)
 
-        # Tworzenie obiektu Receipt
-        receipt = super().create(validated_data)
+        shop_name = validated_data.get("shop", "").strip().lower()
+        if shop_name:
+            recent_shop, created = RecentShop.objects.get_or_create(name=shop_name)
+            if not created:
+                recent_shop.last_used = now()
+                recent_shop.save()
 
-        # Dodanie itemów do Receipt
         for item_data in items_data:
-            item = Item.objects.create(**item_data)
+            item_data["owners"] = [
+                owner.id if isinstance(owner, Person) else owner
+                for owner in item_data.get("owners", [])
+            ]
+            item_serializer = ItemSerializer(data=item_data)
+            item_serializer.is_valid(raise_exception=True)
+            item = item_serializer.save()
             receipt.items.add(item)
+
+            self.update_item_prediction(item, receipt.shop.lower())
 
         return receipt
 
     def update(self, instance, validated_data):
         items_data = validated_data.pop("items", [])
-        instance = super().update(instance, validated_data)
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+        instance.save()
 
-        # Usuń istniejące itemy
         instance.items.clear()
-
         for item_data in items_data:
-            # Szukaj itemu, który może być już w bazie
-            item, _ = Item.objects.get_or_create(
-                id=item_data.get("id"),
-                category=item_data["category"],
-                description=item_data["description"],
-                owners=item_data["owners"],
-                defaults={
-                    "value": item_data["value"],
-                    "quantity": item_data["quantity"],
-                },
-            )
-
-            # Dodaj item do Receipt
+            item_serializer = ItemSerializer(data=item_data)
+            item_serializer.is_valid(raise_exception=True)
+            item = item_serializer.save()
             instance.items.add(item)
 
+            self.update_item_prediction(item, receipt.shop.lower())
+
         return instance
+
+    def update_item_prediction(self, item, shop_name):
+        """
+        Aktualizuje model ItemPrediction z danymi przedmiotu z paragonu.
+        """
+        item_description = item.description.strip().lower()
+        if not item_description:
+            return
+
+        # Pobierz lub utwórz predykcję na podstawie opisu przedmiotu
+        prediction, created = ItemPrediction.objects.get_or_create(
+            item_description=item_description
+        )
+
+        # Zwiększ częstotliwość, jeśli predykcja już istnieje
+        if not created:
+            prediction.frequency += 1
+        else:
+            prediction.frequency = 1  # Ustaw początkową wartość częstotliwości
+
+        prediction.save()
+
+
+class ItemPredictionSerializer(serializers.ModelSerializer):
+    item_description = serializers.CharField(source="item.description", read_only=True)
+    shop_name = serializers.CharField(source="shop.name", read_only=True)
+
+    class Meta:
+        model = ItemPrediction
+        fields = [
+            "id",
+            "item",
+            "item_description",
+            "shop",
+            "shop_name",
+            "frequency",
+        ]
 
 
 class PersonExpenseSerializer(serializers.Serializer):

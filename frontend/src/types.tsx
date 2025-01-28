@@ -8,7 +8,7 @@ export type Person = {
 export type Item = {
     id?: number;
     category: string;
-    value: number | string;
+    value: string;
     description: string;
     quantity: number;
     owners: number[];
@@ -24,9 +24,10 @@ export type Receipt = {
 };
 
 export type Params = {
-    owner?: number;
-    month?: number;
-    year?: number;
+    id?: number;
+    owners: number[];
+    month: number;
+    year: number;
     category?: string | string[];
     transaction_type?: string;
 };
@@ -35,3 +36,4 @@ export type Shops = {
     id?: number;
     name: string;
 };
+

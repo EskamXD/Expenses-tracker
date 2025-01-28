@@ -1,11 +1,12 @@
 import datetime
 import calendar
 from collections import defaultdict
+from decimal import Decimal
 
 from django.core.exceptions import ValidationError
-from django.db.models import Sum
-from decimal import Decimal
+from django.db.models import Sum, Q, F
 from django.http import JsonResponse
+from django.utils.timezone import now
 
 from django_filters.rest_framework import DjangoFilterBackend
 
@@ -16,14 +17,17 @@ from drf_spectacular.utils import (
 )
 from rest_framework import viewsets, generics, serializers
 from rest_framework.decorators import api_view
+from rest_framework.filters import SearchFilter, OrderingFilter
 from rest_framework.response import Response
+from rest_framework.views import APIView
 
 from .filters import ItemFilter, ReceiptFilter
-from .models import Person, Item, Receipt
+from .models import Person, Item, Receipt, RecentShop, ItemPrediction
 from .serializers import (
     PersonSerializer,
     ItemSerializer,
     ReceiptSerializer,
+    ItemPredictionSerializer,
     PersonExpenseSerializer,
     ShopExpenseSerializer,
     CategoryPieExpenseSerializer,
@@ -68,6 +72,133 @@ class ReceiptUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = ReceiptSerializer
 
 
+class RecentShopSearchView(APIView):
+    def get(self, request, *args, **kwargs):
+        query = request.GET.get("q", "").strip()
+        if not query:
+            shops = RecentShop.objects.all().order_by("name")
+            results = [
+                {"id": shop.id, "name": shop.name.capitalize()} for shop in shops
+            ]
+            return JsonResponse({"results": results})
+
+        if len(query) < 3:
+            return JsonResponse({"results": []})
+
+        shops = RecentShop.objects.filter(name__icontains=query).order_by("-last_used")[
+            :10
+        ]
+        results = [{"id": shop.id, "name": shop.name.capitalize()} for shop in shops]
+
+        return JsonResponse({"results": results})
+
+    @staticmethod
+    def scan_and_update_shops(new_shops=None):
+        receipt_shops = Receipt.objects.values_list("shop", flat=True)
+
+        all_shops = set(shop.strip().lower() for shop in receipt_shops if shop)
+        if new_shops:
+            all_shops.update(shop.strip().lower() for shop in new_shops)
+
+        print(sorted(list(all_shops)))
+
+        for shop in all_shops:
+            RecentShop.objects.update_or_create(
+                name=shop, defaults={"last_used": now()}
+            )
+
+        return all_shops
+
+    def post(self, request, *args, **kwargs):
+        new_shops = request.data.get("new_shops", [])
+        if not isinstance(new_shops, list):
+            return JsonResponse(
+                {"error": "Invalid data format. Provide a list."}, status=400
+            )
+
+        updated_shops = self.scan_and_update_shops(new_shops)
+
+        return JsonResponse(
+            {
+                "message": "Shops updated successfully.",
+                "updated_shops": list(updated_shops),
+            }
+        )
+
+    def delete(self, request, *args, **kwargs):
+        RecentShop.objects.all().delete()
+        return JsonResponse({"message": "All recent shops have been deleted."})
+
+
+class ItemPredictionSearchView(APIView):
+    def get(self, request, *args, **kwargs):
+        query = request.GET.get("q", "").strip().lower()
+
+        # Retrieve predictions
+        predictions = ItemPrediction.objects.all()
+
+        # Filter by query if provided and valid
+        if query:
+            if len(query) < 3:
+                return JsonResponse({"results": []})
+            predictions = predictions.filter(item_description__icontains=query)
+
+        # Group and sort predictions by frequency or alphabetically
+        predictions = predictions.values("item_description", "frequency").order_by(
+            "-frequency" if query else "item_description"
+        )
+
+        # Serialize results
+        results = [
+            {
+                "name": prediction["item_description"].capitalize(),
+                "frequency": prediction["frequency"],
+            }
+            for prediction in predictions
+        ]
+        return JsonResponse({"results": results})
+
+    @staticmethod
+    def scan_and_update_predictions():
+        """
+        Scan receipts and update ItemPrediction table with unique items.
+        """
+        receipts = Receipt.objects.prefetch_related("items").all()
+        frequency_map = defaultdict(int)  # Track item frequency
+
+        for receipt in receipts:
+            for item in receipt.items.all():
+                item_description = item.description.strip().lower()
+                if not item_description:
+                    continue  # Skip items with no description
+
+                # Update frequency map
+                frequency_map[item_description] += 1
+
+        # Update database with frequency map
+        for item_description, frequency in frequency_map.items():
+            prediction, created = ItemPrediction.objects.get_or_create(
+                item_description=item_description
+            )
+            if created:
+                prediction.frequency = frequency
+            else:
+                prediction.frequency += frequency
+            prediction.save()
+
+        return "ItemPrediction table updated."
+
+    def post(self, request, *args, **kwargs):
+        """Manually scan receipts to update ItemPrediction."""
+        result = self.scan_and_update_predictions()
+        return JsonResponse({"message": result})
+
+    def delete(self, request, *args, **kwargs):
+        """Delete all data from ItemPrediction table."""
+        ItemPrediction.objects.all().delete()
+        return JsonResponse({"message": "All predictions have been deleted."})
+
+
 @extend_schema(
     methods=["GET"],
     parameters=[
@@ -78,7 +209,7 @@ class ReceiptUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
             name="year", description="Selected year", required=False, type=int
         ),
         OpenApiParameter(
-            name="owner", description="Selected owner", required=False, type=int
+            name="owners", description="Selected owners", required=False, type=list
         ),
     ],
     responses={200: {"total_income": 0.0, "total_expense": 0.0, "balance": 0.0}},

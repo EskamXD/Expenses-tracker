@@ -1,73 +1,37 @@
-/**
- * @file MonthDropdown.js
- * @brief A React component for selecting a month from a dropdown menu.
- *
- * This file defines the MonthDropdown component, which allows users to select
- * a month from a dropdown menu. The dropdown includes the current month and the four previous months.
- */
-
-import React from "react";
+import React, { useEffect } from "react";
 import Dropdown from "react-bootstrap/Dropdown";
 import DropdownButton from "react-bootstrap/DropdownButton";
+import { useGlobalContext } from "../context/GlobalContext";
+import { Params } from "../types";
 
-interface MonthDropdownProps {
-    selectedMonth: number;
-    setSelectedMonth: any;
-    disabled: boolean;
-}
+const MonthDropdown = () => {
+    const { summaryFilters, setSummaryFilters } = useGlobalContext();
 
-/**
- * @file MonthDropdown.js
- * @brief A React component that provides a dropdown menu for selecting a month.
- *
- * This component displays a dropdown button with a list of months. It uses
- * React Bootstrap for styling and dropdown behavior. When a month is selected,
- * the selected month is passed to the parent component via the onSelect callback.
- *
- * @component MonthDropdown
- *
- * @param {number} selectedMonth - The currently selected month.
- * @param {Function} setSelectedMonth - A function to handle the month selection change.
- * @param {boolean} disabled - A flag to indicate if the dropdown is disabled.
- *
- * @returns {JSX.Element} A dropdown component that allows users to select a month.
- */
-const MonthDropdown: React.FC<MonthDropdownProps> = ({
-    selectedMonth,
-    setSelectedMonth,
-    disabled,
-}) => {
-    /**
-     * @brief Gets the full month name from a month number.
-     *
-     * This function takes a month number (1-12) and returns the full name
-     * of the month in the current locale.
-     *
-     * @param {number} month - The month number (1 for January, 12 for December).
-     * @returns {string} The full name of the month.
-     */
-    const getMonthName = (month: number) => {
-        return new Date(0, month - 1).toLocaleString("default", {
-            month: "long",
-        });
-    };
+    const getMonthName = (month: number) =>
+        new Date(0, month - 1).toLocaleString("default", { month: "long" });
 
-    const handleSelect = (eventKey: any) => {
-        setSelectedMonth(eventKey);
+    const handleSelect = (eventKey: string | null) => {
+        if (!eventKey) return;
+        const newMonth = parseInt(eventKey, 10);
+        setSummaryFilters((prevFilters: Params) => ({
+            ...prevFilters,
+            month: newMonth,
+        }));
     };
 
     return (
         <DropdownButton
             id="dropdown-basic-button-month"
-            title={`Wybierz miesiąc: ${getMonthName(selectedMonth)}`}
+            title={`Wybierz miesiąc: ${
+                summaryFilters.month
+                    ? getMonthName(summaryFilters.month)
+                    : "Brak"
+            }`}
             className="mr-1rem"
-            onSelect={handleSelect}
-            disabled={disabled}>
+            onSelect={handleSelect}>
             {[...Array(12)].map((_, index) => (
-                <Dropdown.Item key={index + 1} eventKey={index + 1}>
-                    {new Date(0, index).toLocaleString("default", {
-                        month: "long",
-                    })}
+                <Dropdown.Item key={index + 1} eventKey={`${index + 1}`}>
+                    {getMonthName(index + 1)}
                 </Dropdown.Item>
             ))}
         </DropdownButton>
@@ -75,3 +39,4 @@ const MonthDropdown: React.FC<MonthDropdownProps> = ({
 };
 
 export default MonthDropdown;
+

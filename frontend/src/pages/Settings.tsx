@@ -66,8 +66,10 @@ const Settings = () => {
     };
 
     const showModalToPut = (ID: number) => {
-        // console.log(ID);
+        console.log(ID);
+
         fetchGetPerson(ID).then((response) => {
+            console.log(response);
             setPersonID(response.id);
             setName(response.name);
             setPayer(response.payer);
@@ -83,8 +85,8 @@ const Settings = () => {
                 <h2>Lista osób zarejstrowanych do użytku</h2>
             </div>
             {personList.map((person) => (
-                <>
-                    <div key={person.id} className="d-flex space-between">
+                <div key={person.id}>
+                    <div className="d-flex space-between align-end">
                         <h5>{person.name}</h5>
                         <Button
                             variant="light"
@@ -93,7 +95,7 @@ const Settings = () => {
                         </Button>
                     </div>
                     <hr key={`hr-${person.id}`}></hr>
-                </>
+                </div>
             ))}
 
             <Button variant="primary" type="button" onClick={showModalToPost}>
@@ -115,3 +117,4 @@ const Settings = () => {
 };
 
 export default Settings;
+

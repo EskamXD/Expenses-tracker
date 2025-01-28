@@ -1,215 +1,387 @@
-import React, { useState, useEffect } from "react";
-import { Table } from "react-bootstrap";
-import TableRow from "./TableRow";
-import ReceiptOffcanvas from "./ReceiptOffcanvas";
-import "../assets/styles/main.css";
-import { Item, Receipt } from "../types";
+import React, { useEffect, useState } from "react";
+import Accordion from "react-bootstrap/Accordion";
+import Button from "react-bootstrap/Button";
+import Modal from "react-bootstrap/Modal";
+import Form from "react-bootstrap/Form";
+import { Col, Row } from "react-bootstrap";
+import ArrowForwardIosIcon from "@mui/icons-material/ArrowForwardIos";
 
-interface GroupedItem {
-    id: string;
-    category: string;
-    value: number;
-    payment_date: string;
-}
+import UnifiedForm from "../components/UnifiedForm";
 
-interface SortConfig {
-    key: string;
-    direction: "ascending" | "descending";
-}
+import { selectTranslationList } from "../config/selectOption";
+import { useGlobalContext } from "../context/GlobalContext";
+import {
+    fetchGetReceipts,
+    fetchPutReceipt,
+    fetchDeleteReceipt,
+} from "../api/apiService";
+import { Item, Params, Receipt } from "../types";
+// import "../assets/styles/glassTable.css";
 
 interface SummaryTableProps {
-    receiptsLoaded: boolean;
-    receipts: Receipt[];
-    transactionType: string;
-    selectedOwner: number;
-    reload: boolean;
-    setReload: React.Dispatch<React.SetStateAction<boolean>>;
+    transactionType: "income" | "expense";
 }
 
-const SummaryTable: React.FC<SummaryTableProps> = ({
-    receiptsLoaded,
-    receipts,
-    transactionType,
-    selectedOwner,
-    reload,
-    setReload,
-}) => {
-    const [sortConfig, setSortConfig] = useState<SortConfig>({
-        key: "",
-        direction: "ascending",
-    });
-    const [groupedItems, setGroupedItems] = useState<GroupedItem[]>([]);
-    const [showOffcanvas, setShowOffcanvas] = useState<boolean>(false);
-    const [selectedCategory, setSelectedCategory] = useState<string | null>(
-        null
-    );
-    const [selectedDate, setSelectedDate] = useState<string | null>(null);
+interface ProcessedReceiptForAccordion {
+    date: string;
+    receipts: {
+        id: number;
+        shop: string;
+        totalValue: number;
+        payer: string;
+        categories: string[];
+        keywords: string[];
+    }[];
+}
 
-    const handleClose = () => {
-        setShowOffcanvas(false);
-        setSelectedCategory(null);
-        setSelectedDate(null);
-    };
+const SummaryTable: React.FC<SummaryTableProps> = ({ transactionType }) => {
+    const { persons, filteredReceipts } = useGlobalContext();
+    const [groupedReceipts, setGroupedReceipts] = useState<
+        ProcessedReceiptForAccordion[]
+    >([]);
 
-    const handleShow = (itemRow: GroupedItem) => {
-        setSelectedDate(itemRow.payment_date);
-        setSelectedCategory(itemRow.category);
-        setShowOffcanvas(true);
-    };
+    const [searchQuery, setSearchQuery] = useState("");
 
-    const sortList = (
-        items: GroupedItem[],
-        key: string,
-        direction: "ascending" | "descending"
-    ): GroupedItem[] => {
-        return [...items].sort((a, b) => {
-            let aValue = a[key as keyof GroupedItem];
-            let bValue = b[key as keyof GroupedItem];
+    const [showModal, setShowModal] = useState(false);
+    const [selectedGroup, setSelectedGroup] =
+        useState<ProcessedReceiptForAccordion | null>(null);
+    const [editingReceipt, setEditingReceipt] = useState<Receipt | null>(null); // Pełny obiekt paragonu
+    const [editModalVisible, setEditModalVisible] = useState(false);
 
-            if (typeof aValue === "string" && !isNaN(Number(aValue))) {
-                aValue = parseFloat(aValue as any);
-                bValue = parseFloat(bValue as any);
-            }
-
-            if (aValue < bValue) {
-                return direction === "ascending" ? -1 : 1;
-            }
-            if (aValue > bValue) {
-                return direction === "ascending" ? 1 : -1;
-            }
-            return 0;
-        });
-    };
-
-    const requestSort = (key: keyof GroupedItem) => {
-        let direction: "ascending" | "descending" = "ascending";
-        if (sortConfig.key === key && sortConfig.direction === "ascending") {
-            direction = "descending";
-        }
-        setSortConfig({ key, direction });
-
-        const sorted = sortList(groupedItems, key, direction);
-        setGroupedItems(sorted);
-    };
-
-    const getSortIndicator = (key: keyof GroupedItem) => {
-        if (sortConfig.key === key) {
-            return sortConfig.direction === "ascending" ? " ▲" : " ▼";
-        }
-        return "";
+    const getPersonNameById = (id: number | string): string => {
+        const person = persons.find((person) => person.id === Number(id));
+        return person ? person.name : "Unknown";
     };
 
     useEffect(() => {
-        if (!receipts || receipts.length === 0) {
-            setGroupedItems([]);
-            return;
-        }
+        const grouped: {
+            [date: string]: ProcessedReceiptForAccordion["receipts"];
+        } = {};
 
-        const grouped: { [key: string]: GroupedItem } = {};
-        let usedReceipts = [] as number[];
-
-        receipts.forEach((receipt) => {
-            const filteredItems =
-                selectedOwner === 100
-                    ? receipt.items
-                    : receipt.items.filter(
-                          (item: Item) => Number(item.owner) === selectedOwner
-                      );
-
-            if (usedReceipts.includes(Number(receipt.id))) {
-                console.warn("receipt already used");
+        filteredReceipts.forEach((receipt) => {
+            if (receipt.transaction_type !== transactionType) {
                 return;
             }
 
-            if (filteredItems.length !== 0) {
-                usedReceipts.push(Number(receipt.id));
+            const totalValue = receipt.items.reduce(
+                (sum: number, item: Item) => sum + parseFloat(item.value),
+                0
+            );
 
-                filteredItems.forEach((item) => {
-                    const key = `${item.category}-${receipt.payment_date}`;
+            const uniqueCategories = Array.from(
+                new Set(receipt.items.map((item: Item) => item.category))
+            );
 
-                    // Konwersja wartości z walidacją
-                    const itemValue = Number(Number(item.value).toFixed(2));
-                    if (isNaN(itemValue)) {
-                        console.warn(`Nieprawidłowa wartość: ${item.value}`);
-                        return; // Pomijaj elementy z nieprawidłową wartością
-                    }
+            const keywords = receipt.items
+                .map((item: Item) => item.description.toLowerCase())
+                .filter(Boolean); // Usuwa puste wartości
 
-                    if (!grouped[key]) {
-                        grouped[key] = {
-                            id: `${receipt.id}-${item.category}`,
-                            category: item.category,
-                            value: 0,
-                            payment_date: receipt.payment_date,
-                        };
-                    }
-
-                    // Sumuj wartość
-                    grouped[key].value += itemValue;
-                });
+            if (!grouped[receipt.payment_date]) {
+                grouped[receipt.payment_date] = [];
             }
+
+            grouped[receipt.payment_date].push({
+                id: Number(receipt.id),
+                shop: receipt.shop,
+                totalValue,
+                payer: getPersonNameById(receipt.payer),
+                categories: uniqueCategories,
+                keywords: keywords,
+            });
         });
 
-        setGroupedItems(Object.values(grouped));
-    }, [receiptsLoaded]);
+        const processedData: ProcessedReceiptForAccordion[] = Object.entries(
+            grouped
+        ).map(([date, receipts]) => ({
+            date,
+            receipts,
+        }));
+
+        setGroupedReceipts(processedData);
+    }, [filteredReceipts, transactionType]);
+
+    // Filtruj dane na podstawie frazy wyszukiwania
+    const filteredGroupedReceipts = groupedReceipts
+        .map((group) => ({
+            ...group,
+            receipts: group.receipts.filter((receipt) => {
+                const query = searchQuery.toLowerCase();
+
+                const categoryLabels = receipt.categories
+                    .map((category) => {
+                        const translation = selectTranslationList.find(
+                            (item) => item.value === category
+                        );
+                        return translation
+                            ? translation.label.toLowerCase()
+                            : null;
+                    })
+                    .filter(Boolean);
+
+                return (
+                    receipt.shop.toLowerCase().includes(query) ||
+                    receipt.payer.toLowerCase().includes(query) ||
+                    receipt.categories.some((category) =>
+                        category.toLowerCase().includes(query)
+                    ) ||
+                    categoryLabels.some(
+                        (label) => label && label.includes(query)
+                    ) ||
+                    receipt.keywords.some((keyword) => keyword.includes(query))
+                );
+            }),
+        }))
+        .filter((group) => group.receipts.length > 0);
+
+    const handleShowModal = (group: ProcessedReceiptForAccordion) => {
+        setSelectedGroup(group);
+        setShowModal(true);
+    };
+
+    const handleCloseModal = () => {
+        setSelectedGroup(null);
+        setShowModal(false);
+    };
+
+    const fetchReceiptDetails = async (receiptId: number) => {
+        const params = {
+            id: receiptId,
+        } as Params;
+
+        try {
+            const response = await fetchGetReceipts(params);
+            setEditingReceipt(response[0]); // Pobierz pierwszy wynik
+            setEditModalVisible(true);
+        } catch (error) {
+            console.error("Nie udało się pobrać szczegółów paragonu", error);
+        }
+    };
+
+    const handleSaveReceipt = async (receipt: Receipt) => {
+        if (!receipt.id) return;
+        try {
+            await fetchPutReceipt(receipt.id, receipt);
+            alert("Zapisano zmiany!");
+            setEditModalVisible(false);
+            setEditingReceipt(null);
+        } catch (error) {
+            console.error("Nie udało się zapisać paragonu", error);
+        }
+    };
+
+    const handleDeleteReceipt = async (receipt: Receipt) => {
+        if (!receipt.id) return;
+        if (!window.confirm("Czy na pewno chcesz usunąć ten paragon?")) return;
+
+        try {
+            await fetchDeleteReceipt(receipt);
+            alert("Paragon usunięty!");
+            setEditModalVisible(false);
+            setEditingReceipt(null);
+        } catch (error) {
+            console.error("Nie udało się usunąć paragonu", error);
+        }
+    };
 
     return (
-        <>
-            <Table striped bordered hover style={{ width: "100%" }}>
-                <thead>
-                    <tr key="header">
-                        <th
-                            onClick={() => requestSort("category")}
-                            style={{ userSelect: "none" }}>
-                            Kategoria {getSortIndicator("category")}
-                        </th>
-                        <th
-                            onClick={() => requestSort("value")}
-                            style={{ userSelect: "none" }}>
-                            Kwota (PLN) {getSortIndicator("value")}
-                        </th>
-                        <th
-                            onClick={() => requestSort("payment_date")}
-                            style={{ userSelect: "none" }}>
-                            Data {getSortIndicator("payment_date")}
-                        </th>
-                        <th></th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {groupedItems.length === 0 && (
-                        <tr>
-                            <td colSpan={4}>
-                                Nie znaleziono żadnych{" "}
-                                {transactionType === "expense"
-                                    ? "wydatków"
-                                    : "przychodów"}
-                            </td>
-                        </tr>
-                    )}
-                    {groupedItems.map((itemRow) => (
-                        <TableRow
-                            key={itemRow.id}
-                            listRow={itemRow}
-                            handleShow={() => handleShow(itemRow)}
-                        />
-                    ))}
-                </tbody>
-            </Table>
-            {selectedDate && selectedCategory && (
-                <ReceiptOffcanvas
-                    show={showOffcanvas}
-                    setShowOffcanvas={setShowOffcanvas}
-                    handleClose={handleClose}
-                    selectedDate={selectedDate}
-                    selectedCategory={selectedCategory}
-                    loading={false}
-                    transactionType={transactionType}
-                    selectedOwner={selectedOwner}
-                    reload={reload}
-                    setReload={setReload}
-                />
+        <div className="summary-table-container">
+            <div className="glass-bg">
+                <Form.Group className="mb-3" controlId="search">
+                    <Form.Label>Wyszukaj</Form.Label>
+                    <Form.Control
+                        type="text"
+                        placeholder="Wyszukaj po sklepie, płacącym lub kategorii"
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                    />
+                </Form.Group>
+                <div className="scrollable-content">
+                    <Accordion defaultActiveKey="0" className="accordion">
+                        {filteredGroupedReceipts.map((group, index) => (
+                            <Accordion.Item
+                                eventKey={index.toString()}
+                                key={group.date}
+                                className="accordion-item">
+                                <Accordion.Header className="accordion-header">
+                                    {group.date}
+                                </Accordion.Header>
+                                <Accordion.Body className="accordion-body">
+                                    {group.receipts.map((receipt) => (
+                                        <Row key={receipt.id} className="mb-3">
+                                            <Col>{receipt.shop}</Col>
+                                            <Col>
+                                                {receipt.totalValue.toFixed(2)}{" "}
+                                                PLN
+                                            </Col>
+                                            <Col>{receipt.payer}</Col>
+                                            <Col>
+                                                {receipt.categories.map(
+                                                    (category) => {
+                                                        const translation =
+                                                            selectTranslationList.find(
+                                                                (i) =>
+                                                                    i.value ===
+                                                                    category
+                                                            );
+                                                        return (
+                                                            <p key={category}>
+                                                                {translation
+                                                                    ? translation.label
+                                                                    : "Unknown"}
+                                                            </p>
+                                                        );
+                                                    }
+                                                )}
+                                            </Col>
+                                            <Col className="button-container">
+                                                <Button
+                                                    variant="light"
+                                                    onClick={() =>
+                                                        handleShowModal(group)
+                                                    } // Funkcja otwierająca modal
+                                                >
+                                                    <ArrowForwardIosIcon />
+                                                </Button>
+                                            </Col>
+                                        </Row>
+                                    ))}
+                                </Accordion.Body>
+                            </Accordion.Item>
+                        ))}
+                    </Accordion>
+                </div>
+            </div>
+
+            {/* Modal */}
+            {selectedGroup && (
+                <Modal
+                    show={showModal}
+                    onHide={handleCloseModal}
+                    size="lg"
+                    centered>
+                    <Modal.Header closeButton>
+                        <Modal.Title>
+                            Paragony z dnia {selectedGroup.date}
+                        </Modal.Title>
+                    </Modal.Header>
+                    <Modal.Body>
+                        {selectedGroup.receipts.map((receipt) => {
+                            // Wyciągnięcie unikalnych kategorii
+                            const uniqueCategories = Array.from(
+                                new Set(receipt.categories)
+                            );
+
+                            return (
+                                <div key={receipt.id} className="mb-3">
+                                    <p>
+                                        <strong>Sklep:</strong> {receipt.shop}
+                                    </p>
+                                    <p>
+                                        <strong>Płacący:</strong>{" "}
+                                        {receipt.payer}
+                                    </p>
+                                    <p>
+                                        <strong>Wartość:</strong>{" "}
+                                        {receipt.totalValue.toFixed(2)} PLN
+                                    </p>
+                                    <p>
+                                        <strong>Kategorie:</strong>{" "}
+                                        {uniqueCategories.map((category) => {
+                                            const translation =
+                                                selectTranslationList.find(
+                                                    (item) =>
+                                                        item.value === category
+                                                );
+                                            return (
+                                                <span
+                                                    key={category}
+                                                    className="badge bg-primary me-2">
+                                                    {translation
+                                                        ? translation.label
+                                                        : "Nieznane"}
+                                                </span>
+                                            );
+                                        })}
+                                    </p>
+                                    <p>
+                                        <strong>Rzeczy: </strong>
+                                        {receipt.keywords.map(
+                                            (keyword) => `${keyword}, `
+                                        )}
+                                    </p>
+                                    {/* Możliwość edycji */}
+                                    <Button
+                                        variant="outline-primary"
+                                        className="mt-2"
+                                        onClick={() =>
+                                            fetchReceiptDetails(receipt.id)
+                                        }>
+                                        Edytuj
+                                    </Button>
+                                    <hr />
+                                </div>
+                            );
+                        })}
+                    </Modal.Body>
+                    <Modal.Footer>
+                        <Button variant="secondary" onClick={handleCloseModal}>
+                            Zamknij
+                        </Button>
+                    </Modal.Footer>
+                </Modal>
             )}
-        </>
+
+            {editingReceipt && (
+                <Modal
+                    show={editModalVisible}
+                    onHide={() => {
+                        setEditModalVisible(false);
+                        setEditingReceipt(null);
+                    }}
+                    backdrop="static"
+                    fullscreen={true}
+                    centered>
+                    <Modal.Header closeButton>
+                        <Modal.Title>Edytuj paragon</Modal.Title>
+                    </Modal.Header>
+                    <Modal.Body>
+                        <UnifiedForm
+                            formId={
+                                transactionType === "expense"
+                                    ? "expense-form"
+                                    : "income-form"
+                            }
+                            buttonLabel="Zapisz zmiany"
+                            showShop={true}
+                            showQuantity={true}
+                            receipt={editingReceipt}
+                        />
+                        {/* <Button
+                            variant="secondary"
+                            className="mt-3"
+                            onClick={() => handleSaveReceipt(editingReceipt)}>
+                            Zapisz paragon
+                        </Button> */}
+                        <Button
+                            variant="danger"
+                            className="mt-3"
+                            onClick={() => handleDeleteReceipt(editingReceipt)}>
+                            Usuń paragon
+                        </Button>
+                    </Modal.Body>
+                    <Modal.Footer>
+                        <Button
+                            variant="secondary"
+                            onClick={() => {
+                                setEditModalVisible(false);
+                                setEditingReceipt(null);
+                            }}>
+                            Anuluj
+                        </Button>
+                    </Modal.Footer>
+                </Modal>
+            )}
+        </div>
     );
 };
 

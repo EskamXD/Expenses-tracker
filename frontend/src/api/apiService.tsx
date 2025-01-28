@@ -39,7 +39,7 @@ function printStatus(status: number) {
 
 export const fetchGetPerson = async (id?: number) => {
     try {
-        const response = await apiClient.get(`/person/${id ? id : ""}`);
+        const response = await apiClient.get(`/person/${id ? id + "/" : ""}`);
         if (response.status === 200) {
             return response.data;
         } else {
@@ -96,7 +96,6 @@ export const fetchDeletePerson = async (person: Person) => {
 };
 
 export const fetchGetReceipts = async (params?: Params) => {
-    console.log(params);
     try {
         const response = await apiClient.get(`/receipts/`, {
             params: params,
@@ -105,7 +104,6 @@ export const fetchGetReceipts = async (params?: Params) => {
             },
         });
         if (response.status === 200) {
-            // console.log(response.data);
             return response.data;
         } else {
             printStatus(response.status);
@@ -163,6 +161,50 @@ export const fetchDeleteReceipt = async (receipt: Receipt) => {
         }
     } catch (error) {
         console.error(error);
+        throw error;
+    }
+};
+
+export const fetchSearchRecentShops = async (query: string) => {
+    try {
+        // Jeśli query jest krótsze niż 3 litery, zwróć pustą tablicę
+        if (query.length < 3) return [];
+
+        // Wykonaj zapytanie do backendu
+        const response = await apiClient.get(`/recent-shops/`, {
+            params: { q: query },
+        });
+
+        // Jeśli zapytanie było udane, zwróć dane
+        if (response.status === 200) {
+            return response.data.results; // Zakładamy, że API zwraca pole `results`
+        } else {
+            printStatus(response.status);
+        }
+    } catch (error) {
+        console.error("Error fetching recent shops:", error);
+        throw error;
+    }
+};
+
+export const fetchItemPredictions = async (shop: string, query: string) => {
+    try {
+        // Jeśli query jest krótsze niż 3 litery, zwróć pustą tablicę
+        if (query.length < 3) return [];
+
+        // Wykonaj zapytanie do backendu
+        const response = await apiClient.get(`/item-predictions/`, {
+            params: { shop: shop, q: query },
+        });
+
+        // Jeśli zapytanie było udane, zwróć dane
+        if (response.status === 200) {
+            return response.data.results; // Zakładamy, że API zwraca pole `results`
+        } else {
+            printStatus(response.status);
+        }
+    } catch (error) {
+        console.error("Error fetching recent shops:", error);
         throw error;
     }
 };
@@ -259,3 +301,4 @@ export const fetchGetMonthlyBalance = async (params?: Params) => {
         throw error;
     }
 };
+

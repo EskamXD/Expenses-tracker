@@ -6,6 +6,8 @@ from .views import (
     ItemViewSet,
     ReceiptListCreateView,
     ReceiptUpdateDestroyView,
+    RecentShopSearchView,
+    ItemPredictionSearchView,
     fetch_line_sums,
     fetch_bar_persons,
     fetch_bar_shops,
@@ -23,6 +25,12 @@ urlpatterns = [
     path("receipts/", ReceiptListCreateView.as_view(), name="receipt-create"),
     path(
         "receipts/<int:pk>/", ReceiptUpdateDestroyView.as_view(), name="receipt-update"
+    ),
+    path("recent-shops/", RecentShopSearchView.as_view(), name="recent-shop-search"),
+    path(
+        "item-predictions/",
+        ItemPredictionSearchView.as_view(),
+        name="item-predictions",
     ),
     path("schema/", SpectacularAPIView.as_view(), name="schema"),
     path(

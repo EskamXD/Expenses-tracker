@@ -1,49 +1,50 @@
-import React from "react";
-import { Row, Col } from "react-bootstrap";
-import Form from "react-bootstrap/Form";
+import React, { useEffect, useState } from "react";
 import CloseButton from "react-bootstrap/CloseButton";
+import Col from "react-bootstrap/Col";
+import Form from "react-bootstrap/Form";
+import Row from "react-bootstrap/Row";
+import Spinner from "react-bootstrap/Spinner";
 import UnifiedDropdown from "./UnifiedDropdown";
 import "../assets/styles/main.css";
 import { Item } from "../types";
+import { fetchItemPredictions } from "../api/apiService";
 import {
     selectExpensesOptions,
     selectIncomeOptions,
 } from "../config/selectOption";
+import { useFetcher } from "react-router-dom";
 
 interface UnifiedItemProps {
     formId: string;
     index: number;
+    shop: string;
     items: Item[];
     setItems: React.Dispatch<React.SetStateAction<Item[]>>;
     updateItem: Function;
     removeItem: Function;
     showQuantity: boolean;
+    reset: boolean;
+    setReset: Function;
 }
 
-/**
- * @brief Renders a single item in a form, including input fields and controls.
- *
- * The UnifiedItem component renders an individual item within a list of items in a form.
- * It provides fields for selecting a category, entering a value and description, and optionally
- * a quantity. The component can update the item's details and handle item removal if required.
- *
- * @param {string} formId - A unique identifier for the form.
- * @param {number} index - The index of the item in the list of items.
- * @param {Object} item - The current item data being rendered.
- * @param {Function} setItems - A function to update the list of items.
- * @param {boolean} showQuantity - Flag to show or hide the quantity input field.
- *
- * @return {JSX.Element} A form row component for managing a single transaction item.
- */
 const UnifiedItem: React.FC<UnifiedItemProps> = ({
     formId,
     index,
+    shop,
     items,
     setItems,
     updateItem,
     removeItem,
     showQuantity,
+    reset,
+    setReset,
 }) => {
+    const [query, setQuery] = useState("");
+    const [predictions, setPredictions] = useState([]);
+    const [isLoading, setIsLoading] = useState(false);
+    const [isDropdownVisible, setIsDropdownVisible] = useState(false);
+    const [isClicked, setIsClicked] = useState(false);
+
     if (index === 0) {
         return <></>;
     }
@@ -52,7 +53,40 @@ const UnifiedItem: React.FC<UnifiedItemProps> = ({
         formId === "expense-form" ? selectExpensesOptions : selectIncomeOptions;
 
     const item = items.find((item) => item.id === index);
-    // console.log(items, index, item);
+
+    useEffect(() => {
+        if (isClicked) return;
+        if (query.length >= 3) {
+            setIsLoading(true);
+            setIsDropdownVisible(true);
+
+            const fetchPredictions = async () => {
+                try {
+                    const results = await fetchItemPredictions(shop, query);
+                    setPredictions(results);
+                } catch (error) {
+                    console.error("Error fetching item predictions:", error);
+                } finally {
+                    setIsLoading(false);
+                }
+            };
+
+            fetchPredictions();
+        } else {
+            setPredictions([]);
+            setIsDropdownVisible(false);
+        }
+    }, [query]);
+
+    useEffect(() => {
+        if (reset) {
+            setQuery("");
+            setPredictions([]);
+            setIsDropdownVisible(false);
+            setIsClicked(false);
+            setReset(!reset);
+        }
+    }, [reset]);
 
     if (!item) {
         return <></>;
@@ -96,20 +130,78 @@ const UnifiedItem: React.FC<UnifiedItemProps> = ({
                         }
                     />
                 </Col>
-                <Col>
+                <Col style={{ position: "relative" }}>
                     <Form.Control
                         type="text"
                         placeholder="Opis/Nazwa"
-                        value={item.description || ""}
+                        value={query || item.description || ""}
                         onChange={(e) => {
+                            setIsClicked(false);
+                            const newQuery = e.target.value;
+                            setQuery(newQuery);
+
                             updateItem(
                                 Number(item.id),
                                 "description",
-                                e.target.value,
+                                newQuery,
                                 setItems
                             );
+
+                            if (newQuery === "") {
+                                // Wyczyszczenie opisu w przypadku pustego inputa
+                                updateItem(
+                                    Number(item.id),
+                                    "description",
+                                    "",
+                                    setItems
+                                );
+                            }
                         }}
                     />
+                    {isLoading && <Spinner />}
+                    {isDropdownVisible && predictions.length > 0 && (
+                        <ul
+                            style={{
+                                position: "absolute",
+                                top: "100%",
+                                left: 0,
+                                right: 0,
+                                background: "#333",
+                                border: "1px solid #ddd",
+                                borderRadius: "4px",
+                                maxHeight: "150px",
+                                overflowY: "auto",
+                                zIndex: 1000,
+                                listStyle: "none",
+                                margin: 0,
+                                padding: "0.5rem",
+                            }}>
+                            {predictions.map((prediction: any) => (
+                                <li
+                                    key={prediction.id}
+                                    style={{
+                                        padding: "0.5rem",
+                                        cursor: "pointer",
+                                        color: "#fff",
+                                        textAlign: "left",
+                                    }}
+                                    onClick={() => {
+                                        updateItem(
+                                            Number(item.id),
+                                            "description",
+                                            prediction.name,
+                                            setItems
+                                        );
+                                        setQuery(prediction.name);
+                                        setPredictions([]);
+                                        setIsDropdownVisible(false);
+                                        setIsClicked(true);
+                                    }}>
+                                    {prediction.name} ({prediction.frequency})
+                                </li>
+                            ))}
+                        </ul>
+                    )}
                 </Col>
                 {showQuantity && (
                     <Col className="width-100">
@@ -159,3 +251,4 @@ const UnifiedItem: React.FC<UnifiedItemProps> = ({
 };
 
 export default UnifiedItem;
+

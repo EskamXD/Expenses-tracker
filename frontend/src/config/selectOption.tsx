@@ -7,6 +7,11 @@
  * income, and summary categories.
  */
 
+interface selectOption {
+    value: string;
+    label: string;
+}
+
 /**
  * @brief Options for selecting expense categories.
  *
@@ -14,7 +19,7 @@
  * used in dropdown menus. Each option includes a `value` for internal processing
  * and a `label` for display purposes.
  */
-export const selectExpensesOptions = [
+export const selectExpensesOptions: selectOption[] = [
     { value: "fuel", label: "Paliwo" },
     { value: "car_expenses", label: "Wydatki Samochód" },
     { value: "fastfood", label: "Fastfood" },
@@ -43,7 +48,7 @@ export const selectExpensesOptions = [
  * used in dropdown menus. Each option includes a `value` for internal processing
  * and a `label` for display purposes.
  */
-export const selectIncomeOptions = [
+export const selectIncomeOptions: selectOption[] = [
     { value: "for_study", label: "Na studia" },
     { value: "work_income", label: "Przychód praca" },
     { value: "family_income", label: "Przychód rodzina" },
@@ -59,7 +64,7 @@ export const selectIncomeOptions = [
  * used in dropdown menus. Each option includes a `value` for internal processing
  * and a `label` for display purposes.
  */
-export const selectTranslationList = [
+export const selectTranslationList: selectOption[] = [
     { value: "fuel", label: "Paliwo" },
     { value: "car_expenses", label: "Wydatki Samochód" },
     { value: "fastfood", label: "Fastfood" },
@@ -102,3 +107,4 @@ export const selectPersonOptions: selectPersonInterface = {
     1: "Kamil",
     2: "Ania",
 };
+

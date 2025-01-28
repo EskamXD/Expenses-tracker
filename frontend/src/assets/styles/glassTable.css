@@ -1,0 +1,90 @@
+/* Główny kontener */
+.summary-table-container {
+    display: flex;
+    flex-direction: column;
+    height: 80vh;
+    padding: 0 !important;
+    box-sizing: border-box;
+    /* background: url("../images/glass_background.webp") center/cover no-repeat; */
+    -webkit-background-size: cover;
+    -moz-background-size: cover;
+    -o-background-size: cover;
+    background-size: cover;
+    isolation: isolate; /* Izolacja efektów */
+    border-radius: 1em;
+}
+
+.glass-bg {
+    display: flex;
+    flex-direction: column;
+    height: 80vh;
+    padding: 1em;
+    background: rgba(0, 0, 0, 0.1);
+    box-shadow: 0 8px 32px 0 rgba(88, 69, 60, 0.37);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-radius: 1em;
+}
+
+/* Scrollowalny kontener */
+.scrollable-content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 1rem;
+    background: transparent !important;
+}
+
+/* .scrollable-content div {
+    background: rgba(255, 255, 255, 0.1) !important;
+} */
+
+/* Reset tła w akordeonie */
+.accordion {
+    background: transparent !important;
+}
+
+/* Elementy akordeonu */
+.accordion-item {
+    border-radius: 1em !important;
+    margin-bottom: 1rem;
+    background: rgba(255, 255, 255, 0.1) !important;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+.accordion-button {
+    border-radius: 1em !important;
+    background: rgba(1, 18, 52, 0.6) !important;
+}
+
+/* Tekst w akordeonie */
+.accordion-body {
+    color: #fff; /* Białe litery */
+}
+
+.button-container {
+    background: transparent !important;
+}
+
+/* Przyciski */
+.glass-button {
+    background: rgba(0, 0, 0, 0.1); /* Szklane tło */
+    background-image: radial-gradient(
+        120deg,
+        rgba(88, 69, 60, 1),
+        rgba(0, 0, 0, 1)
+    );
+    border: 1px solid rgba(255, 255, 255, 0.2); /* Subtelna ramka */
+
+    /* backdrop-filter: blur(10px); */
+    /* -webkit-backdrop-filter: blur(10px); */
+    border-radius: 12px;
+    padding: 0.5rem 1rem;
+    color: #fff;
+    cursor: pointer;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.glass-button:hover {
+    box-shadow: 0 6px 10px rgba(0, 0, 0, 0.15);
+}
+
