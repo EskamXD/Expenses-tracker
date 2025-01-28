@@ -302,3 +302,14 @@ export const fetchGetMonthlyBalance = async (params?: Params) => {
     }
 };
 
+export const fetchDatabaseScan = async () => {
+    try {
+        await apiClient.delete("/recent-shops/");
+        await apiClient.post("/recent-shops/");
+        await apiClient.delete("/item-prediction/");
+        await apiClient.post("/item-prediction/");
+    } catch (error) {
+        console.error(error);
+        throw error;
+    }
+};

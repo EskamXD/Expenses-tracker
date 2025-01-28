@@ -6,7 +6,11 @@ import Tabs from "react-bootstrap/Tabs";
 import Spinner from "react-bootstrap/Spinner";
 import JSZip from "jszip";
 
-import { fetchGetReceipts, fetchPostReceipt } from "../api/apiService";
+import {
+    fetchGetReceipts,
+    fetchPostReceipt,
+    fetchDatabaseScan,
+} from "../api/apiService";
 
 import Toaster from "../components/Toaster";
 
@@ -27,19 +31,6 @@ interface toastInterface {
 }
 
 const ImportExportPage = () => {
-    // const currentMonth = new Date().getMonth() - 8;
-    // const currentYear = new Date().getFullYear();
-
-    // const [fromMonth, setFromMonth] = useState(
-    //     currentMonth === 0 ? 12 : currentMonth - 1
-    // );
-    // const [fromYear, setFromYear] = useState(
-    //     currentMonth === 0 ? currentYear - 1 : currentYear
-    // );
-
-    // const [toMonth, setToMonth] = useState(currentMonth);
-    // const [toYear, setToYear] = useState(currentYear);
-
     const [isDownloading, setIsDownloading] = useState(false);
     const [isUploading, setIsUploading] = useState(false);
     const [showToast, setShowToast] = useState<showToastInterface>({
@@ -187,6 +178,8 @@ const ImportExportPage = () => {
                 .finally(() => {
                     setIsUploading(false);
                 });
+
+            fetchDatabaseScan();
         };
 
         fileReader.readAsText(e.target.files[0]); // Read the uploaded file as text
@@ -253,3 +246,4 @@ const ImportExportPage = () => {
 };
 
 export default ImportExportPage;
+
