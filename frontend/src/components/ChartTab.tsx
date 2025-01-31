@@ -23,6 +23,8 @@ import moment from "moment";
 import InfoRoundedIcon from "@mui/icons-material/InfoRounded";
 import "../assets/styles/main.css";
 
+import { useGlobalContext } from "../context/GlobalContext";
+
 interface ShopBarInterface {
     shop: string;
     expense_sum: number;
@@ -69,17 +71,10 @@ const trendLine = (
 
 interface ChartTabProps {
     tab: string;
-    selectedOwner: number;
-    selectedYear: number;
-    selectedMonth: number;
 }
 
-const ChartTab: React.FC<ChartTabProps> = ({
-    tab,
-    selectedOwner,
-    selectedYear,
-    selectedMonth,
-}) => {
+const ChartTab: React.FC<ChartTabProps> = ({ tab }) => {
+    const { summaryFilters } = useGlobalContext();
     const [selectedCategories, setSelectedCategories] = useState([
         "fuel",
         "car_expenses",

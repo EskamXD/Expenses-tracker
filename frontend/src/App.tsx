@@ -31,7 +31,9 @@ const App: React.FC = () => {
 
         fetchGetPerson()
             .then((response) => {
-                response.length !== 0 ? setPersons(response) : setPersons([]);
+                if (JSON.stringify(response) !== JSON.stringify(persons)) {
+                    setPersons(response.length !== 0 ? response : []);
+                }
             })
             .finally(() => {
                 setLoading(false);

@@ -10,30 +10,16 @@ import {
 import EditRoundedIcon from "@mui/icons-material/EditRounded";
 import "../assets/styles/main.css";
 
+import { useGlobalContext } from "../context/GlobalContext";
+
 const Settings = () => {
-    const [personList, setPersonList] = useState<Person[]>([]);
+    const { persons, setPersons } = useGlobalContext();
     const [personID, setPersonID] = useState(0);
     const [name, setName] = useState("");
     const [payer, setPayer] = useState(false);
     const [showModal, setShowModal] = useState(false);
-    const [reload, setReload] = useState(false);
     const [modalMethod, setModalMethod] = useState("post");
 
-    useEffect(() => {
-        fetchGetPerson()
-            .then((response) => {
-                setPersonList(response);
-            })
-            .finally(() => {
-                setReload(false);
-            });
-    }, [reload]);
-
-    useEffect(() => {
-        setReload(true);
-    }, []);
-
-    // Obsługuje zdarzenie przesłania formularza
     const handleSubmit = async (e: any) => {
         e.preventDefault();
 
@@ -55,7 +41,13 @@ const Settings = () => {
         setShowModal(false);
         setName("");
         setPayer(false);
-        setReload(true);
+
+        // Pobierz nowe dane tylko jeśli coś się zmieniło
+        fetchGetPerson().then((response) => {
+            if (JSON.stringify(response) !== JSON.stringify(persons)) {
+                setPersons(response);
+            }
+        });
     };
 
     const showModalToPost = () => {
@@ -84,7 +76,7 @@ const Settings = () => {
                 <h1>Ustawienia</h1>
                 <h2>Lista osób zarejstrowanych do użytku</h2>
             </div>
-            {personList.map((person) => (
+            {persons.map((person) => (
                 <div key={person.id}>
                     <div className="d-flex space-between align-end">
                         <h5>{person.name}</h5>
@@ -117,4 +109,3 @@ const Settings = () => {
 };
 
 export default Settings;
-

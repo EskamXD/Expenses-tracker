@@ -1,4 +1,10 @@
-import React, { createContext, useContext, useState, ReactNode } from "react";
+import React, {
+    createContext,
+    useContext,
+    useState,
+    ReactNode,
+    useEffect,
+} from "react";
 import { Params, Person, Receipt, Shops } from "../types";
 import { fetchGetReceipts } from "../api/apiService";
 
@@ -85,6 +91,10 @@ export const GlobalProvider: React.FC<{ children: ReactNode }> = ({
         }
     };
 
+    useEffect(() => {
+        filterReceipts();
+    }, []);
+
     return (
         <GlobalContext.Provider
             value={{
@@ -106,4 +116,3 @@ export const GlobalProvider: React.FC<{ children: ReactNode }> = ({
 
 // Hook do korzystania z GlobalContext
 export const useGlobalContext = () => useContext(GlobalContext);
-

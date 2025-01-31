@@ -23,15 +23,10 @@ const SummaryPage = () => {
                 <Tab eventKey="income" title="Przychody">
                     <SummaryTab transactionType="income" />
                 </Tab>
-                {/* <Tab eventKey="charts" title="Wykresy">
-                    <ChartTab
-                        tab={tab}
-                        selectedOwners={selectedOwner}
-                        selectedYear={selectedYear}
-                        selectedMonth={selectedMonth}
-                    />
+                <Tab eventKey="charts" title="Wykresy">
+                    <ChartTab tab={tab} />
                 </Tab>
-                <Tab eventKey="balance" title="Saldo">
+                {/* <Tab eventKey="balance" title="Saldo">
                     <BalanceTab
                         selectedOwners={selectedOwner}
                         selectedYear={selectedYear}
@@ -44,4 +39,3 @@ const SummaryPage = () => {
 };
 
 export default SummaryPage;
-
