@@ -15,9 +15,6 @@ interface GlobalState {
     receipts: Receipt[];
     setReceipts: (receipts: Receipt[]) => void;
 
-    filteredReceipts: Receipt[];
-    filterReceipts: () => void;
-
     shops: Shops[];
     setShops: (shops: Shops[]) => void;
 
@@ -33,8 +30,6 @@ const defaultState: GlobalState = {
     setPersons: () => {},
     receipts: [],
     setReceipts: () => {},
-    filteredReceipts: [],
-    filterReceipts: () => {},
     shops: [],
     setShops: () => {},
     summaryFilters: {
@@ -61,40 +56,6 @@ export const GlobalProvider: React.FC<{ children: ReactNode }> = ({
         year: new Date().getFullYear(),
     });
 
-    const [filteredReceipts, setFilteredReceipts] = useState<Receipt[]>([]);
-
-    const filterReceipts = async () => {
-        console.log("Rozpoczynam filtrowanie...");
-
-        const { owners, month, year, category, transaction_type } =
-            summaryFilters;
-
-        try {
-            // Wywołanie API z wszystkimi filtrami
-            const fetchedReceipts = await fetchGetReceipts({
-                transaction_type,
-                owners,
-                month,
-                year,
-                category,
-            });
-
-            // Ustawienie przefiltrowanych paragonów w stanie
-            setFilteredReceipts(fetchedReceipts);
-
-            console.log(
-                "Filtrowanie zakończone. Liczba wyników:",
-                fetchedReceipts.length
-            );
-        } catch (error) {
-            console.error("Błąd podczas pobierania danych z API:", error);
-        }
-    };
-
-    useEffect(() => {
-        filterReceipts();
-    }, []);
-
     return (
         <GlobalContext.Provider
             value={{
@@ -106,8 +67,6 @@ export const GlobalProvider: React.FC<{ children: ReactNode }> = ({
                 setShops,
                 summaryFilters,
                 setSummaryFilters,
-                filteredReceipts,
-                filterReceipts,
             }}>
             {children}
         </GlobalContext.Provider>
@@ -116,3 +75,4 @@ export const GlobalProvider: React.FC<{ children: ReactNode }> = ({
 
 // Hook do korzystania z GlobalContext
 export const useGlobalContext = () => useContext(GlobalContext);
+

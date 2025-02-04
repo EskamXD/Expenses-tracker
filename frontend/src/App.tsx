@@ -9,8 +9,8 @@ import ImportExportPage from "./pages/ImportExportPage";
 import Settings from "./pages/Settings";
 import Loader from "./pages/Loader";
 
-import SiteNavbar from "./components/SiteNavbar";
-import Container from "react-bootstrap/Container";
+import SiteSidebar from "./components/SiteSidebar.tsx";
+import { Skeleton } from "@/components/ui/skeleton.tsx";
 
 import { Params } from "./types.tsx";
 import { fetchGetPerson, fetchGetReceipts } from "./api/apiService";
@@ -19,7 +19,6 @@ import { useGlobalContext } from "./context/GlobalContext";
 
 import "./App.css";
 import "bootstrap/dist/css/bootstrap.min.css";
-import { Spinner } from "react-bootstrap";
 
 const App: React.FC = () => {
     const [loading, setLoading] = useState(false);
@@ -59,7 +58,7 @@ const App: React.FC = () => {
 
     return (
         <>
-            {persons.length === 0 && loading === true && <Spinner />}
+            {persons.length === 0 && loading === true && <Skeleton />}
             {persons.length === 0 && loading === false && (
                 /* Tutaj możesz dodać loader, np. */
                 <Loader />
@@ -67,26 +66,21 @@ const App: React.FC = () => {
             {persons.length > 0 && loading === false && (
                 // save Persons in local storage
                 <>
-                    <SiteNavbar />
+                    <SiteSidebar />
 
-                    <Container data-bs-theme="dark">
-                        <Routes>
-                            <Route
-                                path="/expenses/"
-                                element={<ExpensesPage />}
-                            />
-                            <Route path="/income/" element={<IncomePage />} />
-                            <Route path="/summary/" element={<SummaryPage />} />
-                            <Route path="/bills/" element={<FlatBills />} />
-                            <Route
-                                path="/import-export/"
-                                element={<ImportExportPage />}
-                            />
-                            <Route path="/settings/" element={<Settings />} />
-                            {/* Możesz również dodać stronę domyślną, np. */}
-                            <Route path="/" element={<HomePage />} />
-                        </Routes>
-                    </Container>
+                    <Routes>
+                        <Route path="/expenses/" element={<ExpensesPage />} />
+                        <Route path="/income/" element={<IncomePage />} />
+                        <Route path="/summary/" element={<SummaryPage />} />
+                        <Route path="/bills/" element={<FlatBills />} />
+                        <Route
+                            path="/import-export/"
+                            element={<ImportExportPage />}
+                        />
+                        <Route path="/settings/" element={<Settings />} />
+                        {/* Możesz również dodać stronę domyślną, np. */}
+                        <Route path="/" element={<HomePage />} />
+                    </Routes>
                 </>
             )}
         </>
@@ -94,3 +88,4 @@ const App: React.FC = () => {
 };
 
 export default App;
+

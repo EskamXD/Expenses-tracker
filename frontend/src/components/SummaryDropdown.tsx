@@ -1,5 +1,11 @@
-import React from "react";
-import Dropdown from "react-bootstrap/Dropdown";
+import {
+    DropdownMenu,
+    DropdownMenuCheckboxItem,
+    DropdownMenuContent,
+    DropdownMenuLabel,
+    DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Button } from "@/components/ui/button"; // Shadcn Button
 import { useGlobalContext } from "../context/GlobalContext";
 import { Person } from "../types";
 
@@ -16,26 +22,27 @@ const SummaryDropdown = () => {
     };
 
     return (
-        <Dropdown id="dropdown-basic-button-summary">
-            <Dropdown.Toggle>Wybierz osobę</Dropdown.Toggle>
-            <Dropdown.Menu>
+        <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+                <Button variant="outline">
+                    Wybierz osobę{" "}
+                    {summaryFilters.owners.length > 0 &&
+                        `(${summaryFilters.owners.length})`}
+                </Button>
+            </DropdownMenuTrigger>
+
+            <DropdownMenuContent>
+                <DropdownMenuLabel>Wybierz osobę</DropdownMenuLabel>
                 {persons.map(({ id, name }: Person) => (
-                    <Dropdown.Item
+                    <DropdownMenuCheckboxItem
                         key={id}
-                        as="label"
-                        className="d-flex align-items-center gap-2"
-                        onClick={(e) => e.stopPropagation()}>
-                        <input
-                            type="checkbox"
-                            checked={summaryFilters.owners.includes(id)}
-                            onChange={() => toggleOwner(id)}
-                            style={{ marginRight: "8px" }}
-                        />
+                        checked={summaryFilters.owners.includes(id)}
+                        onCheckedChange={() => toggleOwner(id)}>
                         {name}
-                    </Dropdown.Item>
+                    </DropdownMenuCheckboxItem>
                 ))}
-            </Dropdown.Menu>
-        </Dropdown>
+            </DropdownMenuContent>
+        </DropdownMenu>
     );
 };
 

@@ -1,18 +1,21 @@
-import React, { useEffect, useState } from "react";
-import Button from "react-bootstrap/Button";
-import Col from "react-bootstrap/Col";
-import Form from "react-bootstrap/Form";
-import Row from "react-bootstrap/Row";
-import Spinner from "react-bootstrap/Spinner";
+import React, { useEffect, useState, useRef } from "react";
+import { useForm } from "react-hook-form";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Skeleton } from "@/components/ui/skeleton";
+import {
+    Form,
+    FormField,
+    FormItem,
+    FormControl,
+    FormLabel,
+    FormMessage,
+} from "@/components/ui/form";
 import UnifiedDropdown from "./UnifiedDropdown";
-import UnifiedItem from "./UnifiedItem";
-import { addItem, updateItem, removeItem } from "../utils/receiptItemsHandler";
+import UnifiedItem, { UnifiedItemRef } from "./UnifiedItem";
 import moment from "moment";
 import { Item, Receipt } from "../types";
-import { fetchPostReceipt, fetchSearchRecentShops } from "../api/apiService";
-import { validateAndEvaluate } from "../utils/valuesCheckExpression";
-
-import "../assets/styles/main.css";
+import { fetchSearchRecentShops } from "../api/apiService";
 
 interface UnifiedFormProps {
     formId: string;
@@ -27,104 +30,61 @@ const UnifiedForm: React.FC<UnifiedFormProps> = ({
     showQuantity = false,
     receipt,
 }) => {
-    const [paymentDate, setPaymentDate] = useState(
-        new Date().toISOString().split("T")[0]
-    );
-    const [payer, setPayer] = useState(-1);
-    const [shop, setShop] = useState("");
+    const form = useForm({
+        defaultValues: {
+            paymentDate: new Date().toISOString().split("T")[0],
+            payer: -1,
+            shop: "",
+        },
+    });
+
     const [query, setQuery] = useState("");
     const [results, setResults] = useState([]);
     const [isLoading, setIsLoading] = useState(false);
     const [isDropdownVisible, setIsDropdownVisible] = useState(false);
     const [isRecentShopClicked, setIsRecentShopClicked] = useState(false);
-    const [reset, setReset] = useState(false);
 
-    const [items, setItems] = useState<Item[]>([
-        {
-            id: 1,
-            category: "food_drinks",
-            value: "",
-            description: "",
-            quantity: 1,
-            owners: [1, 2],
-        },
-    ]);
+    const [items, setItems] = useState<number[]>([1]);
+    const itemRefs = useRef<Record<number, React.RefObject<UnifiedItemRef>>>(
+        {}
+    );
 
-    useEffect(() => {
-        console.log(receipt);
-        if (receipt) {
-            setPaymentDate(
-                receipt.payment_date || new Date().toISOString().split("T")[0]
-            );
-            setPayer(receipt.payer || -1);
-            setShop(receipt.shop || "");
-            setItems(receipt.items || []);
-        }
-    }, [receipt]);
-
-    const handleSubmit = async (e: any) => {
-        e.preventDefault();
-
-        try {
-            items.forEach((item: Item) => {
-                // console.log("handleSbumit", item);
-                const result = validateAndEvaluate(item) as {
-                    status: boolean;
-                    message: string;
-                };
-                if (!result) {
-                    throw new Error("Niepoprawne dane w formularzu.");
-                }
-            });
-        } catch (error) {
-            console.error(error);
-
-            return;
-        }
-
-        const receiptData = [
-            {
-                payment_date: paymentDate,
-                payer: payer,
-                shop: shop,
-                transaction_type: "expense",
-                items: items,
-            },
-        ] as Receipt[];
-
-        fetchPostReceipt(receiptData)
-            .then(() => {
-                setItems([
-                    {
-                        id: 1,
-                        category: "food_drinks",
-                        value: "",
-                        description: "",
-                        quantity: 1,
-                        owners: [1, 2],
-                    },
-                ]);
-                setShop("");
-                setQuery("");
-                setIsRecentShopClicked(false);
-                setIsDropdownVisible(false);
-                setReset(true);
-            })
-            .catch((error) => {
-                console.error(error);
-            });
+    const addItem = () => {
+        const newId = items.length + 1;
+        setItems((prev) => [...prev, newId]);
+        itemRefs.current[newId] = React.createRef();
     };
 
-    const handleDateChange = (e: any) => {
-        const newDate = moment(e.target.value).format("YYYY-MM-DD");
-        setPaymentDate(newDate);
+    const removeItem = (id: number) => {
+        setItems((prev) => prev.filter((itemId) => itemId !== id));
+        delete itemRefs.current[id];
+    };
+
+    const handleSubmit = (data: any) => {
+        const collectedItems: Item[] = [];
+        for (const id of items) {
+            const itemRef = itemRefs.current[id];
+            if (itemRef && itemRef.current) {
+                const itemData = itemRef.current.getItemData();
+                if (!itemData) {
+                    alert("Uzupełnij wszystkie pola przed zapisaniem!");
+                    return;
+                }
+                collectedItems.push(itemData);
+            }
+        }
+
+        console.log("Gotowy paragon:", {
+            ...data,
+            items: collectedItems,
+        });
     };
 
     useEffect(() => {
         if (isRecentShopClicked) return;
         if (query.length >= 3) {
             setIsDropdownVisible(true);
-            setIsLoading(true); // Rozpoczęcie ładowania
+            setIsLoading(true);
             const fetchResults = async () => {
                 try {
                     const shops = await fetchSearchRecentShops(query);
@@ -132,10 +92,9 @@ const UnifiedForm: React.FC<UnifiedFormProps> = ({
                 } catch (error) {
                     console.error("Error fetching recent shops:", error);
                 } finally {
-                    setIsLoading(false); // Zakończenie ładowania
+                    setIsLoading(false);
                 }
             };
-
             fetchResults();
         } else {
             setResults([]);
@@ -143,144 +102,119 @@ const UnifiedForm: React.FC<UnifiedFormProps> = ({
         }
     }, [query]);
 
-    const calculateTotal = () => {
-        return items
-            .reduce((sum, item) => {
-                const itemValue = parseFloat(item.value.replace(",", ".")) || 0;
-                return sum + itemValue;
-            }, 0)
-            .toFixed(2);
-    };
-
     return (
-        <form
-            onSubmit={handleSubmit}
-            style={{
-                display: "flex",
-                flexDirection: "column",
-                height: "80vh", // Wypełnia całe okno przeglądarki
-            }}>
-            {/* Górna część formularza */}
-            <div style={{ flex: "0 0 auto", padding: "1rem" }}>
-                <Form.Control
-                    id={`${formId}-calendar`}
-                    type="date"
-                    className="mb-3"
-                    value={paymentDate}
-                    onChange={handleDateChange}
-                />
-                <div style={{ position: "relative" }}>
-                    <Form.Control
-                        type="text"
-                        placeholder="Sklep"
-                        className="mb-3"
-                        value={query}
-                        onChange={(e) => {
-                            setIsRecentShopClicked(false);
-                            setShop(e.target.value);
-                            setQuery(e.target.value);
-                        }}
-                    />
-                    {isLoading && <Spinner />}
-                    {isDropdownVisible && results.length > 0 && (
-                        <ul
-                            style={{
-                                position: "absolute",
-                                top: "100%",
-                                left: 0,
-                                right: 0,
-                                background: "#333",
-                                border: "1px solid #ddd",
-                                borderRadius: "4px",
-                                maxHeight: "150px",
-                                overflowY: "auto",
-                                zIndex: 1000,
-                                listStyle: "none",
-                                margin: 0,
-                                padding: "0.5rem",
-                            }}>
-                            {results.map((shop: any) => (
-                                <li
-                                    key={shop.id}
-                                    style={{
-                                        padding: "0.5rem",
-                                        cursor: "pointer",
-                                        color: "#fff",
-                                        textAlign: "left",
-                                    }}
-                                    onClick={() => {
-                                        setShop(shop.name);
-                                        setQuery(shop.name);
-                                        setResults([]);
-                                        setIsDropdownVisible(false);
-                                        setIsRecentShopClicked(true);
-                                    }}>
-                                    {shop.name}
-                                </li>
-                            ))}
-                        </ul>
+        <Form {...form}>
+            <form
+                onSubmit={form.handleSubmit(handleSubmit)}
+                className="flex flex-col h-[80vh] gap-4 p-4">
+                {/* Data płatności */}
+                <FormField
+                    control={form.control}
+                    name="paymentDate"
+                    render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Data płatności</FormLabel>
+                            <FormControl>
+                                <Input
+                                    type="date"
+                                    {...field}
+                                    onChange={(e) =>
+                                        field.onChange(
+                                            moment(e.target.value).format(
+                                                "YYYY-MM-DD"
+                                            )
+                                        )
+                                    }
+                                />
+                            </FormControl>
+                            <FormMessage />
+                        </FormItem>
                     )}
-                </div>
-                <Row className="d-flex gap-2 space-between margin-0">
-                    <Col xs={2} align="start" className="padding-0">
-                        <UnifiedDropdown
-                            type="payer"
-                            label="Płatnik"
-                            personInDropdown={payer}
-                            setPersonInDropdown={setPayer}
-                        />
-                    </Col>
-                    <Col xs="auto" className="padding-0">
-                        <Button
-                            variant="primary"
-                            type="button"
-                            onClick={() => addItem(items, setItems)}>
-                            Dodaj rzecz
-                        </Button>
-                    </Col>
-                    <Col xs="auto" align="end" className="padding-0">
-                        <Button variant="success" type="submit">
-                            {buttonLabel}
-                        </Button>
-                    </Col>
-                </Row>
-            </div>
+                />
 
-            {/* Główna część z przewijanymi elementami */}
-            <div
-                style={{
-                    flex: "1 1 auto",
-                    overflowY: "auto",
-                    padding: "1rem",
-                }}>
-                {items.map((item) => (
-                    <UnifiedItem
-                        key={`item-${item.id}`}
-                        formId={formId}
-                        index={Number(item.id)}
-                        shop={shop}
-                        items={items}
-                        setItems={setItems}
-                        updateItem={updateItem}
-                        removeItem={removeItem}
-                        showQuantity={showQuantity}
-                        reset={reset}
-                        setReset={setReset}
+                {/* Sklep */}
+                <FormField
+                    control={form.control}
+                    name="shop"
+                    render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Sklep</FormLabel>
+                            <FormControl>
+                                <Input
+                                    placeholder="Wpisz nazwę sklepu"
+                                    {...field}
+                                    onChange={(e) => {
+                                        setIsRecentShopClicked(false);
+                                        field.onChange(e.target.value);
+                                        setQuery(e.target.value);
+                                    }}
+                                />
+                            </FormControl>
+                            {isLoading && (
+                                <Skeleton className="h-5 w-full mt-2" />
+                            )}
+                            {isDropdownVisible && results.length > 0 && (
+                                <ul className="absolute top-full left-0 right-0 bg-white border border-gray-300 rounded-md shadow-md max-h-40 overflow-y-auto z-10 p-2">
+                                    {results.map((shop: any) => (
+                                        <li
+                                            key={shop.id}
+                                            className="p-2 hover:bg-gray-200 cursor-pointer"
+                                            onClick={() => {
+                                                field.onChange(shop.name);
+                                                setQuery(shop.name);
+                                                setResults([]);
+                                                setIsDropdownVisible(false);
+                                                setIsRecentShopClicked(true);
+                                            }}>
+                                            {shop.name}
+                                        </li>
+                                    ))}
+                                </ul>
+                            )}
+                            <FormMessage />
+                        </FormItem>
+                    )}
+                />
+
+                {/* Płatnik i przyciski */}
+                <div className="flex flex-wrap gap-4">
+                    <UnifiedDropdown
+                        label="Płatnik"
+                        personInDropdown={form.watch("payer")}
+                        setPersonInDropdown={(
+                            val: number | ((prev: number) => number)
+                        ) =>
+                            form.setValue(
+                                "payer",
+                                typeof val === "function"
+                                    ? val(form.getValues("payer"))
+                                    : val
+                            )
+                        }
                     />
-                ))}
-            </div>
 
-            {/* Sticky stopka z podsumowaniem */}
-            <div
-                style={{
-                    flex: "0 0 auto",
-                    padding: "1rem",
-                    borderTop: "1px solid #ddd",
-                    textAlign: "right",
-                }}>
-                <strong>Razem: {calculateTotal()} zł</strong>
-            </div>
-        </form>
+                    <Button onClick={addItem} variant="outline">
+                        Dodaj pozycję
+                    </Button>
+                    <Button type="submit">{buttonLabel}</Button>
+                </div>
+
+                {/* Pozycje rachunku */}
+                <div className="flex-1 overflow-y-auto p-4">
+                    {items.map((id) => (
+                        <UnifiedItem
+                            key={id}
+                            index={id}
+                            removeItem={removeItem}
+                            ref={
+                                itemRefs.current[id] ||
+                                (itemRefs.current[id] = React.createRef())
+                            }
+                        />
+                    ))}
+                </div>
+            </form>
+        </Form>
     );
 };
 

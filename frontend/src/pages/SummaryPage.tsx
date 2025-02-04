@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import { Tabs, Tab, Col } from "react-bootstrap";
+import { useState } from "react";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import SummaryTab from "../components/SummaryTab";
 import ChartTab from "../components/ChartTab";
 import BalanceTab from "../components/BalanceTab";
@@ -9,33 +9,39 @@ const SummaryPage = () => {
     const [tab, setTab] = useState("expense");
 
     return (
-        <Col className="pt-1rem" style={{ margin: "0", width: "100%" }}>
+        <div className="pt-1rem" style={{ margin: "0", width: "100%" }}>
             <div className="mb-3">
-                <SummaryFilters />
+                <SummaryFilters transactionType={tab} />
             </div>
-            <Tabs
-                activeKey={tab}
-                id="summary-tabs"
-                onSelect={(t) => t && setTab(t)}>
-                <Tab eventKey="expense" title="Wydatki">
+
+            <Tabs value={tab} onValueChange={setTab} className="w-full">
+                <TabsList>
+                    <TabsTrigger value="expense">Wydatki</TabsTrigger>
+                    <TabsTrigger value="income">Przychody</TabsTrigger>
+                    {/* <TabsTrigger value="charts">Wykresy</TabsTrigger> */}
+                    {/* <TabsTrigger value="balance">Saldo</TabsTrigger> */}
+                </TabsList>
+
+                <TabsContent value="expense">
                     <SummaryTab transactionType="expense" />
-                </Tab>
-                <Tab eventKey="income" title="Przychody">
+                </TabsContent>
+                <TabsContent value="income">
                     <SummaryTab transactionType="income" />
-                </Tab>
-                <Tab eventKey="charts" title="Wykresy">
+                </TabsContent>
+                {/* <TabsContent value="charts">
                     <ChartTab tab={tab} />
-                </Tab>
-                {/* <Tab eventKey="balance" title="Saldo">
-                    <BalanceTab
+                </TabsContent> */}
+                {/* <TabsContent value="balance">
+                    <BalanceTab 
                         selectedOwners={selectedOwner}
                         selectedYear={selectedYear}
                         selectedMonth={selectedMonth}
                     />
-                </Tab> */}
+                </TabsContent> */}
             </Tabs>
-        </Col>
+        </div>
     );
 };
 
 export default SummaryPage;
+

@@ -1,95 +1,95 @@
-import Dropdown from "react-bootstrap/Dropdown";
-import "../assets/styles/main.css";
-import { Person } from "../types";
+import {
+    DropdownMenu,
+    DropdownMenuCheckboxItem,
+    DropdownMenuContent,
+    DropdownMenuLabel,
+    DropdownMenuRadioGroup,
+    DropdownMenuRadioItem,
+    DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"; // Import z shadcn
+import { Button } from "@/components/ui/button"; // Shadcn Button
 import { useGlobalContext } from "../context/GlobalContext";
+import React from "react";
 
 interface UnifiedDropdownProps {
-    type: "payer" | "owner";
-    label: string | "";
+    label?: string;
     personInDropdown: number | number[];
-    setPersonInDropdown: Function;
+    setPersonInDropdown:
+        | React.Dispatch<React.SetStateAction<number>>
+        | React.Dispatch<React.SetStateAction<number[]>>;
 }
 
 export const UnifiedDropdown: React.FC<UnifiedDropdownProps> = ({
-    type,
     label = "Wybierz",
     personInDropdown,
     setPersonInDropdown,
 }) => {
-    const { persons } = useGlobalContext(); // Pobieranie danych z kontekstu
+    const { persons } = useGlobalContext(); // Pobieranie listy osób
 
-    const handleChange = (newPersonInDropdown: number) => {
-        setPersonInDropdown(newPersonInDropdown);
+    const handleChange = (selectedId: number) => {
+        if (Array.isArray(personInDropdown)) {
+            (
+                setPersonInDropdown as React.Dispatch<
+                    React.SetStateAction<number[]>
+                >
+            )((prev) =>
+                prev.includes(selectedId)
+                    ? prev.filter((id) => id !== selectedId)
+                    : [...prev, selectedId]
+            );
+        } else {
+            (
+                setPersonInDropdown as React.Dispatch<
+                    React.SetStateAction<number>
+                >
+            )(selectedId);
+        }
     };
 
+    const isMultiSelect = Array.isArray(personInDropdown); // Czy checkboxy czy radio
+    const dropdownHeader = isMultiSelect
+        ? "Wybierz właścicieli"
+        : "Wybierz płatnika";
+
     return (
-        <Dropdown>
-            <Dropdown.Toggle variant="primary" id="dropdown-unified">
-                {label}{" "}
-                {type === "payer" &&
-                    persons.find((p) => p.id === personInDropdown)?.name}
-                {type === "owner" &&
-                    Array.isArray(personInDropdown) &&
-                    personInDropdown.length}
-            </Dropdown.Toggle>
+        <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+                <Button variant="outline">
+                    {label}{" "}
+                    {isMultiSelect
+                        ? `(${personInDropdown.length})`
+                        : persons.find((p) => p.id === personInDropdown)
+                              ?.name || "Wybierz"}
+                </Button>
+            </DropdownMenuTrigger>
 
-            <Dropdown.Menu>
-                {!Array.isArray(personInDropdown) && (
-                    <>
-                        {/* Payer Section */}
-                        <Dropdown.Header>Wybierz płatnika</Dropdown.Header>
-                        {persons
-                            .filter((person: Person) => person.payer)
-                            .map((person: Person) => (
-                                <Dropdown.Item key={person.id} as="label">
-                                    <p style={{ userSelect: "none" }}>
-                                        <input
-                                            type="radio"
-                                            name="payer"
-                                            value={person.id}
-                                            checked={
-                                                personInDropdown === person.id
-                                            }
-                                            onChange={() =>
-                                                handleChange(person.id)
-                                            }
-                                            style={{ marginRight: "8px" }}
-                                        />
-                                        {person.name}
-                                    </p>
-                                </Dropdown.Item>
-                            ))}
-                        <Dropdown.Divider />
-                    </>
-                )}
+            <DropdownMenuContent>
+                <DropdownMenuLabel>{dropdownHeader}</DropdownMenuLabel>
 
-                {Array.isArray(personInDropdown) && (
-                    <>
-                        {/* Owners Section */}
-                        <Dropdown.Header>Wybierz właścicieli</Dropdown.Header>
-                        {persons.map((person: Person) => (
-                            <Dropdown.Item
+                {isMultiSelect ? (
+                    persons.map((person) => (
+                        <DropdownMenuCheckboxItem
+                            key={person.id}
+                            checked={personInDropdown.includes(person.id)}
+                            onCheckedChange={() => handleChange(person.id)}>
+                            {person.name}
+                        </DropdownMenuCheckboxItem>
+                    ))
+                ) : (
+                    <DropdownMenuRadioGroup
+                        value={String(personInDropdown)}
+                        onValueChange={(value) => handleChange(Number(value))}>
+                        {persons.map((person) => (
+                            <DropdownMenuRadioItem
                                 key={person.id}
-                                as="label"
-                                onClick={(e) => e.stopPropagation()}>
-                                <p style={{ userSelect: "none" }}>
-                                    <input
-                                        type="checkbox"
-                                        value={person.id}
-                                        checked={personInDropdown.includes(
-                                            person.id
-                                        )}
-                                        onChange={() => handleChange(person.id)}
-                                        style={{ marginRight: "8px" }}
-                                    />
-                                    {person.name}
-                                </p>
-                            </Dropdown.Item>
+                                value={String(person.id)}>
+                                {person.name}
+                            </DropdownMenuRadioItem>
                         ))}
-                    </>
+                    </DropdownMenuRadioGroup>
                 )}
-            </Dropdown.Menu>
-        </Dropdown>
+            </DropdownMenuContent>
+        </DropdownMenu>
     );
 };
 

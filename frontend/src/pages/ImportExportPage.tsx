@@ -1,9 +1,9 @@
-import { useEffect, useState } from "react";
-import Button from "react-bootstrap/Button";
-import Form from "react-bootstrap/Form";
-import Tab from "react-bootstrap/Tab";
-import Tabs from "react-bootstrap/Tabs";
-import Spinner from "react-bootstrap/Spinner";
+import { useState } from "react";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Skeleton } from "@/components/ui/skeleton";
 import JSZip from "jszip";
 
 import {
@@ -11,18 +11,8 @@ import {
     fetchPostReceipt,
     fetchDatabaseScan,
 } from "../api/apiService";
-
 import Toaster from "../components/Toaster";
-
-import "../assets/styles/main.css";
 import { Receipt } from "../types";
-
-interface showToastInterface {
-    successDownload: boolean;
-    failedDownload: boolean;
-    successUpload: boolean;
-    failedUpload: boolean;
-}
 
 interface toastInterface {
     type: string;
@@ -31,207 +21,145 @@ interface toastInterface {
 }
 
 const ImportExportPage = () => {
-    const [isDownloading, setIsDownloading] = useState(false);
-    const [isUploading, setIsUploading] = useState(false);
-    const [showToast, setShowToast] = useState<showToastInterface>({
-        successDownload: false,
-        failedDownload: false,
-        successUpload: false,
-        failedUpload: false,
-    });
-
     const [toastArray, setToastArray] = useState<toastInterface[]>([]);
 
-    useEffect(() => {
-        const newToastArray = [];
+    // ** Pobieranie danych do eksportu **
+    const { data: receipts, isFetching } = useQuery({
+        queryKey: ["receipts"],
+        queryFn: () => fetchGetReceipts(), // 🔹 Przekazanie domyślnych parametrów
+        staleTime: 1000 * 60 * 5,
+    });
 
-        if (showToast.successDownload) {
-            newToastArray.push({
-                type: "success",
-                header: "Sukces",
-                message: "Dane zostały pomyślnie pobrane.",
+    // ** Eksportowanie danych **
+    const exportMutation = useMutation({
+        mutationFn: async () => {
+            if (!receipts) throw new Error("Brak danych do eksportu");
+
+            const zip = new JSZip();
+            zip.file("data.json", JSON.stringify(receipts, null, 2));
+
+            const content = await zip.generateAsync({ type: "blob" });
+            const downloadLink = document.createElement("a");
+            downloadLink.href = URL.createObjectURL(content);
+            downloadLink.download = "data.zip";
+            downloadLink.click();
+        },
+        onSuccess: () => {
+            setToastArray([
+                ...toastArray,
+                {
+                    type: "success",
+                    header: "Sukces",
+                    message: "Dane zostały pomyślnie pobrane.",
+                },
+            ]);
+        },
+        onError: () => {
+            setToastArray([
+                ...toastArray,
+                {
+                    type: "danger",
+                    header: "Błąd",
+                    message: "Błąd podczas pobierania danych.",
+                },
+            ]);
+        },
+    });
+
+    // ** Importowanie danych **
+    const importMutation = useMutation({
+        mutationFn: async (file: File) => {
+            const fileReader = new FileReader();
+            return new Promise<Receipt[]>((resolve, reject) => {
+                fileReader.onload = (e) => {
+                    if (!e.target || !e.target.result) {
+                        reject("Nie można odczytać pliku");
+                        return;
+                    }
+                    try {
+                        const content = JSON.parse(String(e.target.result));
+                        resolve(content);
+                    } catch (error) {
+                        reject("Niepoprawny format JSON");
+                    }
+                };
+                fileReader.readAsText(file);
             });
-
-            setTimeout(() => {
-                setShowToast((prevState) => ({
-                    ...prevState,
-                    successDownload: false,
-                }));
-            }, 5500);
-        }
-        if (showToast.failedDownload) {
-            newToastArray.push({
-                type: "danger",
-                header: "Błąd",
-                message: "Błąd podczas pobierania danych.",
-            });
-            setTimeout(() => {
-                setShowToast((prevState) => ({
-                    ...prevState,
-                    failedDownload: false,
-                }));
-            }, 5500);
-        }
-        if (showToast.successUpload) {
-            newToastArray.push({
-                type: "success",
-                header: "Sukces",
-                message: "Dane zostały pomyślnie zaimportowane.",
-            });
-            setTimeout(() => {
-                setShowToast((prevState) => ({
-                    ...prevState,
-                    successUpload: false,
-                }));
-            }, 5500);
-        }
-        if (showToast.failedUpload) {
-            newToastArray.push({
-                type: "danger",
-                header: "Błąd",
-                message: "Błąd podczas importowania danych.",
-            });
-            setTimeout(() => {
-                setShowToast((prevState) => ({
-                    ...prevState,
-                    failedUpload: false,
-                }));
-            }, 5500);
-        }
-
-        setToastArray(newToastArray); // Ustawiamy nową tablicę
-    }, [showToast]);
-
-    const downloadJsonAsZip = async () => {
-        setIsDownloading(true);
-
-        fetchGetReceipts()
-            .then((response) => {
-                const zip = new JSZip();
-                zip.file("data.json", JSON.stringify(response, null, 2));
-
-                zip.generateAsync({ type: "blob" }).then((content) => {
-                    const downloadLink = document.createElement("a");
-                    downloadLink.href = URL.createObjectURL(content);
-                    downloadLink.download = "data.zip";
-                    downloadLink.click();
-                    setIsDownloading(false);
-                    setShowToast((prevState) => ({
-                        ...prevState,
-                        successDownload: true,
-                    }));
-                });
-            })
-            .catch(() => {
-                setShowToast((prevState) => ({
-                    ...prevState,
-                    failedDownload: true,
-                }));
-            })
-            .finally(() => {
-                setIsDownloading(false);
-            });
-    };
-
-    const handleFileUpload = (e: any) => {
-        setIsUploading(true);
-        // console.log(e.target.files);
-        e.preventDefault();
-
-        const fileReader = new FileReader();
-        fileReader.onload = async (e) => {
-            if (!e.target || !e.target.result) {
-                setShowToast((prevState) => ({
-                    ...prevState,
-                    failedUpload: true,
-                }));
-                setIsUploading(false);
-                return;
-            }
-            const content = e.target.result;
-            const json = JSON.parse(String(content));
-
-            const receipts: Receipt[] = json;
-
-            if (receipts.length === 0) {
-                setShowToast((prevState) => ({
-                    ...prevState,
-                    failedUpload: true,
-                }));
-                setIsUploading(false);
-                return;
-            }
-
-            fetchPostReceipt(receipts)
-                .then(() => {
-                    setShowToast((prevState) => ({
-                        ...prevState,
-                        successUpload: true,
-                    }));
-                })
-                .catch(() => {
-                    setShowToast((prevState) => ({
-                        ...prevState,
-                        failedUpload: true,
-                    }));
-                })
-                .finally(() => {
-                    setIsUploading(false);
-                });
-
-            fetchDatabaseScan();
-        };
-
-        fileReader.readAsText(e.target.files[0]); // Read the uploaded file as text
-    };
+        },
+        onSuccess: async (data) => {
+            await fetchPostReceipt(data);
+            await fetchDatabaseScan();
+            setToastArray([
+                ...toastArray,
+                {
+                    type: "success",
+                    header: "Sukces",
+                    message: "Dane zostały pomyślnie zaimportowane.",
+                },
+            ]);
+        },
+        onError: () => {
+            setToastArray([
+                ...toastArray,
+                {
+                    type: "danger",
+                    header: "Błąd",
+                    message: "Błąd podczas importowania danych.",
+                },
+            ]);
+        },
+    });
 
     return (
-        <>
-            <h1>Import/Export</h1>
-            <Tabs defaultActiveKey="export" id="import-export-tabs">
-                <Tab eventKey="export" title="Eksport">
-                    <h2>Eksport</h2>
+        <div className="p-6">
+            <h1 className="text-2xl font-bold">Import/Export</h1>
+
+            {/* Tabsy */}
+            <Tabs defaultValue="export" className="mt-4">
+                <TabsList>
+                    <TabsTrigger value="export">Eksport</TabsTrigger>
+                    <TabsTrigger value="import">Import</TabsTrigger>
+                </TabsList>
+
+                {/* Eksport */}
+                <TabsContent value="export">
+                    <h2 className="text-xl font-semibold mt-4">Eksport</h2>
                     <Button
-                        variant="primary"
-                        onClick={downloadJsonAsZip}
-                        disabled={isDownloading}>
-                        {isDownloading ? "Pobieranie..." : "Eksportuj dane"}
+                        onClick={() => exportMutation.mutate()}
+                        disabled={exportMutation.isPending || isFetching}>
+                        {exportMutation.isPending
+                            ? "Pobieranie..."
+                            : "Eksportuj dane"}
                     </Button>
-                </Tab>
-                <Tab eventKey="import" title="Import">
-                    <h2>Import</h2>
-                    <form>
-                        <Form.Group
-                            controlId="formFileMultiple"
-                            className="mb-3">
-                            <Form.Label>Wybierz pliki...</Form.Label>
-                            <Form.Control
-                                type="file"
-                                multiple={false} // Removed multiple to keep logic simple for now
-                                accept="application/json"
-                                onChange={(event) => handleFileUpload(event)} // Use onChange event
-                                disabled={isUploading}
-                            />
-                        </Form.Group>
-                        {/* <Button
-                            variant="primary"
-                            disabled={isUploading}
-                            type="submit">
-                            {isUploading ? "Wysyłanie..." : "Importuj dane"}
-                        </Button> */}
-                    </form>
-                    {showToast.successDownload && (
-                        <Spinner animation="border" role="status">
-                            <span className="visually-hidden">
-                                Ładowanie...
-                            </span>
-                        </Spinner>
+                    {(exportMutation.isPending || isFetching) && (
+                        <Skeleton className="w-40 h-10 mt-2" />
                     )}
-                </Tab>
+                </TabsContent>
+
+                {/* Import */}
+                <TabsContent value="import">
+                    <h2 className="text-xl font-semibold mt-4">Import</h2>
+                    <div className="flex flex-col gap-3">
+                        <label className="text-gray-600">Wybierz plik:</label>
+                        <Input
+                            type="file"
+                            accept="application/json"
+                            onChange={(e) => {
+                                if (e.target.files && e.target.files[0]) {
+                                    importMutation.mutate(e.target.files[0]);
+                                }
+                            }}
+                            disabled={importMutation.isPending}
+                        />
+                        {importMutation.isPending && (
+                            <Skeleton className="w-40 h-10" />
+                        )}
+                    </div>
+                </TabsContent>
             </Tabs>
-            <div
-                className="d-flex flex-column gap-3 position-absolute"
-                style={{ bottom: "140px", left: "30px", width: "500px" }}>
+
+            {/* Toastery */}
+            {/* <div className="fixed bottom-10 left-10 w-96 space-y-3">
                 {toastArray.map((toast, index) => (
                     <Toaster
                         key={index}
@@ -240,8 +168,8 @@ const ImportExportPage = () => {
                         message={toast.message}
                     />
                 ))}
-            </div>
-        </>
+            </div> */}
+        </div>
     );
 };
 

@@ -1,33 +1,44 @@
-import React from "react";
-import Dropdown from "react-bootstrap/Dropdown";
-import DropdownButton from "react-bootstrap/DropdownButton";
 import { useGlobalContext } from "../context/GlobalContext";
 import { Params } from "../types";
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select"; // Shadcn Select
 
 const YearDropdown = () => {
     const { summaryFilters, setSummaryFilters } = useGlobalContext();
 
-    const handleSelect = (eventKey: string | null) => {
-        if (!eventKey) return;
-        const newMonth = parseInt(eventKey, 10);
+    const handleSelect = (value: string) => {
+        const newYear = parseInt(value, 10);
         setSummaryFilters((prevFilters: Params) => ({
             ...prevFilters,
-            year: newMonth,
+            year: newYear,
         }));
     };
+
     return (
-        <DropdownButton
-            id="dropdown-basic-button-year"
-            title={`Wybierz rok: ${summaryFilters.year}`}
-            onSelect={handleSelect}>
-            {[...Array(5)].map((_, index) => (
-                <Dropdown.Item
-                    key={index}
-                    eventKey={new Date().getFullYear() - index}>
-                    {new Date().getFullYear() - index}
-                </Dropdown.Item>
-            ))}
-        </DropdownButton>
+        <div className="w-40">
+            <Select
+                onValueChange={handleSelect}
+                value={String(summaryFilters.year)}>
+                <SelectTrigger>
+                    <SelectValue placeholder="Wybierz rok" />
+                </SelectTrigger>
+                <SelectContent>
+                    {[...Array(5)].map((_, index) => {
+                        const year = new Date().getFullYear() - index;
+                        return (
+                            <SelectItem key={year} value={String(year)}>
+                                {year}
+                            </SelectItem>
+                        );
+                    })}
+                </SelectContent>
+            </Select>
+        </div>
     );
 };
 

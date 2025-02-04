@@ -1,25 +1,35 @@
 import React, { useEffect, useState } from "react";
-import Accordion from "react-bootstrap/Accordion";
-import Button from "react-bootstrap/Button";
-import Modal from "react-bootstrap/Modal";
-import Form from "react-bootstrap/Form";
-import { Col, Row } from "react-bootstrap";
-import ArrowForwardIosIcon from "@mui/icons-material/ArrowForwardIos";
-
-import UnifiedForm from "../components/UnifiedForm";
-
-import { selectTranslationList } from "../config/selectOption";
+import {
+    Accordion,
+    AccordionContent,
+    AccordionItem,
+    AccordionTrigger,
+} from "@/components/ui/accordion";
+import { Button } from "@/components/ui/button";
+import {
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+    DialogDescription,
+    DialogFooter,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { useGlobalContext } from "../context/GlobalContext";
 import {
     fetchGetReceipts,
     fetchPutReceipt,
     fetchDeleteReceipt,
 } from "../api/apiService";
+import UnifiedForm from "../components/UnifiedForm";
+import { selectTranslationList } from "../config/selectOption";
 import { Item, Params, Receipt } from "../types";
-// import "../assets/styles/glassTable.css";
+import { ArrowRight } from "lucide-react";
 
 interface SummaryTableProps {
     transactionType: "income" | "expense";
+    receipts: Receipt[];
 }
 
 interface ProcessedReceiptForAccordion {
@@ -34,8 +44,11 @@ interface ProcessedReceiptForAccordion {
     }[];
 }
 
-const SummaryTable: React.FC<SummaryTableProps> = ({ transactionType }) => {
-    const { persons, filteredReceipts } = useGlobalContext();
+const SummaryTable: React.FC<SummaryTableProps> = ({
+    transactionType,
+    receipts,
+}) => {
+    const { persons } = useGlobalContext();
     const [groupedReceipts, setGroupedReceipts] = useState<
         ProcessedReceiptForAccordion[]
     >([]);
@@ -54,14 +67,13 @@ const SummaryTable: React.FC<SummaryTableProps> = ({ transactionType }) => {
     };
 
     useEffect(() => {
-        const grouped: {
-            [date: string]: ProcessedReceiptForAccordion["receipts"];
-        } = {};
+        const grouped: Record<
+            string,
+            ProcessedReceiptForAccordion["receipts"]
+        > = {};
 
-        filteredReceipts.forEach((receipt) => {
-            if (receipt.transaction_type !== transactionType) {
-                return;
-            }
+        receipts.forEach((receipt) => {
+            if (receipt.transaction_type !== transactionType) return;
 
             const totalValue = receipt.items.reduce(
                 (sum: number, item: Item) => sum + parseFloat(item.value),
@@ -74,7 +86,7 @@ const SummaryTable: React.FC<SummaryTableProps> = ({ transactionType }) => {
 
             const keywords = receipt.items
                 .map((item: Item) => item.description.toLowerCase())
-                .filter(Boolean); // Usuwa puste wartości
+                .filter(Boolean);
 
             if (!grouped[receipt.payment_date]) {
                 grouped[receipt.payment_date] = [];
@@ -98,7 +110,7 @@ const SummaryTable: React.FC<SummaryTableProps> = ({ transactionType }) => {
         }));
 
         setGroupedReceipts(processedData);
-    }, [filteredReceipts, transactionType]);
+    }, [receipts, transactionType]);
 
     // Filtruj dane na podstawie frazy wyszukiwania
     const filteredGroupedReceipts = groupedReceipts
@@ -184,167 +196,118 @@ const SummaryTable: React.FC<SummaryTableProps> = ({ transactionType }) => {
     };
 
     return (
-        <div className="summary-table-container">
-            <div className="glass-bg">
-                <Form.Group className="mb-3" controlId="search">
-                    <Form.Label>Wyszukaj</Form.Label>
-                    <Form.Control
-                        type="text"
-                        placeholder="Wyszukaj po sklepie, płacącym lub kategorii"
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                    />
-                </Form.Group>
-                <div className="scrollable-content">
-                    <Accordion defaultActiveKey="0" className="accordion">
-                        {filteredGroupedReceipts.map((group, index) => (
-                            <Accordion.Item
-                                eventKey={index.toString()}
-                                key={group.date}
-                                className="accordion-item">
-                                <Accordion.Header className="accordion-header">
-                                    {group.date}
-                                </Accordion.Header>
-                                <Accordion.Body className="accordion-body">
-                                    {group.receipts.map((receipt) => (
-                                        <Row key={receipt.id} className="mb-3">
-                                            <Col>{receipt.shop}</Col>
-                                            <Col>
-                                                {receipt.totalValue.toFixed(2)}{" "}
-                                                PLN
-                                            </Col>
-                                            <Col>{receipt.payer}</Col>
-                                            <Col>
-                                                {receipt.categories.map(
-                                                    (category) => {
-                                                        const translation =
-                                                            selectTranslationList.find(
-                                                                (i) =>
-                                                                    i.value ===
-                                                                    category
-                                                            );
-                                                        return (
-                                                            <p key={category}>
-                                                                {translation
-                                                                    ? translation.label
-                                                                    : "Unknown"}
-                                                            </p>
-                                                        );
-                                                    }
-                                                )}
-                                            </Col>
-                                            <Col className="button-container">
-                                                <Button
-                                                    variant="light"
-                                                    onClick={() =>
-                                                        handleShowModal(group)
-                                                    } // Funkcja otwierająca modal
-                                                >
-                                                    <ArrowForwardIosIcon />
-                                                </Button>
-                                            </Col>
-                                        </Row>
-                                    ))}
-                                </Accordion.Body>
-                            </Accordion.Item>
-                        ))}
-                    </Accordion>
-                </div>
+        <div className="summary-table-container p-4 bg-white shadow rounded-lg">
+            <div className="mb-4">
+                <Label htmlFor="search">Wyszukaj</Label>
+                <Input
+                    id="search"
+                    type="text"
+                    placeholder="Wyszukaj po sklepie, płacącym lub kategorii"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                />
             </div>
 
-            {/* Modal */}
-            {selectedGroup && (
-                <Modal
-                    show={showModal}
-                    onHide={handleCloseModal}
-                    size="lg"
-                    centered>
-                    <Modal.Header closeButton>
-                        <Modal.Title>
-                            Paragony z dnia {selectedGroup.date}
-                        </Modal.Title>
-                    </Modal.Header>
-                    <Modal.Body>
-                        {selectedGroup.receipts.map((receipt) => {
-                            // Wyciągnięcie unikalnych kategorii
-                            const uniqueCategories = Array.from(
-                                new Set(receipt.categories)
-                            );
-
-                            return (
-                                <div key={receipt.id} className="mb-3">
-                                    <p>
-                                        <strong>Sklep:</strong> {receipt.shop}
-                                    </p>
-                                    <p>
-                                        <strong>Płacący:</strong>{" "}
-                                        {receipt.payer}
-                                    </p>
-                                    <p>
-                                        <strong>Wartość:</strong>{" "}
-                                        {receipt.totalValue.toFixed(2)} PLN
-                                    </p>
-                                    <p>
-                                        <strong>Kategorie:</strong>{" "}
-                                        {uniqueCategories.map((category) => {
-                                            const translation =
-                                                selectTranslationList.find(
-                                                    (item) =>
-                                                        item.value === category
-                                                );
-                                            return (
-                                                <span
-                                                    key={category}
-                                                    className="badge bg-primary me-2">
-                                                    {translation
-                                                        ? translation.label
-                                                        : "Nieznane"}
-                                                </span>
-                                            );
-                                        })}
-                                    </p>
-                                    <p>
-                                        <strong>Rzeczy: </strong>
-                                        {receipt.keywords.map(
-                                            (keyword) => `${keyword}, `
-                                        )}
-                                    </p>
-                                    {/* Możliwość edycji */}
+            <Accordion type="single" collapsible>
+                {groupedReceipts.map((group) => (
+                    <AccordionItem key={group.date} value={group.date}>
+                        <AccordionTrigger>{group.date}</AccordionTrigger>
+                        <AccordionContent>
+                            {group.receipts.map((receipt) => (
+                                <div
+                                    key={receipt.id}
+                                    className="flex items-center justify-between py-2 border-b">
+                                    <div className="flex flex-col">
+                                        <span className="font-bold">
+                                            {receipt.shop}
+                                        </span>
+                                        <span>
+                                            {receipt.totalValue.toFixed(2)} PLN
+                                        </span>
+                                    </div>
+                                    <div className="flex flex-col">
+                                        <span>Płacący: {receipt.payer}</span>
+                                        <span>
+                                            {receipt.categories.map(
+                                                (category) => {
+                                                    const translation =
+                                                        selectTranslationList.find(
+                                                            (i) =>
+                                                                i.value ===
+                                                                category
+                                                        );
+                                                    return (
+                                                        <span
+                                                            key={category}
+                                                            className="text-sm text-gray-500">
+                                                            {translation
+                                                                ? translation.label
+                                                                : "Nieznane"}
+                                                        </span>
+                                                    );
+                                                }
+                                            )}
+                                        </span>
+                                    </div>
                                     <Button
-                                        variant="outline-primary"
-                                        className="mt-2"
-                                        onClick={() =>
-                                            fetchReceiptDetails(receipt.id)
-                                        }>
-                                        Edytuj
+                                        variant="outline"
+                                        onClick={() => handleShowModal(group)}>
+                                        <ArrowRight className="w-4 h-4" />
                                     </Button>
-                                    <hr />
                                 </div>
-                            );
-                        })}
-                    </Modal.Body>
-                    <Modal.Footer>
-                        <Button variant="secondary" onClick={handleCloseModal}>
-                            Zamknij
-                        </Button>
-                    </Modal.Footer>
-                </Modal>
-            )}
+                            ))}
+                        </AccordionContent>
+                    </AccordionItem>
+                ))}
+            </Accordion>
 
+            {/* Modal szczegółów paragonu */}
+            <Dialog open={showModal} onOpenChange={setShowModal}>
+                <DialogContent className="max-w-2xl">
+                    <DialogHeader>
+                        <DialogTitle>
+                            Paragony z dnia {selectedGroup?.date}
+                        </DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-4">
+                        {selectedGroup?.receipts.map((receipt) => (
+                            <div
+                                key={receipt.id}
+                                className="p-4 border rounded-md">
+                                <p>
+                                    <strong>Sklep:</strong> {receipt.shop}
+                                </p>
+                                <p>
+                                    <strong>Płacący:</strong> {receipt.payer}
+                                </p>
+                                <p>
+                                    <strong>Wartość:</strong>{" "}
+                                    {receipt.totalValue.toFixed(2)} PLN
+                                </p>
+                                <Button
+                                    variant="outline"
+                                    className="mt-2"
+                                    onClick={() => {}}>
+                                    Edytuj
+                                </Button>
+                            </div>
+                        ))}
+                    </div>
+                    <DialogFooter>
+                        <Button onClick={handleCloseModal}>Zamknij</Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            {/* Modal edycji paragonu */}
             {editingReceipt && (
-                <Modal
-                    show={editModalVisible}
-                    onHide={() => {
-                        setEditModalVisible(false);
-                        setEditingReceipt(null);
-                    }}
-                    backdrop="static"
-                    fullscreen={true}
-                    centered>
-                    <Modal.Header closeButton>
-                        <Modal.Title>Edytuj paragon</Modal.Title>
-                    </Modal.Header>
-                    <Modal.Body>
+                <Dialog
+                    open={editModalVisible}
+                    onOpenChange={setEditModalVisible}>
+                    <DialogContent className="max-w-4xl">
+                        <DialogHeader>
+                            <DialogTitle>Edytuj paragon</DialogTitle>
+                        </DialogHeader>
                         <UnifiedForm
                             formId={
                                 transactionType === "expense"
@@ -352,34 +315,23 @@ const SummaryTable: React.FC<SummaryTableProps> = ({ transactionType }) => {
                                     : "income-form"
                             }
                             buttonLabel="Zapisz zmiany"
-                            showShop={true}
                             showQuantity={true}
                             receipt={editingReceipt}
                         />
-                        {/* <Button
-                            variant="secondary"
-                            className="mt-3"
-                            onClick={() => handleSaveReceipt(editingReceipt)}>
-                            Zapisz paragon
-                        </Button> */}
-                        <Button
-                            variant="danger"
-                            className="mt-3"
-                            onClick={() => handleDeleteReceipt(editingReceipt)}>
-                            Usuń paragon
-                        </Button>
-                    </Modal.Body>
-                    <Modal.Footer>
-                        <Button
-                            variant="secondary"
-                            onClick={() => {
-                                setEditModalVisible(false);
-                                setEditingReceipt(null);
-                            }}>
-                            Anuluj
-                        </Button>
-                    </Modal.Footer>
-                </Modal>
+                        <DialogFooter>
+                            <Button
+                                variant="destructive"
+                                onClick={() =>
+                                    fetchDeleteReceipt(editingReceipt)
+                                }>
+                                Usuń paragon
+                            </Button>
+                            <Button onClick={() => setEditModalVisible(false)}>
+                                Anuluj
+                            </Button>
+                        </DialogFooter>
+                    </DialogContent>
+                </Dialog>
             )}
         </div>
     );

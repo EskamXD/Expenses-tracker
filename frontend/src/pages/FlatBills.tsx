@@ -1,253 +1,188 @@
-import { useState, useEffect } from "react";
-import { Button, Modal, Spinner, Table } from "react-bootstrap";
-import {
-    fetchGetReceipts,
-    fetchPostReceipt,
-    fetchPutReceipt,
-} from "../api/apiService";
-import { Params, Receipt, Item } from "../types";
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { useGlobalContext } from "../context/GlobalContext";
+import { getPersonOption } from "../utils/getPersonOption";
+import { fetchGetReceipts } from "../api/apiService";
 import SummaryFilters from "../components/SummaryFilters.tsx";
 import CallSplitIcon from "@mui/icons-material/CallSplit";
-import PayerDropdown from "../components/PayerDropdown";
-import { getPersonOption } from "../utils/getPersonOption";
-
-interface ComparePayerBillInterface {
-    payer: number;
-    sumOfCommonBills: number;
-}
+import { Receipt } from "../types.tsx";
+import UnifiedDropdown from "../components/UnifiedDropdown.tsx";
+import { Button } from "@/components/ui/button";
+import {
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+} from "@/components/ui/dialog";
+import { Skeleton } from "@/components/ui/skeleton";
+import { DataTable } from "@/components/ui/data-table";
+import { ColumnDef } from "@tanstack/react-table";
 
 const FlatBills = () => {
-    const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
-    const [selectedMonth, setSelectedMonth] = useState(
-        new Date().getMonth() + 1
-    );
-    const [receiptBills, setReceiptBills] = useState<Receipt[]>([]);
-    const [comparePayerBills, setComparePayerBills] = useState<
-        ComparePayerBillInterface[]
-    >([]);
-    const [loading, setLoading] = useState(false);
-    const [newPayer, setNewPayer] = useState<number | null>(null);
-    const [reload, setReload] = useState(false);
-    const [selectedBillReceipt, setSelectedBillReceipt] =
+    const { summaryFilters } = useGlobalContext();
+    const [splitModalOpen, setSplitModalOpen] = useState(false);
+    const [selectedSplitReceipt, setSelectedSplitReceipt] =
         useState<Receipt | null>(null);
-    const [sendingBillUpdate, setSendingBillUpdate] = useState(false);
+    const [splitOwner, setSplitOwner] = useState<number[]>([]);
 
-    // Fetch receipts
-    useEffect(() => {
-        const fetchReceipts = async () => {
-            setLoading(true);
-            const params = {
-                year: selectedYear,
-                month: selectedMonth,
-                category: "flat_bills",
-            } as Params;
+    // Pobranie rachunków
+    const {
+        data: receipts,
+        isLoading,
+        error,
+    } = useQuery<Receipt[], Error>({
+        queryKey: ["flat_bills_receipts", summaryFilters],
+        queryFn: () => fetchGetReceipts(summaryFilters),
+        staleTime: 1000 * 60 * 5,
+        placeholderData: (previousData) => previousData,
+    });
 
-            try {
-                const response = await fetchGetReceipts(params);
-                setReceiptBills(response);
-                const comparePayerArray = processReceipts(response);
-                setComparePayerBills(comparePayerArray);
-            } catch (error) {
-                console.error("Error fetching receipts", error);
-            } finally {
-                setLoading(false);
-                setReload(false);
-            }
-        };
+    if (isLoading) return <Skeleton className="h-40 w-full" />;
+    if (error) return <p>Wystąpił błąd podczas pobierania danych!</p>;
 
-        fetchReceipts();
-    }, [selectedYear, selectedMonth, reload]);
+    // Filtrowanie rachunków
+    const filteredBills = (receipts ?? [])
+        .map((receipt) => ({
+            ...receipt,
+            items: receipt.items.filter(
+                (item) => item.category === "flat_bills"
+            ),
+        }))
+        .filter((receipt) => receipt.items.length > 0);
 
-    const processReceipts = (
-        receipts: Receipt[]
-    ): ComparePayerBillInterface[] => {
-        const comparePayerMap: { [key: number]: ComparePayerBillInterface } =
-            {};
-
-        receipts.forEach((receiptBill) => {
-            const payer = receiptBill.payer;
-            const billValue = Number(receiptBill.items[0].value);
-
-            if (!comparePayerMap[payer]) {
-                comparePayerMap[payer] = { payer, sumOfCommonBills: 0 };
-            }
-            comparePayerMap[payer].sumOfCommonBills += billValue;
-        });
-
-        return Object.values(comparePayerMap);
+    const handleShowSplitModal = (receipt: Receipt) => {
+        const otherOwners = receipt.items[0].owners.filter(
+            (owner) => owner !== receipt.payer
+        );
+        setSelectedSplitReceipt(receipt);
+        setSplitOwner(otherOwners.length > 0 ? otherOwners : []);
+        setSplitModalOpen(true);
     };
 
-    const handleShowEditSplitModal = (receiptBill: Receipt) => {
-        console.log("handleShowEditSplitModal", receiptBill);
-        console.log(newPayer);
-        setSelectedBillReceipt(receiptBill);
+    const handleCloseSplitModal = () => {
+        setSplitModalOpen(false);
+        setSelectedSplitReceipt(null);
+        setSplitOwner([]);
     };
 
-    const handleCloseModal = () => {
-        setSelectedBillReceipt(null);
+    const handleSplitReceipt = async () => {
+        if (!selectedSplitReceipt || splitOwner.length === 0) return;
+
+        const halfValue = Number(selectedSplitReceipt.items[0].value) / 2;
+
+        const newReceipts = [
+            {
+                ...selectedSplitReceipt,
+                payer: selectedSplitReceipt.payer,
+                owners: [selectedSplitReceipt.payer],
+                items: [{ ...selectedSplitReceipt.items[0], value: halfValue }],
+            },
+            {
+                ...selectedSplitReceipt,
+                payer: splitOwner[0],
+                owners: [splitOwner[0]],
+                items: [{ ...selectedSplitReceipt.items[0], value: halfValue }],
+            },
+        ];
+
+        console.log("Zapisuję nowe rachunki:", newReceipts);
+        handleCloseSplitModal();
     };
 
-    const handleSplitBill = async (receiptBill: Receipt, payer: number) => {
-        setSendingBillUpdate(true);
-        const billValue =
-            Math.round((Number(receiptBill.items[0].value) / 2) * 100) / 100;
-
-        const newPayerReceipt = {
-            payment_date: receiptBill.payment_date,
-            payer,
-            shop: receiptBill.shop,
-            transaction_type: receiptBill.transaction_type,
-            items: [
-                { ...receiptBill.items[0], value: billValue, owner: payer },
-            ] as Item[],
-        };
-
-        const oldPayerReceipt = {
-            ...receiptBill,
-            items: [
-                {
-                    ...receiptBill.items[0],
-                    value: billValue,
-                    owner: receiptBill.payer,
-                },
-            ] as Item[],
-        };
-
-        try {
-            await fetchPostReceipt([newPayerReceipt]);
-            await fetchPutReceipt(Number(receiptBill.id), oldPayerReceipt);
-        } catch (error) {
-            console.error("Error updating receipts", error);
-        } finally {
-            setReload(true);
-            setSendingBillUpdate(false);
-            handleCloseModal();
-        }
-    };
+    // Kolumny dla DataTable
+    const columns: ColumnDef<Receipt>[] = [
+        {
+            accessorKey: "payment_date",
+            header: "Data",
+        },
+        {
+            accessorKey: "items.0.value",
+            header: "Wartość",
+            cell: ({ row }) => `${row.original.items[0].value} zł`,
+        },
+        {
+            accessorKey: "payer",
+            header: "Płacił",
+            cell: ({ row }) => getPersonOption(row.original.payer),
+        },
+        {
+            accessorKey: "items.0.description",
+            header: "Opis",
+        },
+        {
+            id: "actions",
+            header: "",
+            cell: ({ row }) => {
+                const billItem = row.original.items[0];
+                return (
+                    <Button
+                        variant="outline"
+                        size="icon"
+                        disabled={billItem.owners.length === 1}
+                        onClick={() => handleShowSplitModal(row.original)}>
+                        <CallSplitIcon />
+                    </Button>
+                );
+            },
+        },
+    ];
 
     return (
         <div>
             <h1>Rachunki</h1>
-            <p>Różnice w rachunkach:</p>
-            {loading ? (
-                <p>Ładowanie...</p>
+            <SummaryFilters
+                defaultCategory="flat_bills"
+                transactionType="expense"
+            />
+
+            {filteredBills.length > 0 ? (
+                <DataTable columns={columns} data={filteredBills} />
             ) : (
-                <>
-                    {comparePayerBills.length > 0 ? (
-                        comparePayerBills.map(({ payer, sumOfCommonBills }) => (
-                            <p key={payer}>
-                                {getPersonOption(payer)}:{" "}
-                                {sumOfCommonBills.toFixed(2)} zł
-                            </p>
-                        ))
-                    ) : (
-                        <p>Brak rachunków</p>
-                    )}
-                    <SummaryFilters />
-                    {receiptBills.length > 0 && (
-                        <Table striped bordered hover className="mt-1rem">
-                            <thead>
-                                <tr>
-                                    <th>Data</th>
-                                    <th>Wartość</th>
-                                    <th>Płacił</th>
-                                    <th>Opis</th>
-                                    <th></th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {receiptBills.map((receiptBill) =>
-                                    receiptBill.items.map((billItem) => (
-                                        <tr key={billItem.id}>
-                                            <td>{receiptBill.payment_date}</td>
-                                            <td>{billItem.value} zł</td>
-                                            <td>
-                                                {getPersonOption(
-                                                    receiptBill.payer
-                                                )}
-                                            </td>
-                                            <td>{billItem.description}</td>
-                                            <td width={"1%"}>
-                                                <Button
-                                                    variant="light"
-                                                    onClick={() =>
-                                                        handleShowEditSplitModal(
-                                                            receiptBill
-                                                        )
-                                                    }
-                                                    disabled={
-                                                        Number(
-                                                            billItem.owner
-                                                        ) !== 99
-                                                    }>
-                                                    <CallSplitIcon />
-                                                </Button>
-                                            </td>
-                                        </tr>
-                                    ))
-                                )}
-                            </tbody>
-                        </Table>
-                    )}
-                </>
+                <p>Brak rachunków</p>
             )}
-            {/* Modal dla wybranego rachunku */}
-            {selectedBillReceipt && (
-                <Modal show onHide={handleCloseModal}>
-                    <Modal.Header closeButton={!sendingBillUpdate}>
-                        <Modal.Title>
-                            Edytuj Rachunek:{" "}
-                            {selectedBillReceipt.items[0]?.description}
-                        </Modal.Title>
-                    </Modal.Header>
-                    <Modal.Body>
-                        <PayerDropdown
-                            label="Nowy płatnik"
-                            payer={Number(newPayer)}
-                            setPayer={setNewPayer}
-                        />
-                        <div className="mt-1rem">
-                            <p>Data: {selectedBillReceipt.payment_date}</p>
+
+            {/* Dialog do podziału rachunku */}
+            <Dialog open={splitModalOpen} onOpenChange={handleCloseSplitModal}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Podziel Rachunek</DialogTitle>
+                    </DialogHeader>
+                    {selectedSplitReceipt && (
+                        <div>
                             <p>
-                                Płacił:{" "}
-                                {getPersonOption(selectedBillReceipt.payer)}
+                                <strong>Oryginalna kwota:</strong>{" "}
+                                {selectedSplitReceipt.items[0].value} zł
                             </p>
                             <p>
-                                Kwota: {selectedBillReceipt.items[0]?.value} zł
+                                <strong>Kwota po podziale:</strong>{" "}
+                                {(
+                                    Number(
+                                        selectedSplitReceipt.items[0].value
+                                    ) / 2
+                                ).toFixed(2)}{" "}
+                                zł
                             </p>
-                            <p>
-                                Opis:{" "}
-                                {selectedBillReceipt.items[0]?.description}
-                            </p>
+
+                            <UnifiedDropdown
+                                label="Wybierz drugiego właściciela"
+                                personInDropdown={splitOwner}
+                                setPersonInDropdown={setSplitOwner}
+                            />
+
+                            <div className="flex justify-end gap-2 mt-4">
+                                <Button
+                                    variant="outline"
+                                    onClick={handleCloseSplitModal}>
+                                    Anuluj
+                                </Button>
+                                <Button onClick={handleSplitReceipt}>
+                                    Zatwierdź podział
+                                </Button>
+                            </div>
                         </div>
-                    </Modal.Body>
-                    <Modal.Footer>
-                        <Button
-                            variant="secondary"
-                            onClick={handleCloseModal}
-                            disabled={sendingBillUpdate}>
-                            Zamknij
-                        </Button>
-                        <Button
-                            style={{ minWidth: "16ch" }}
-                            variant="success"
-                            onClick={() =>
-                                handleSplitBill(selectedBillReceipt, newPayer!)
-                            }
-                            disabled={sendingBillUpdate}>
-                            {sendingBillUpdate ? (
-                                <Spinner
-                                    size="sm"
-                                    animation="border"
-                                    role="status"
-                                />
-                            ) : (
-                                "Podziel rachunek"
-                            )}
-                        </Button>
-                    </Modal.Footer>
-                </Modal>
-            )}
+                    )}
+                </DialogContent>
+            </Dialog>
         </div>
     );
 };

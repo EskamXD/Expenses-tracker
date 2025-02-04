@@ -1,8 +1,12 @@
-import React, { useEffect } from "react";
-import Dropdown from "react-bootstrap/Dropdown";
-import DropdownButton from "react-bootstrap/DropdownButton";
 import { useGlobalContext } from "../context/GlobalContext";
 import { Params } from "../types";
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select";
 
 const MonthDropdown = () => {
     const { summaryFilters, setSummaryFilters } = useGlobalContext();
@@ -10,9 +14,8 @@ const MonthDropdown = () => {
     const getMonthName = (month: number) =>
         new Date(0, month - 1).toLocaleString("default", { month: "long" });
 
-    const handleSelect = (eventKey: string | null) => {
-        if (!eventKey) return;
-        const newMonth = parseInt(eventKey, 10);
+    const handleSelect = (value: string) => {
+        const newMonth = parseInt(value, 10);
         setSummaryFilters((prevFilters: Params) => ({
             ...prevFilters,
             month: newMonth,
@@ -20,21 +23,27 @@ const MonthDropdown = () => {
     };
 
     return (
-        <DropdownButton
-            id="dropdown-basic-button-month"
-            title={`Wybierz miesiąc: ${
-                summaryFilters.month
-                    ? getMonthName(summaryFilters.month)
-                    : "Brak"
-            }`}
-            className="mr-1rem"
-            onSelect={handleSelect}>
-            {[...Array(12)].map((_, index) => (
-                <Dropdown.Item key={index + 1} eventKey={`${index + 1}`}>
-                    {getMonthName(index + 1)}
-                </Dropdown.Item>
-            ))}
-        </DropdownButton>
+        <div className="w-40">
+            <Select
+                onValueChange={handleSelect}
+                value={
+                    summaryFilters.month ? String(summaryFilters.month) : ""
+                }>
+                <SelectTrigger>
+                    <SelectValue placeholder="Wybierz miesiąc" />
+                </SelectTrigger>
+                <SelectContent>
+                    {[...Array(12)].map((_, index) => {
+                        const month = index + 1;
+                        return (
+                            <SelectItem key={month} value={String(month)}>
+                                {getMonthName(month)}
+                            </SelectItem>
+                        );
+                    })}
+                </SelectContent>
+            </Select>
+        </div>
     );
 };
 

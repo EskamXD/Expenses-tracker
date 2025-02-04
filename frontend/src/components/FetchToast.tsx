@@ -1,20 +1,26 @@
-import Toast from "react-bootstrap/Toast";
+import { Button } from "@/components/ui/button";
+import { useToast } from "@/hooks/use-toast";
 
 function FetchToast() {
+    const { toast } = useToast();
+
+    const showToast = () => {
+        const now = new Date();
+        const hours = now.getHours().toString().padStart(2, "0");
+        const minutes = now.getMinutes().toString().padStart(2, "0");
+
+        toast({
+            title: "ShadCN Toast",
+            description: `Hello, world! This is a toast message. • ${hours}:${minutes}`,
+        });
+    };
+
     return (
-        <Toast>
-            <Toast.Header>
-                <img
-                    src="holder.js/20x20?text=%20"
-                    className="rounded me-2"
-                    alt=""
-                />
-                <strong className="me-auto">Bootstrap</strong>
-                <small>11 mins ago</small>
-            </Toast.Header>
-            <Toast.Body>Hello, world! This is a toast message.</Toast.Body>
-        </Toast>
+        <Button variant="outline" onClick={showToast}>
+            Pokaż powiadomienie
+        </Button>
     );
 }
 
 export default FetchToast;
+

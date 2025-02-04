@@ -1,4 +1,4 @@
-import Form from "react-bootstrap/Form";
+import { Checkbox } from "@/components/ui/checkbox";
 
 interface CheckboxGroupProps {
     options: { value: string; label: string }[];
@@ -13,27 +13,33 @@ const CheckboxGroup: React.FC<CheckboxGroupProps> = ({
 }) => {
     const handleCheckboxChange = (value: string) => {
         const newSelectedCategories = selectedCategories.includes(value)
-            ? selectedCategories.filter((category) => category !== value) // Remove the category if it's already selected
-            : [...selectedCategories, value]; // Add the new category
+            ? selectedCategories.filter((category) => category !== value) // Remove if selected
+            : [...selectedCategories, value]; // Add new category
 
-        handleChange(newSelectedCategories); // Update the parent with the new selection
+        handleChange(newSelectedCategories); // Update parent state
     };
 
     return (
-        <div className="mb-3" style={{ width: "fit-content" }}>
-            {options.map((type) => (
-                <Form.Check
-                    type="checkbox"
-                    key={type.value}
-                    id={type.value} // Uncomment to provide unique IDs
-                    label={type.label}
-                    name="checkboxgroup"
-                    onChange={() => handleCheckboxChange(type.value)}
-                    checked={selectedCategories.includes(type.value)} // Check if the category is selected
-                />
+        <div className="space-y-2">
+            {options.map((option) => (
+                <div key={option.value} className="flex items-center space-x-2">
+                    <Checkbox
+                        id={option.value}
+                        checked={selectedCategories.includes(option.value)}
+                        onCheckedChange={() =>
+                            handleCheckboxChange(option.value)
+                        }
+                    />
+                    <label
+                        htmlFor={option.value}
+                        className="text-sm font-medium leading-none cursor-pointer">
+                        {option.label}
+                    </label>
+                </div>
             ))}
         </div>
     );
 };
 
 export default CheckboxGroup;
+

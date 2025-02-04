@@ -1,13 +1,16 @@
-import { Toast } from "react-bootstrap";
+import { useEffect } from "react";
+import { useToast } from "@/hooks/use-toast";
+import { Toast, ToastAction } from "@/components/ui/toast";
 
 interface ToastStatusProps {
     show: boolean;
-    setShow: Function;
-    type: string;
+    setShow: (show: boolean) => void;
+    type: "default" | "destructive"; // Typy dostępne w shadcn/ui
     headerStrong: string;
     body: string;
-    icon: any;
+    icon?: JSX.Element;
 }
+
 const ToastStatus: React.FC<ToastStatusProps> = ({
     show,
     setShow,
@@ -16,25 +19,34 @@ const ToastStatus: React.FC<ToastStatusProps> = ({
     body,
     icon,
 }) => {
-    const now = new Date();
-    const hours = now.getHours().toString().padStart(2, "0"); // Get hours (0-23) and pad with leading 0 if needed
-    const minutes = now.getMinutes().toString().padStart(2, "0"); // Get minutes (0-59) and pad with leading 0 if needed
+    const { toast } = useToast();
 
-    return (
-        <Toast
-            bg={type}
-            show={show}
-            onClose={() => setShow(false)}
-            delay={5000}
-            autohide>
-            <Toast.Header>
-                {icon}
-                <strong className="me-auto">{headerStrong}</strong>
-                <small>{`${hours}:${minutes}`}</small>
-            </Toast.Header>
-            <Toast.Body>{body}</Toast.Body>
-        </Toast>
-    );
+    useEffect(() => {
+        if (show) {
+            const now = new Date();
+            const hours = now.getHours().toString().padStart(2, "0");
+            const minutes = now.getMinutes().toString().padStart(2, "0");
+
+            toast({
+                title: headerStrong,
+                description: `${body} • ${hours}:${minutes}`,
+                variant: type, // "default" lub "destructive"
+                action: (
+                    <ToastAction
+                        altText="Zamknij"
+                        onClick={() => setShow(false)}>
+                        Zamknij
+                    </ToastAction>
+                ),
+            });
+
+            // Ukryj toast po 5 sekundach
+            setTimeout(() => setShow(false), 5000);
+        }
+    }, [show, toast, setShow, type, headerStrong, body]);
+
+    return null; // Nie renderujemy bezpośrednio, bo toasty są obsługiwane przez hook
 };
 
 export default ToastStatus;
+

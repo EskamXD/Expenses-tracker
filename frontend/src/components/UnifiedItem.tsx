@@ -1,254 +1,135 @@
-import React, { useEffect, useState } from "react";
-import CloseButton from "react-bootstrap/CloseButton";
-import Col from "react-bootstrap/Col";
-import Form from "react-bootstrap/Form";
-import Row from "react-bootstrap/Row";
-import Spinner from "react-bootstrap/Spinner";
+import { useState, forwardRef, useImperativeHandle } from "react";
+import { Button } from "@/components/ui/button"; // Shadcn Button
+import { Input } from "@/components/ui/input"; // Shadcn Input
+import { Label } from "@/components/ui/label"; // Shadcn Label
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select"; // Shadcn Select
+import { X } from "lucide-react"; // Ikona zamykania
 import UnifiedDropdown from "./UnifiedDropdown";
 import "../assets/styles/main.css";
 import { Item } from "../types";
-import { fetchItemPredictions } from "../api/apiService";
-import {
-    selectExpensesOptions,
-    selectIncomeOptions,
-} from "../config/selectOption";
-import { useFetcher } from "react-router-dom";
 
 interface UnifiedItemProps {
-    formId: string;
     index: number;
-    shop: string;
-    items: Item[];
-    setItems: React.Dispatch<React.SetStateAction<Item[]>>;
-    updateItem: Function;
-    removeItem: Function;
-    showQuantity: boolean;
-    reset: boolean;
-    setReset: Function;
+    removeItem: (id: number) => void;
 }
 
-const UnifiedItem: React.FC<UnifiedItemProps> = ({
-    formId,
-    index,
-    shop,
-    items,
-    setItems,
-    updateItem,
-    removeItem,
-    showQuantity,
-    reset,
-    setReset,
-}) => {
-    const [query, setQuery] = useState("");
-    const [predictions, setPredictions] = useState([]);
-    const [isLoading, setIsLoading] = useState(false);
-    const [isDropdownVisible, setIsDropdownVisible] = useState(false);
-    const [isClicked, setIsClicked] = useState(false);
+export interface UnifiedItemRef {
+    getItemData: () => Item | null;
+}
 
-    if (index === 0) {
-        return <></>;
-    }
+const UnifiedItem = forwardRef<UnifiedItemRef, UnifiedItemProps>(
+    ({ index, removeItem }, ref) => {
+        // 🔹 Lokalny stan dla każdej wartości
+        const [category, setCategory] = useState<string>("");
+        const [value, setValue] = useState<string>("");
+        const [description, setDescription] = useState<string>("");
+        const [owners, setOwners] = useState<number[]>([]);
+        const [quantity, setQuantity] = useState<number>(1); // 👈 Poprawione na `number`
 
-    const selectOptions =
-        formId === "expense-form" ? selectExpensesOptions : selectIncomeOptions;
-
-    const item = items.find((item) => item.id === index);
-
-    useEffect(() => {
-        if (isClicked) return;
-        if (query.length >= 3) {
-            setIsLoading(true);
-            setIsDropdownVisible(true);
-
-            const fetchPredictions = async () => {
-                try {
-                    const results = await fetchItemPredictions(shop, query);
-                    setPredictions(results);
-                } catch (error) {
-                    console.error("Error fetching item predictions:", error);
-                } finally {
-                    setIsLoading(false);
+        // 🔹 Udostępnianie danych do `UnifiedForm` przez ref
+        useImperativeHandle(ref, () => ({
+            getItemData: () => {
+                // Walidacja przed wysłaniem
+                if (
+                    !category ||
+                    !value ||
+                    !description ||
+                    owners.length === 0
+                ) {
+                    return null; // Nie zwracaj niekompletnego itemu
                 }
-            };
+                return {
+                    id: index,
+                    category,
+                    value,
+                    description,
+                    owners,
+                    quantity: Number(quantity), // 👈 Konwersja do liczby
+                };
+            },
+        }));
 
-            fetchPredictions();
-        } else {
-            setPredictions([]);
-            setIsDropdownVisible(false);
-        }
-    }, [query]);
+        return (
+            <div className="flex flex-wrap gap-4 p-4 border rounded-lg bg-white shadow-md">
+                {/* Kategoria */}
+                <div className="flex flex-col w-1/5 min-w-[150px]">
+                    <Label htmlFor={`category-${index}`}>Kategoria</Label>
+                    <Select onValueChange={setCategory}>
+                        <SelectTrigger>
+                            <SelectValue placeholder="Wybierz kategorię" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="food">Jedzenie</SelectItem>
+                            <SelectItem value="transport">Transport</SelectItem>
+                        </SelectContent>
+                    </Select>
+                </div>
 
-    useEffect(() => {
-        if (reset) {
-            setQuery("");
-            setPredictions([]);
-            setIsDropdownVisible(false);
-            setIsClicked(false);
-            setReset(!reset);
-        }
-    }, [reset]);
-
-    if (!item) {
-        return <></>;
-    }
-
-    return (
-        <div>
-            <Row>
-                <Col xs={2}>
-                    <Form.Select
-                        id={`category-${item.id}`}
-                        className="mb-3"
-                        value={item.category || ""}
-                        onChange={(e) =>
-                            updateItem(
-                                Number(item.id),
-                                "category",
-                                e.target.value,
-                                setItems
-                            )
-                        }>
-                        {selectOptions.map((option) => (
-                            <option key={option.value} value={option.value}>
-                                {option.label}
-                            </option>
-                        ))}
-                    </Form.Select>
-                </Col>
-                <Col className="width-100">
-                    <Form.Control
+                {/* Kwota */}
+                <div className="flex flex-col w-1/5 min-w-[150px]">
+                    <Label htmlFor={`value-${index}`}>Kwota</Label>
+                    <Input
                         type="text"
+                        id={`value-${index}`}
                         placeholder="Kwota"
-                        value={item.value}
-                        onChange={(e) =>
-                            updateItem(
-                                Number(item.id),
-                                "value",
-                                e.target.value,
-                                setItems
-                            )
-                        }
+                        value={value}
+                        onChange={(e) => setValue(e.target.value)}
                     />
-                </Col>
-                <Col style={{ position: "relative" }}>
-                    <Form.Control
+                </div>
+
+                {/* Opis */}
+                <div className="flex flex-col w-1/5 min-w-[150px]">
+                    <Label htmlFor={`description-${index}`}>Opis/Nazwa</Label>
+                    <Input
                         type="text"
+                        id={`description-${index}`}
                         placeholder="Opis/Nazwa"
-                        value={query || item.description || ""}
-                        onChange={(e) => {
-                            setIsClicked(false);
-                            const newQuery = e.target.value;
-                            setQuery(newQuery);
-
-                            updateItem(
-                                Number(item.id),
-                                "description",
-                                newQuery,
-                                setItems
-                            );
-
-                            if (newQuery === "") {
-                                // Wyczyszczenie opisu w przypadku pustego inputa
-                                updateItem(
-                                    Number(item.id),
-                                    "description",
-                                    "",
-                                    setItems
-                                );
-                            }
-                        }}
+                        value={description}
+                        onChange={(e) => setDescription(e.target.value)}
                     />
-                    {isLoading && <Spinner />}
-                    {isDropdownVisible && predictions.length > 0 && (
-                        <ul
-                            style={{
-                                position: "absolute",
-                                top: "100%",
-                                left: 0,
-                                right: 0,
-                                background: "#333",
-                                border: "1px solid #ddd",
-                                borderRadius: "4px",
-                                maxHeight: "150px",
-                                overflowY: "auto",
-                                zIndex: 1000,
-                                listStyle: "none",
-                                margin: 0,
-                                padding: "0.5rem",
-                            }}>
-                            {predictions.map((prediction: any) => (
-                                <li
-                                    key={prediction.id}
-                                    style={{
-                                        padding: "0.5rem",
-                                        cursor: "pointer",
-                                        color: "#fff",
-                                        textAlign: "left",
-                                    }}
-                                    onClick={() => {
-                                        updateItem(
-                                            Number(item.id),
-                                            "description",
-                                            prediction.name,
-                                            setItems
-                                        );
-                                        setQuery(prediction.name);
-                                        setPredictions([]);
-                                        setIsDropdownVisible(false);
-                                        setIsClicked(true);
-                                    }}>
-                                    {prediction.name} ({prediction.frequency})
-                                </li>
-                            ))}
-                        </ul>
-                    )}
-                </Col>
-                {showQuantity && (
-                    <Col className="width-100">
-                        <Form.Control
-                            type="number"
-                            placeholder="Ilość"
-                            value={item.quantity || ""}
-                            onChange={(e: any) =>
-                                updateItem(
-                                    Number(item.id),
-                                    "quantity",
-                                    e.target.value,
-                                    setItems
-                                )
-                            }
-                        />
-                    </Col>
-                )}
-                <Col style={{ maxWidth: "fit-content" }}>
+                </div>
+
+                {/* Ilość */}
+                <div className="flex flex-col w-1/5 min-w-[100px]">
+                    <Label htmlFor={`quantity-${index}`}>Ilość</Label>
+                    <Input
+                        type="number"
+                        id={`quantity-${index}`}
+                        placeholder="Ilość"
+                        value={quantity}
+                        onChange={(e) => setQuantity(Number(e.target.value))}
+                    />
+                </div>
+
+                {/* Właściciele */}
+                <div className="flex flex-col w-auto">
+                    <Label>Właściciele</Label>
                     <UnifiedDropdown
-                        type="owner"
                         label="Wybierz właścicieli"
-                        personInDropdown={item.owners}
-                        setPersonInDropdown={(newOwners: number[]) =>
-                            updateItem(
-                                Number(item.id),
-                                "owners",
-                                newOwners,
-                                setItems
-                            )
-                        }
+                        personInDropdown={owners}
+                        setPersonInDropdown={setOwners}
                     />
-                </Col>
+                </div>
 
-                <Col style={{ maxWidth: "fit-content" }}>
-                    {index !== 1 ? (
-                        <CloseButton
-                            onClick={() => removeItem(items, setItems, item.id)}
-                        />
-                    ) : (
-                        <CloseButton style={{ visibility: "hidden" }} />
-                    )}
-                </Col>
-            </Row>
-        </div>
-    );
-};
+                {/* Usuwanie itemu */}
+                <div className="flex items-center">
+                    <Button
+                        variant="destructive"
+                        size="icon"
+                        onClick={() => removeItem(index)}>
+                        <X className="w-5 h-5" />
+                    </Button>
+                </div>
+            </div>
+        );
+    }
+);
 
 export default UnifiedItem;
 

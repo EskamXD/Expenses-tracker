@@ -1,15 +1,26 @@
-import Breadcrumb from "react-bootstrap/Breadcrumb";
-import { Link } from "react-router-dom";
+import {
+    Breadcrumb,
+    BreadcrumbItem,
+    BreadcrumbLink,
+    BreadcrumbList,
+    BreadcrumbPage,
+    BreadcrumbSeparator,
+} from "@/components/ui/breadcrumb";
 import UnifiedForm from "../components/UnifiedForm";
 
 const IncomePage = () => {
     return (
         <>
             <Breadcrumb>
-                <Breadcrumb.Item linkAs={Link} linkProps={{ to: "/" }}>
-                    Strona główna
-                </Breadcrumb.Item>
-                <Breadcrumb.Item active>Przychody</Breadcrumb.Item>
+                <BreadcrumbList>
+                    <BreadcrumbItem>
+                        <BreadcrumbLink href="/">Home</BreadcrumbLink>
+                    </BreadcrumbItem>
+                    <BreadcrumbSeparator />
+                    <BreadcrumbItem>
+                        <BreadcrumbPage>Przychody</BreadcrumbPage>
+                    </BreadcrumbItem>
+                </BreadcrumbList>
             </Breadcrumb>
 
             <h1>Przychody</h1>

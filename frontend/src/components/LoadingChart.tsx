@@ -1,4 +1,4 @@
-import Spinner from "react-bootstrap/Spinner";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface LoadingChartProps {
     isLoading: boolean;
@@ -9,14 +9,10 @@ interface LoadingChartProps {
 const LoadingChart: React.FC<LoadingChartProps> = ({
     isLoading,
     chartComponent,
+    className = "w-full h-64",
 }) => {
-    return isLoading ? (
-        <Spinner animation="border" role="status">
-            <span className="sr-only"></span>
-        </Spinner>
-    ) : (
-        chartComponent
-    );
+    return isLoading ? <Skeleton className={className} /> : chartComponent;
 };
 
 export default LoadingChart;
+

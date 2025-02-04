@@ -1,5 +1,5 @@
 export type Person = {
-    id: number;
+    id?: number;
     name: string;
     payer: boolean;
     owner: boolean;
@@ -25,9 +25,9 @@ export type Receipt = {
 
 export type Params = {
     id?: number;
-    owners: number[];
-    month: number;
-    year: number;
+    owners?: number[];
+    month?: number;
+    year?: number;
     category?: string | string[];
     transaction_type?: string;
 };

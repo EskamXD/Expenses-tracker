@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import Spinner from "react-bootstrap/Spinner";
+import { Skeleton } from "@/components/ui/skeleton";
 import ModalPerson from "../components/ModalPerson";
 import { fetchPostPerson } from "../api/apiService";
 import { Person } from "../types";
@@ -8,39 +8,36 @@ import { useGlobalContext } from "../context/GlobalContext";
 
 const Loader: React.FC = () => {
     const [showModal, setShowModal] = useState(true);
-    const [name, setName] = useState("");
-    const [payer, setPayer] = useState(false);
     const { setPersons } = useGlobalContext();
 
-    // Obsługuje zdarzenie przesłania formularza
-    const handleSubmit = async (e: any) => {
-        e.preventDefault;
-
-        const user = {
-            name: name,
-            payer: payer,
+    // Obsługuje przesyłanie formularza z `ModalPerson`
+    const handleSubmit = async (data: { name: string; payer: boolean }) => {
+        const user: Person = {
+            name: data.name,
+            payer: data.payer,
             owner: true,
-        } as Person;
+        };
 
-        fetchPostPerson(user).then((reponse) => {
-            setPersons(reponse);
+        try {
+            const response = await fetchPostPerson(user);
+            setPersons(response);
             setShowModal(false);
-        });
+        } catch (error) {
+            console.error("Błąd podczas dodawania osoby:", error);
+        }
     };
 
     return (
         <div className="center-div">
-            <Spinner animation="border" role="status">
-                <span className="visually-hidden">Loading...</span>
-            </Spinner>
+            <Skeleton className="w-16 h-16 rounded-full" />
             <ModalPerson
                 showModal={showModal}
                 setShowModal={setShowModal}
-                name={name}
-                setName={setName}
-                payer={payer}
-                setPayer={setPayer}
-                handleSubmit={handleSubmit}
+                name=""
+                setName={() => {}}
+                payer={false}
+                setPayer={() => {}}
+                handleSubmit={handleSubmit} // 🔹 Teraz pasuje do `ModalPerson`
                 canCloseModal={false}
             />
         </div>
@@ -48,3 +45,4 @@ const Loader: React.FC = () => {
 };
 
 export default Loader;
+

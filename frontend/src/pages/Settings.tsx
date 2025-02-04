@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-import { Button } from "react-bootstrap";
+// import { Button } from "react-bootstrap";
+import { Button } from "@/components/ui/button";
 import ModalPerson from "../components/ModalPerson";
 import { Person } from "../types";
 import {
@@ -109,3 +110,4 @@ const Settings = () => {
 };
 
 export default Settings;
+

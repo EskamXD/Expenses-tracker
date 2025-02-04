@@ -1,14 +1,31 @@
-import { Button, Form, Modal } from "react-bootstrap";
-import { FormEventHandler } from "react";
+import {
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+    DialogFooter,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+    Form,
+    FormControl,
+    FormField,
+    FormItem,
+    FormLabel,
+    FormMessage,
+} from "@/components/ui/form";
+import { useForm } from "react-hook-form";
 
 interface ModalPersonProps {
     showModal: boolean;
-    setShowModal: Function;
+    setShowModal: (open: boolean) => void; // 🔹 Poprawiony typ
     name: string;
-    setName: Function;
+    setName: (name: string) => void; // 🔹 Poprawiony typ
     payer: boolean;
-    setPayer: Function;
-    handleSubmit: FormEventHandler<HTMLFormElement>;
+    setPayer: (payer: boolean) => void; // 🔹 Poprawiony typ
+    handleSubmit: (data: { name: string; payer: boolean }) => void;
     canCloseModal: boolean;
 }
 
@@ -22,45 +39,82 @@ const ModalPerson: React.FC<ModalPersonProps> = ({
     handleSubmit,
     canCloseModal,
 }) => {
-    const handleChange = (e: any) => {
-        setPayer(e.target.checked);
+    const form = useForm({
+        defaultValues: {
+            name: name,
+            payer: payer,
+        },
+    });
+
+    const onSubmit = (data: { name: string; payer: boolean }) => {
+        handleSubmit(data);
+        setShowModal(false);
     };
+
     return (
-        <Modal show={showModal} centered>
-            <Modal.Header
-                closeButton={canCloseModal}
-                onClick={() => setShowModal(false)}>
-                <Modal.Title>Dodaj osobę</Modal.Title>
-            </Modal.Header>
-            <Modal.Body>
-                <Form onSubmit={handleSubmit}>
-                    <Form.Group className="mb-3" controlId="formBasicName">
-                        <Form.Label>Imię</Form.Label>
-                        <Form.Control
-                            type="text"
-                            placeholder="Wpisz imię"
-                            value={name} // Dodaj wartość stanu jako wartość kontrolowaną
-                            onChange={(e) => setName(e.target.value)} // Aktualizuj stan na podstawie zmian w polu
-                            className="mb-3"
+        <Dialog
+            open={showModal}
+            onOpenChange={canCloseModal ? setShowModal : undefined}>
+            <DialogContent className="max-w-md">
+                <DialogHeader>
+                    <DialogTitle>Dodaj osobę</DialogTitle>
+                </DialogHeader>
+                <Form {...form}>
+                    <form
+                        onSubmit={form.handleSubmit(onSubmit)}
+                        className="space-y-4">
+                        {/* Imię */}
+                        <FormField
+                            control={form.control}
+                            name="name"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Imię</FormLabel>
+                                    <FormControl>
+                                        <Input
+                                            placeholder="Wpisz imię"
+                                            {...field}
+                                            onChange={(e) => {
+                                                field.onChange(e);
+                                                setName(e.target.value);
+                                            }}
+                                        />
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
                         />
-                        <Form.Check>
-                            <Form.Check.Input
-                                type="checkbox"
-                                onChange={(e) => handleChange(e)}
-                                checked={payer} // Dodaj wartość stanu jako wartość kontrolowaną
-                            />
-                            <Form.Check.Label>
-                                Zaznacz, jeśli chcesz dodać osobę jako płatnika
-                                do wspólnych rachunków
-                            </Form.Check.Label>
-                        </Form.Check>
-                    </Form.Group>
-                    <Button variant="success" type="submit">
-                        Dodaj
-                    </Button>
+
+                        {/* Checkbox Płatnika */}
+                        <FormField
+                            control={form.control}
+                            name="payer"
+                            render={({ field }) => (
+                                <FormItem className="flex flex-row items-center space-x-2">
+                                    <FormControl>
+                                        <Checkbox
+                                            checked={field.value}
+                                            onCheckedChange={(checked) => {
+                                                field.onChange(checked);
+                                                setPayer(!!checked);
+                                            }}
+                                        />
+                                    </FormControl>
+                                    <FormLabel>
+                                        Zaznacz, jeśli chcesz dodać osobę jako
+                                        płatnika do wspólnych rachunków
+                                    </FormLabel>
+                                </FormItem>
+                            )}
+                        />
+
+                        <DialogFooter>
+                            <Button type="submit">Dodaj</Button>
+                        </DialogFooter>
+                    </form>
                 </Form>
-            </Modal.Body>
-        </Modal>
+            </DialogContent>
+        </Dialog>
     );
 };
 
