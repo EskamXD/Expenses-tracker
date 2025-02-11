@@ -1,12 +1,12 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { useGlobalContext } from "../context/GlobalContext";
-import { getPersonOption } from "../utils/getPersonOption";
-import { fetchGetReceipts } from "../api/apiService";
-import SummaryFilters from "../components/SummaryFilters.tsx";
+import { useGlobalContext } from "@/context/GlobalContext";
+import { getPersonOption } from "@/utils/getPersonOption";
+import { fetchGetReceipts } from "@/api/apiService";
+import SummaryFilters from "@/components/SummaryFilters.tsx";
 import CallSplitIcon from "@mui/icons-material/CallSplit";
-import { Receipt } from "../types.tsx";
-import UnifiedDropdown from "../components/UnifiedDropdown.tsx";
+import { Receipt } from "@/types.tsx";
+import UnifiedDropdown from "@/components/UnifiedDropdown.tsx";
 import { Button } from "@/components/ui/button";
 import {
     Dialog,

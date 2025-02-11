@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import UnifiedForm from "../components/UnifiedForm";
+import UnifiedForm from "@/components/UnifiedForm";
 import {
     Breadcrumb,
     BreadcrumbList,
