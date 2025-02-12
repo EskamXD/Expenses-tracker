@@ -1,11 +1,9 @@
 import { useState } from "react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import SummaryTab from "../components/SummaryTab";
-import ChartTab from "../components/ChartTab";
-import BalanceTab from "../components/BalanceTab";
-import SummaryFilters from "../components/SummaryFilters.tsx";
+import SummaryTab from "@/components/summary-tab";
+import SummaryFilters from "@/components/summary-filters";
 
-const SummaryPage = () => {
+const Summary = () => {
     const [tab, setTab] = useState("expense");
 
     return (
@@ -18,8 +16,6 @@ const SummaryPage = () => {
                 <TabsList>
                     <TabsTrigger value="expense">Wydatki</TabsTrigger>
                     <TabsTrigger value="income">Przychody</TabsTrigger>
-                    {/* <TabsTrigger value="charts">Wykresy</TabsTrigger> */}
-                    {/* <TabsTrigger value="balance">Saldo</TabsTrigger> */}
                 </TabsList>
 
                 <TabsContent value="expense">
@@ -28,20 +24,9 @@ const SummaryPage = () => {
                 <TabsContent value="income">
                     <SummaryTab transactionType="income" />
                 </TabsContent>
-                {/* <TabsContent value="charts">
-                    <ChartTab tab={tab} />
-                </TabsContent> */}
-                {/* <TabsContent value="balance">
-                    <BalanceTab 
-                        selectedOwners={selectedOwner}
-                        selectedYear={selectedYear}
-                        selectedMonth={selectedMonth}
-                    />
-                </TabsContent> */}
             </Tabs>
         </div>
     );
 };
 
-export default SummaryPage;
-
+export default Summary;

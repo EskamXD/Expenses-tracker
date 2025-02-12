@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { useGlobalContext } from "../context/GlobalContext";
 import { fetchGetReceipts } from "../api/apiService";
-import SummaryTable from "./SummaryTable";
+import SummaryTable from "./summary-table";
 import { Skeleton } from "@/components/ui/skeleton"; // Shadcn Skeleton
 
 interface SummaryTabProps {
@@ -16,7 +16,7 @@ const SummaryTab: React.FC<SummaryTabProps> = ({ transactionType }) => {
         isLoading,
         error,
     } = useQuery({
-        queryKey: ["receipts", summaryFilters],
+        queryKey: ["receipts", summaryFilters, transactionType],
         queryFn: () => fetchGetReceipts(summaryFilters),
         staleTime: 1000 * 60 * 5, // Cache na 5 minut
         placeholderData: (previousData) => previousData, // Zachowanie poprzednich danych przy zmianie filtrów
@@ -25,9 +25,9 @@ const SummaryTab: React.FC<SummaryTabProps> = ({ transactionType }) => {
     if (isLoading) {
         return (
             <div className="flex flex-col items-center justify-center w-full h-64">
-                <Skeleton className="h-6 w-48 mb-2" />
-                <Skeleton className="h-6 w-64 mb-2" />
-                <Skeleton className="h-6 w-52" />
+                <Skeleton className="h-6 w-128 mb-2" />
+                <Skeleton className="h-6 w-128 mb-2" />
+                <Skeleton className="h-6 w-128" />
             </div>
         );
     }
@@ -61,4 +61,3 @@ const SummaryTab: React.FC<SummaryTabProps> = ({ transactionType }) => {
 };
 
 export default SummaryTab;
-

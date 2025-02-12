@@ -1,12 +1,12 @@
 export type Person = {
-    id?: number;
+    id: number;
     name: string;
     payer: boolean;
     owner: boolean;
 };
 
 export type Item = {
-    id?: number;
+    id: number;
     category: string;
     value: string;
     description: string;
@@ -15,7 +15,7 @@ export type Item = {
 };
 
 export type Receipt = {
-    id?: number;
+    id: number;
     payment_date: string;
     payer: number;
     shop: string;
@@ -36,4 +36,3 @@ export type Shops = {
     id?: number;
     name: string;
 };
-

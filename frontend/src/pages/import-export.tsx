@@ -10,9 +10,8 @@ import {
     fetchGetReceipts,
     fetchPostReceipt,
     fetchDatabaseScan,
-} from "../api/apiService";
-import Toaster from "../components/Toaster";
-import { Receipt } from "../types";
+} from "@/api/apiService";
+import { Receipt } from "@/types";
 
 interface toastInterface {
     type: string;
@@ -20,7 +19,7 @@ interface toastInterface {
     message: string;
 }
 
-const ImportExportPage = () => {
+const ImportExport = () => {
     const [toastArray, setToastArray] = useState<toastInterface[]>([]);
 
     // ** Pobieranie danych do eksportu **
@@ -173,5 +172,4 @@ const ImportExportPage = () => {
     );
 };
 
-export default ImportExportPage;
-
+export default ImportExport;

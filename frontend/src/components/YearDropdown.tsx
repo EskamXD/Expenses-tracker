@@ -12,6 +12,7 @@ const YearDropdown = () => {
     const { summaryFilters, setSummaryFilters } = useGlobalContext();
 
     const handleSelect = (value: string) => {
+        console.log(value, summaryFilters);
         const newYear = parseInt(value, 10);
         setSummaryFilters((prevFilters: Params) => ({
             ...prevFilters,
@@ -43,4 +44,3 @@ const YearDropdown = () => {
 };
 
 export default YearDropdown;
-

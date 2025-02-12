@@ -26,27 +26,28 @@ export const UnifiedDropdown: React.FC<UnifiedDropdownProps> = ({
 }) => {
     const { persons } = useGlobalContext(); // Pobieranie listy osób
 
-    const handleChange = (selectedId: number) => {
+    // Funkcja przyjmuje dodatkowy argument "checked", który mówi, czy dany element został zaznaczony
+    const handleChange = (selectedId: number, checked: boolean) => {
         if (Array.isArray(personInDropdown)) {
-            (
-                setPersonInDropdown as React.Dispatch<
-                    React.SetStateAction<number[]>
-                >
-            )((prev) =>
-                prev.includes(selectedId)
-                    ? prev.filter((id) => id !== selectedId)
-                    : [...prev, selectedId]
-            );
+            if (checked) {
+                setPersonInDropdown((prev) => {
+                    if (!prev.includes(selectedId)) {
+                        return [...prev, selectedId];
+                    }
+                    return prev;
+                });
+            } else {
+                setPersonInDropdown((prev) =>
+                    prev.filter((id) => id !== selectedId)
+                );
+            }
         } else {
-            (
-                setPersonInDropdown as React.Dispatch<
-                    React.SetStateAction<number>
-                >
-            )(selectedId);
+            // Dla single select po prostu ustawiamy wartość
+            setPersonInDropdown(selectedId);
         }
     };
 
-    const isMultiSelect = Array.isArray(personInDropdown); // Czy checkboxy czy radio
+    const isMultiSelect = Array.isArray(personInDropdown); // Czy multi select czy single
     const dropdownHeader = isMultiSelect
         ? "Wybierz właścicieli"
         : "Wybierz płatnika";
@@ -71,14 +72,19 @@ export const UnifiedDropdown: React.FC<UnifiedDropdownProps> = ({
                         <DropdownMenuCheckboxItem
                             key={person.id}
                             checked={personInDropdown.includes(person.id)}
-                            onCheckedChange={() => handleChange(person.id)}>
+                            // onCheckedChange przekazuje boolean – rzutujemy typ (checked as boolean)
+                            onCheckedChange={(checked) =>
+                                handleChange(person.id, checked as boolean)
+                            }>
                             {person.name}
                         </DropdownMenuCheckboxItem>
                     ))
                 ) : (
                     <DropdownMenuRadioGroup
                         value={String(personInDropdown)}
-                        onValueChange={(value) => handleChange(Number(value))}>
+                        onValueChange={(value) =>
+                            handleChange(Number(value), true)
+                        }>
                         {persons.map((person) => (
                             <DropdownMenuRadioItem
                                 key={person.id}
@@ -94,4 +100,3 @@ export const UnifiedDropdown: React.FC<UnifiedDropdownProps> = ({
 };
 
 export default UnifiedDropdown;
-

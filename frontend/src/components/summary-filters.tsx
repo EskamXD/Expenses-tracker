@@ -1,8 +1,8 @@
 import { Button } from "@/components/ui/button"; // Shadcn Button
-import YearDropdown from "./YearDropdown";
-import MonthDropdown from "./MonthDropdown";
-import SummaryDropdown from "./SummaryDropdown";
-import { useGlobalContext } from "../context/GlobalContext";
+import YearDropdown from "@/components/YearDropdown";
+import MonthDropdown from "@/components/MonthDropdown";
+import SummaryDropdown from "@/components/summary-dropdown";
+import { useGlobalContext } from "@/context/GlobalContext";
 
 interface SummaryFiltersProps {
     showOwnersDropdown?: boolean;
@@ -24,24 +24,24 @@ const SummaryFilters: React.FC<SummaryFiltersProps> = ({
     const { setSummaryFilters } = useGlobalContext();
 
     return (
-        <div className="flex flex-wrap gap-2 p-4 border rounded-lg bg-white shadow-md">
+        <div className="flex flex-wrap gap-2 p-4 border rounded-lg shadow-md">
             {showOwnersDropdown && (
-                <div className="p-2 border rounded-lg">
+                <div className="p-2">
                     <SummaryDropdown />
                 </div>
             )}
             {showYear && (
-                <div className="p-2 border rounded-lg">
+                <div className="p-2">
                     <YearDropdown />
                 </div>
             )}
             {showMonth && (
-                <div className="p-2 border rounded-lg">
+                <div className="p-2">
                     <MonthDropdown />
                 </div>
             )}
             {showCategories && (
-                <div className="p-2 border rounded-lg">
+                <div className="p-2">
                     {/* <CategoriesDropdown defaultCategory={defaultCategory} transactionType={transactionType} /> */}
                 </div>
             )}
@@ -61,4 +61,3 @@ const SummaryFilters: React.FC<SummaryFiltersProps> = ({
 };
 
 export default SummaryFilters;
-

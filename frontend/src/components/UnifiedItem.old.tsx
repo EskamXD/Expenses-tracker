@@ -8,15 +8,22 @@ import {
     SelectItem,
     SelectTrigger,
     SelectValue,
-} from "@/components/ui/select"; // Shadcn Select
-import { X } from "lucide-react"; // Ikona zamykania
-import UnifiedDropdown from "./UnifiedDropdown";
-import "../assets/styles/main.css";
-import { Item } from "../types";
+} from "@/components/ui/select";
+import { X } from "lucide-react";
+import UnifiedDropdown from "@/components/unified-dropdown";
+import {
+    selectExpensesOptions,
+    selectIncomeOptions,
+} from "@/config/selectOption";
+// import "../assets/styles/main.css";
+import { Item } from "@/types";
 
 interface UnifiedItemProps {
     index: number;
+    formId: string;
     removeItem: (id: number) => void;
+    showQuantity: boolean;
+    initialData?: Item; // Dodajemy opcjonalny prop z danymi
 }
 
 export interface UnifiedItemRef {
@@ -24,7 +31,17 @@ export interface UnifiedItemRef {
 }
 
 const UnifiedItem = forwardRef<UnifiedItemRef, UnifiedItemProps>(
-    ({ index, removeItem }, ref) => {
+    ({ index, formId, removeItem, initialData }, ref) => {
+        const categoriesToMap = () => {
+            if (formId === "expense-form") {
+                return selectExpensesOptions;
+            } else if (formId === "income-form") {
+                return selectIncomeOptions;
+            } else {
+                throw new Error("Invalid form index");
+            }
+        };
+
         // 🔹 Lokalny stan dla każdej wartości
         const [category, setCategory] = useState<string>("");
         const [value, setValue] = useState<string>("");
@@ -35,44 +52,54 @@ const UnifiedItem = forwardRef<UnifiedItemRef, UnifiedItemProps>(
         // 🔹 Udostępnianie danych do `UnifiedForm` przez ref
         useImperativeHandle(ref, () => ({
             getItemData: () => {
-                // Walidacja przed wysłaniem
                 if (
                     !category ||
                     !value ||
                     !description ||
                     owners.length === 0
                 ) {
-                    return null; // Nie zwracaj niekompletnego itemu
+                    return null;
                 }
+                console.log(index, category, value, description, owners);
                 return {
                     id: index,
                     category,
                     value,
                     description,
                     owners,
-                    quantity: Number(quantity), // 👈 Konwersja do liczby
+                    quantity: Number(quantity),
                 };
             },
         }));
 
         return (
-            <div className="flex flex-wrap gap-4 p-4 border rounded-lg bg-white shadow-md">
+            <div className="flex flex-wrap justify-between gap-4 p-4 border rounded-lg shadow-md">
                 {/* Kategoria */}
-                <div className="flex flex-col w-1/5 min-w-[150px]">
+                <div className="flex flex-col w-1/5 min-w-[150px] gap-1">
                     <Label htmlFor={`category-${index}`}>Kategoria</Label>
                     <Select onValueChange={setCategory}>
                         <SelectTrigger>
                             <SelectValue placeholder="Wybierz kategorię" />
                         </SelectTrigger>
                         <SelectContent>
-                            <SelectItem value="food">Jedzenie</SelectItem>
-                            <SelectItem value="transport">Transport</SelectItem>
+                            {categoriesToMap().map(
+                                (
+                                    category: { value: string; label: string },
+                                    index: number
+                                ) => (
+                                    <SelectItem
+                                        key={index}
+                                        value={category.value}>
+                                        {category.label}
+                                    </SelectItem>
+                                )
+                            )}
                         </SelectContent>
                     </Select>
                 </div>
 
                 {/* Kwota */}
-                <div className="flex flex-col w-1/5 min-w-[150px]">
+                <div className="flex flex-col w-1/8 min-w-[50px] gap-1">
                     <Label htmlFor={`value-${index}`}>Kwota</Label>
                     <Input
                         type="text"
@@ -84,7 +111,7 @@ const UnifiedItem = forwardRef<UnifiedItemRef, UnifiedItemProps>(
                 </div>
 
                 {/* Opis */}
-                <div className="flex flex-col w-1/5 min-w-[150px]">
+                <div className="flex flex-col w-1/5 min-w-[150px] gap-1">
                     <Label htmlFor={`description-${index}`}>Opis/Nazwa</Label>
                     <Input
                         type="text"
@@ -96,7 +123,7 @@ const UnifiedItem = forwardRef<UnifiedItemRef, UnifiedItemProps>(
                 </div>
 
                 {/* Ilość */}
-                <div className="flex flex-col w-1/5 min-w-[100px]">
+                <div className="flex flex-col w-1/10 min-w-[20px] gap-1">
                     <Label htmlFor={`quantity-${index}`}>Ilość</Label>
                     <Input
                         type="number"
@@ -108,7 +135,7 @@ const UnifiedItem = forwardRef<UnifiedItemRef, UnifiedItemProps>(
                 </div>
 
                 {/* Właściciele */}
-                <div className="flex flex-col w-auto">
+                <div className="flex flex-col w-auto gap-1">
                     <Label>Właściciele</Label>
                     <UnifiedDropdown
                         label="Wybierz właścicieli"
@@ -118,7 +145,7 @@ const UnifiedItem = forwardRef<UnifiedItemRef, UnifiedItemProps>(
                 </div>
 
                 {/* Usuwanie itemu */}
-                <div className="flex items-center">
+                <div className="flex items-end">
                     <Button
                         variant="destructive"
                         size="icon"
@@ -132,4 +159,3 @@ const UnifiedItem = forwardRef<UnifiedItemRef, UnifiedItemProps>(
 );
 
 export default UnifiedItem;
-

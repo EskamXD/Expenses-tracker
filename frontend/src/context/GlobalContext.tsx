@@ -1,16 +1,10 @@
-import React, {
-    createContext,
-    useContext,
-    useState,
-    ReactNode,
-    useEffect,
-} from "react";
-import { Params, Person, Receipt, Shops } from "../types";
-import { fetchGetReceipts } from "../api/apiService";
+import React, { createContext, useContext, useState, ReactNode } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { fetchGetPerson } from "@/api/apiService";
+import { Params, Person, Receipt, Shops } from "@/types";
 
 interface GlobalState {
     persons: Person[];
-    setPersons: (users: Person[]) => void;
 
     receipts: Receipt[];
     setReceipts: (receipts: Receipt[]) => void;
@@ -27,7 +21,6 @@ interface GlobalState {
 // Domyślny stan
 const defaultState: GlobalState = {
     persons: [],
-    setPersons: () => {},
     receipts: [],
     setReceipts: () => {},
     shops: [],
@@ -47,7 +40,7 @@ const GlobalContext = createContext<GlobalState>(defaultState);
 export const GlobalProvider: React.FC<{ children: ReactNode }> = ({
     children,
 }) => {
-    const [persons, setPersons] = useState<Person[]>([]);
+    // const [persons, setPersons] = useState<Person[]>([]);
     const [receipts, setReceipts] = useState<Receipt[]>([]);
     const [shops, setShops] = useState<Shops[]>([]);
     const [summaryFilters, setSummaryFilters] = useState<Params>({
@@ -56,11 +49,16 @@ export const GlobalProvider: React.FC<{ children: ReactNode }> = ({
         year: new Date().getFullYear(),
     });
 
+    const { data: persons = [] } = useQuery<Person[], Error>({
+        queryKey: ["persons"],
+        queryFn: () => fetchGetPerson(),
+        staleTime: 1000 * 60 * 5,
+    });
+
     return (
         <GlobalContext.Provider
             value={{
                 persons,
-                setPersons,
                 receipts,
                 setReceipts,
                 shops,
@@ -75,4 +73,3 @@ export const GlobalProvider: React.FC<{ children: ReactNode }> = ({
 
 // Hook do korzystania z GlobalContext
 export const useGlobalContext = () => useContext(GlobalContext);
-

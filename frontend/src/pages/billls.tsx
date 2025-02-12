@@ -1,12 +1,11 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useGlobalContext } from "@/context/GlobalContext";
-import { getPersonOption } from "@/utils/getPersonOption";
 import { fetchGetReceipts } from "@/api/apiService";
-import SummaryFilters from "@/components/SummaryFilters.tsx";
-import CallSplitIcon from "@mui/icons-material/CallSplit";
+import SummaryFilters from "@/components/summary-filters";
+import { Split } from "lucide-react";
 import { Receipt } from "@/types.tsx";
-import UnifiedDropdown from "@/components/UnifiedDropdown.tsx";
+import UnifiedDropdown from "@/components/unified-dropdown";
 import { Button } from "@/components/ui/button";
 import {
     Dialog,
@@ -18,8 +17,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { DataTable } from "@/components/ui/data-table";
 import { ColumnDef } from "@tanstack/react-table";
 
-const FlatBills = () => {
-    const { summaryFilters } = useGlobalContext();
+const Bills = () => {
+    const { summaryFilters, persons } = useGlobalContext();
     const [splitModalOpen, setSplitModalOpen] = useState(false);
     const [selectedSplitReceipt, setSelectedSplitReceipt] =
         useState<Receipt | null>(null);
@@ -103,7 +102,9 @@ const FlatBills = () => {
         {
             accessorKey: "payer",
             header: "Płacił",
-            cell: ({ row }) => getPersonOption(row.original.payer),
+            cell: ({ row }) =>
+                persons.find((person) => person.id === row.original.payer)
+                    ?.name,
         },
         {
             accessorKey: "items.0.description",
@@ -120,7 +121,7 @@ const FlatBills = () => {
                         size="icon"
                         disabled={billItem.owners.length === 1}
                         onClick={() => handleShowSplitModal(row.original)}>
-                        <CallSplitIcon />
+                        <Split />
                     </Button>
                 );
             },
@@ -129,11 +130,12 @@ const FlatBills = () => {
 
     return (
         <div>
-            <h1>Rachunki</h1>
-            <SummaryFilters
-                defaultCategory="flat_bills"
-                transactionType="expense"
-            />
+            <div className="mb-3">
+                <SummaryFilters
+                    defaultCategory="flat_bills"
+                    transactionType="expense"
+                />
+            </div>
 
             {filteredBills.length > 0 ? (
                 <DataTable columns={columns} data={filteredBills} />
@@ -187,5 +189,4 @@ const FlatBills = () => {
     );
 };
 
-export default FlatBills;
-
+export default Bills;
