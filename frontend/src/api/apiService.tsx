@@ -114,6 +114,28 @@ export const fetchGetReceipts = async (params?: Params) => {
     }
 };
 
+export const fetchGetReceiptsByID = async (params: {
+    id: number | number[];
+}) => {
+    if (!Array.isArray(params.id)) params.id = Array(params.id);
+    if (!params.id || params.id.length === 0) return [];
+
+    try {
+        // Wykonujemy zapytanie dla każdego ID w pętli asynchronicznie
+        const responses = await Promise.all(
+            params.id.map(async (receiptId) => {
+                const response = await apiClient.get(`/receipts/${receiptId}/`);
+                return response.data;
+            })
+        );
+
+        return responses; // Zwracamy listę paragonów
+    } catch (error) {
+        console.error(error);
+        throw error;
+    }
+};
+
 export const fetchPostReceipt = async (receipt: Receipt[]) => {
     // console.log(receipt);
     // console.log(JSON.stringify(receipt));
@@ -313,3 +335,4 @@ export const fetchDatabaseScan = async () => {
         throw error;
     }
 };
+

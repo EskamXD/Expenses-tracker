@@ -27,7 +27,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { useGlobalContext } from "@/context/GlobalContext";
+
 import {
     fetchGetReceipts,
     fetchPutReceipt,
@@ -36,8 +36,10 @@ import {
 import UnifiedForm, { UnifiedFormRef } from "@/components/unified-form";
 import { selectTranslationList } from "@/config/selectOption";
 import { Item, Params, Receipt } from "@/types";
-import { ArrowRight } from "lucide-react";
+
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+
+import { ReceiptRow } from "@/components/ui/receipt-row";
 
 interface SummaryTableProps {
     transactionType: "income" | "expense";
@@ -118,44 +120,6 @@ const SearchBar: React.FC<{
         />
     </div>
 );
-
-/** Komponent pojedynczego wiersza paragonu – używamy grid aby kolumny były wyrównane */
-interface ReceiptRowProps {
-    receipt: ProcessedReceiptForAccordion["receipts"][number];
-    onEdit: (receiptId: number) => void;
-}
-
-const ReceiptRow: React.FC<ReceiptRowProps> = ({ receipt, onEdit }) => {
-    const { persons } = useGlobalContext();
-    // Znajdź imię płacącego na podstawie globalnego kontekstu persons
-    const person = persons.find((p) => p.id === Number(receipt.payer));
-    const payerName = person ? person.name : "Unknown";
-
-    return (
-        <div className="grid grid-cols-5 gap-4 items-center py-2 border-b">
-            <div className="truncate font-bold">{receipt.shop}</div>
-            <div className="truncate">{receipt.totalValue.toFixed(2)} PLN</div>
-            <div className="truncate">{payerName}</div>
-            <div className="truncate">
-                {receipt.categories.map((cat) => {
-                    const translation = selectTranslationList.find(
-                        (item) => item.value === cat
-                    );
-                    return (
-                        <span key={cat} className="text-sm text-gray-500 mr-2">
-                            {translation ? translation.label : "Nieznane"}
-                        </span>
-                    );
-                })}
-            </div>
-            <div className="flex justify-end">
-                <Button variant="outline" onClick={() => onEdit(receipt.id)}>
-                    <ArrowRight className="w-4 h-4" />
-                </Button>
-            </div>
-        </div>
-    );
-};
 
 /** Komponent akordeonu wyświetlającego paragony pogrupowane według daty */
 interface ReceiptsAccordionProps {
@@ -253,7 +217,7 @@ const EditReceiptModal: React.FC<EditReceiptModalProps> = ({
     if (isLoading)
         return (
             <Dialog open onOpenChange={onClose}>
-                <DialogContent className="max-w-4xl">
+                <DialogContent className="w-screen h-screen !max-w-none rounded-none">
                     <DialogHeader>
                         <DialogTitle>Edytuj paragon</DialogTitle>
                     </DialogHeader>
@@ -264,7 +228,7 @@ const EditReceiptModal: React.FC<EditReceiptModalProps> = ({
     if (isError || !receipt)
         return (
             <Dialog open onOpenChange={onClose}>
-                <DialogContent className="max-w-4xl">
+                <DialogContent className="w-screen h-screen !max-w-none rounded-none">
                     <DialogHeader>
                         <DialogTitle>Błąd</DialogTitle>
                     </DialogHeader>
@@ -389,3 +353,4 @@ const SummaryTable: React.FC<SummaryTableProps> = ({
 };
 
 export default SummaryTable;
+

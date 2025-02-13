@@ -554,70 +554,89 @@ def fetch_line_sums(request):
 @api_view(["GET"])
 def fetch_bar_persons(request):
     try:
-        params = get_query_params(request, "month", "year")
-        selected_month = params["month"]
-        selected_year = params["year"]
+        # Pobranie parametrów zapytania
+        selected_month = int(request.GET.get("month"))
+        selected_year = int(request.GET.get("year"))
         selected_categories = request.GET.getlist("category")
 
-        print(selected_categories)
-    except ValueError as e:
-        return handle_error(e, 400, "Invalid query parameters")
+    except (ValueError, TypeError):
+        return JsonResponse({"error": "Invalid query parameters"}, status=400)
 
     try:
-        if selected_categories:
-            for category in selected_categories:
-                validate_category(category)
+        # Pobranie paragonów
+        receipts = Receipt.objects.filter(
+            transaction_type="expense",
+            payment_date__month=selected_month,
+            payment_date__year=selected_year,
+        ).prefetch_related("items")
 
-        # Pobierz wszystkie paragony z bazy danych (mogą to być wszystkie wydatki)
-        receipts = list(
-            Receipt.objects.filter(
-                transaction_type="expense",
-                payment_date__month=selected_month,
-                payment_date__year=selected_year,
-            ).prefetch_related("items")
+        # Słowniki dla dwóch rodzajów wydatków
+        shared_expense_sums = defaultdict(
+            lambda: {"sum": Decimal(0), "receipt_ids": set()}
+        )
+        not_own_expense_sums = defaultdict(
+            lambda: {"sum": Decimal(0), "receipt_ids": set()}
         )
 
-        print(f"Total Receipts Fetched: {len(receipts)}")
-
-        # Słownik do przechowywania sum wydatków według płatnika
-        persons_expense_sums = defaultdict(Decimal)
-
-        # Iterowanie przez każdy paragon
         for receipt in receipts:
             payer = receipt.payer
             for item in receipt.items.all():
-                # Sprawdź, czy przedmiot należy do wybranych kategorii (jeśli istnieje filtr)
+                owners = list(item.owners.all())  # Pobranie listy właścicieli
+
+                # Jeśli filtr kategorii, pomiń przedmioty spoza wybranych kategorii
                 if selected_categories and item.category not in selected_categories:
                     continue
 
-                # Sumowanie wartości tylko wtedy, gdy właściciel przedmiotu nie jest równy płatnikowi
-                if item.owner != payer:
+                # Jeśli płatnik zapłacił za rzecz, którą współdzieli z innymi (min. 2 właścicieli i wśród nich payer)
+                if len(owners) > 1 and payer in owners:
                     try:
-                        # Dodajemy wartość pozycji do odpowiedniego płatnika
-                        persons_expense_sums[payer] += Decimal(item.value)
+                        shared_expense_sums[payer]["sum"] += Decimal(item.value)
+                        shared_expense_sums[payer]["receipt_ids"].add(receipt.id)
                     except (ValueError, TypeError):
-                        # Jeśli wartość nie jest prawidłowa, zignoruj ten wpis
                         continue
 
-        # Posortowanie wyników według sumy wydatków (malejąco)
-        sorted_persons_expense_sums = sorted(
-            persons_expense_sums.items(), key=lambda x: x[1], reverse=True
+                # Jeśli płatnik zapłacił za rzecz, której nie jest właścicielem
+                if payer not in owners:
+                    try:
+                        not_own_expense_sums[payer]["sum"] += Decimal(item.value)
+                        not_own_expense_sums[payer]["receipt_ids"].add(receipt.id)
+                    except (ValueError, TypeError):
+                        continue
+
+        # Sortowanie wyników
+        sorted_shared_expenses = sorted(
+            shared_expense_sums.items(), key=lambda x: x[1]["sum"], reverse=True
+        )
+        sorted_not_own_expenses = sorted(
+            not_own_expense_sums.items(), key=lambda x: x[1]["sum"], reverse=True
         )
 
-        # Przygotowanie danych do serializacji
-        serialized_data = [
-            {"payer": payer, "expense_sum": total}
-            for payer, total in sorted_persons_expense_sums
-        ]
-        serializer = PersonExpenseSerializer(data=serialized_data, many=True)
+        # Przygotowanie odpowiedzi
+        response_data = {
+            "shared_expenses": [
+                {
+                    "payer": payer.id,
+                    "expense_sum": float(data["sum"]),
+                    "receipt_ids": list(data["receipt_ids"]),  # Konwersja set na listę
+                }
+                for payer, data in sorted_shared_expenses
+            ],
+            "not_own_expenses": [
+                {
+                    "payer": payer.id,
+                    "expense_sum": float(data["sum"]),
+                    "receipt_ids": list(data["receipt_ids"]),  # Konwersja set na listę
+                }
+                for payer, data in sorted_not_own_expenses
+            ],
+        }
 
-        if serializer.is_valid():
-            return JsonResponse(serializer.data, safe=False, status=200)
-        else:
-            return JsonResponse(serializer.errors, status=400)
+        return JsonResponse(response_data, safe=False, status=200)
 
     except Exception as e:
-        return handle_error(e, 500, "Error while fetching bar persons")
+        return JsonResponse(
+            {"error": f"{str(e)} - Error while fetching bar persons"}, status=500
+        )
 
 
 @extend_schema(

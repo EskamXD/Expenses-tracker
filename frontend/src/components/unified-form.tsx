@@ -10,8 +10,9 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
-import PayerDropdown from "./payer-dropdown";
-import OwnersDropdown from "./owners-dropdown";
+import { X } from "lucide-react";
+import PayerDropdown from "@/components/payer-dropdown";
+import OwnersDropdown from "@/components/owners-dropdown";
 import { Item, Receipt } from "@/types";
 import { categoryOptions } from "@/config/selectOption";
 
@@ -288,8 +289,9 @@ const UnifiedForm = React.forwardRef<UnifiedFormRef, UnifiedFormProps>(
                             <Button
                                 type="button"
                                 variant="destructive"
+                                className="aspect-square"
                                 onClick={() => remove(index)}>
-                                Usuń pozycję
+                                <X />
                             </Button>
                         </div>
                     ))}
@@ -300,3 +302,4 @@ const UnifiedForm = React.forwardRef<UnifiedFormRef, UnifiedFormProps>(
 );
 
 export default UnifiedForm;
+

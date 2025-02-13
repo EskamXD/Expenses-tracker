@@ -25,9 +25,16 @@ const SummaryTab: React.FC<SummaryTabProps> = ({ transactionType }) => {
     if (isLoading) {
         return (
             <div className="flex flex-col items-center justify-center w-full h-64">
+                <Skeleton className="h-6 w-full mb-2" />
+                <Skeleton className="h-6 w-full mb-2" />
+                <Skeleton className="h-6 w-full mb-2" />
+                <Skeleton className="h-6 w-full mb-2" />
+                <Skeleton className="h-6 w-full mb-2" />
+                <Skeleton className="h-6 w-full mb-2" />
+                <Skeleton className="h-6 w-full mb-2" />
+                <Skeleton className="h-6 w-full mb-2" />
+                <Skeleton className="h-6 w-full mb-2" />
                 <Skeleton className="h-6 w-128 mb-2" />
-                <Skeleton className="h-6 w-128 mb-2" />
-                <Skeleton className="h-6 w-128" />
             </div>
         );
     }
@@ -61,3 +68,4 @@ const SummaryTab: React.FC<SummaryTabProps> = ({ transactionType }) => {
 };
 
 export default SummaryTab;
+

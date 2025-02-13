@@ -43,7 +43,7 @@ python manage.py migrate
 
 # 4. Uruchomienie serwera Django
 echo "Uruchamianie serwera Django..."
-python manage.py runserver &
+python manage.py runserver
 
 # 5. Uruchomienie przeglądarki z aplikacją
 sleep 2  # Poczekaj chwilę, aby serwer mógł się uruchomić
