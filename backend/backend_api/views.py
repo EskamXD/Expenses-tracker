@@ -4,12 +4,13 @@ from collections import defaultdict
 from decimal import Decimal
 
 from django.core.exceptions import ValidationError
-from django.db.models import Sum, Q, F
+from django.db.models import Sum, Q, F, FloatField
 from django.http import JsonResponse
 from django.utils.timezone import now
 
 from django_filters.rest_framework import DjangoFilterBackend
 
+from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import (
     extend_schema,
     OpenApiParameter,
@@ -472,61 +473,98 @@ def convert_sum_to_linear(daily_sums, all_dates):
     methods=["GET"],
     parameters=[
         OpenApiParameter(
-            name="owner", description="Selected owner ID", required=False, type=int
+            name="owners[]",
+            description="Lista ID właścicieli (np. owners[]=1&owners[]=2)",
+            required=False,
+            type=int,
+            many=True,
         ),
         OpenApiParameter(
-            name="month", description="Selected month", required=True, type=int
+            name="month", description="Wybrany miesiąc", required=True, type=int
         ),
         OpenApiParameter(
-            name="year", description="Selected year", required=True, type=int
+            name="year", description="Wybrany rok", required=True, type=int
         ),
     ],
-    responses={200: {"linearExpenseSums": [0.0], "linearIncomeSums": [0.0]}},
+    responses={
+        200: {
+            "type": "object",
+            "example": {
+                "1": {"income": [0.0, 10.0, 20.0], "expense": [5.0, 15.0, 25.0]},
+                "2": {"income": [0.0, 12.0, 22.0], "expense": [6.0, 16.0, 26.0]},
+                # W przypadku braku filtrowania po ownerze, można użyć np. klucza "global"
+                "global": {"income": [0.0, 10.0, 20.0], "expense": [5.0, 15.0, 25.0]},
+            },
+        }
+    },
 )
 @api_view(["GET"])
 def fetch_line_sums(request):
     try:
         params = get_query_params(request, "month", "year")
-        selected_owner_id = request.GET.get("owner")
         selected_month = params["month"]
         selected_year = params["year"]
+
+        # Pobieramy listę parametrów owner (możliwe wielokrotne wartości)
+        owner_param = request.GET.getlist("owners[]")
+        selected_owner_ids = [int(o) for o in owner_param] if owner_param else []
+        if not selected_owner_ids:
+            return handle_error("Nie podano ownersów", 400, "Brak parametru owners")
     except ValueError as e:
-        return handle_error(e, 400, "Invalid query parameters")
+        return handle_error(e, 400, "Niepoprawne parametry zapytania")
 
     try:
-        expense_receipts = Receipt.objects.filter(
-            transaction_type="expense",
-            payment_date__month=selected_month,
-            payment_date__year=selected_year,
-        ).distinct()
-
-        income_receipts = Receipt.objects.filter(
-            transaction_type="income",
-            payment_date__month=selected_month,
-            payment_date__year=selected_year,
-        ).distinct()
-
-        if selected_owner_id:
-            expense_receipts = expense_receipts.filter(items__owner=selected_owner_id)
-            income_receipts = income_receipts.filter(items__owner=selected_owner_id)
-
         all_dates = get_all_dates_in_month(selected_year, selected_month)
-        daily_expense_sums = process_items(expense_receipts)
-        daily_income_sums = process_items(income_receipts)
 
-        linear_expense_sums = convert_sum_to_linear(daily_expense_sums, all_dates)
-        linear_income_sums = convert_sum_to_linear(daily_income_sums, all_dates)
+        def get_receipts(owner=None):
+            """Zwraca krotkę (expense_receipts, income_receipts) – ewentualnie filtrowane po ownerze."""
+            qs_expense = Receipt.objects.filter(
+                transaction_type="expense",
+                payment_date__month=selected_month,
+                payment_date__year=selected_year,
+            ).distinct()
+            qs_income = Receipt.objects.filter(
+                transaction_type="income",
+                payment_date__month=selected_month,
+                payment_date__year=selected_year,
+            ).distinct()
+            if owner is not None:
+                qs_expense = qs_expense.filter(items__owners__id=owner)
+                qs_income = qs_income.filter(items__owners__id=owner)
+            return qs_expense, qs_income
 
-        return JsonResponse(
-            {
-                "linearExpenseSums": linear_expense_sums,
-                "linearIncomeSums": linear_income_sums,
-            },
-            status=200,
-        )
+        def process_and_format(owner=None):
+            """
+            Przetwarza zapytania i zwraca listy kwot (expense, income) sformatowane do 2 miejsc po przecinku.
+            """
+            qs_expense, qs_income = get_receipts(owner)
+            daily_expense = process_items(qs_expense)
+            daily_income = process_items(qs_income)
+            linear_expense = convert_sum_to_linear(daily_expense, all_dates)
+            linear_income = convert_sum_to_linear(daily_income, all_dates)
+            linear_expense = [round(val, 2) for val in linear_expense]
+            linear_income = [round(val, 2) for val in linear_income]
+            return linear_expense, linear_income
+
+        results = {}
+        # Przetwarzamy dane dla każdego właściciela
+        for owner in selected_owner_ids:
+            expense, income = process_and_format(owner)
+            results[str(owner)] = {"expense": expense, "income": income}
+
+        return JsonResponse(results, status=200)
 
     except Exception as e:
-        return handle_error(e, 500, "Error while processing data")
+        return handle_error(e, 500, "Błąd podczas przetwarzania danych")
+
+
+def get_top_outlier_receipts(receipt_ids, num_top=3):
+    """Zwraca ID top 3 paragonów o największej wartości dla danego płatnika."""
+    receipts = Receipt.objects.filter(id__in=receipt_ids).prefetch_related("items")
+    sorted_receipts = sorted(
+        receipts, key=lambda r: sum(item.value for item in r.items.all()), reverse=True
+    )
+    return [r.id for r in sorted_receipts[:num_top]]
 
 
 @extend_schema(
@@ -539,14 +577,11 @@ def fetch_line_sums(request):
             name="year", description="Selected year", required=True, type=int
         ),
         OpenApiParameter(
-            name="category",
-            description="Selected category",
-            required=False,
-            type=list,
+            name="category", description="Selected category", required=False, type=list
         ),
     ],
     responses={
-        200: PersonExpenseSerializer(many=True),
+        200: OpenApiResponse(description="List of expenses with receipts"),
         400: OpenApiResponse(description="Bad request"),
         500: OpenApiResponse(description="Internal server error"),
     },
@@ -563,7 +598,7 @@ def fetch_bar_persons(request):
         return JsonResponse({"error": "Invalid query parameters"}, status=400)
 
     try:
-        # Pobranie paragonów
+        # Pobranie paragonów (tylko wydatki)
         receipts = Receipt.objects.filter(
             transaction_type="expense",
             payment_date__month=selected_month,
@@ -572,10 +607,10 @@ def fetch_bar_persons(request):
 
         # Słowniki dla dwóch rodzajów wydatków
         shared_expense_sums = defaultdict(
-            lambda: {"sum": Decimal(0), "receipt_ids": set()}
+            lambda: {"sum": Decimal(0), "receipt_ids": set(), "top_outliers": []}
         )
         not_own_expense_sums = defaultdict(
-            lambda: {"sum": Decimal(0), "receipt_ids": set()}
+            lambda: {"sum": Decimal(0), "receipt_ids": set(), "top_outliers": []}
         )
 
         for receipt in receipts:
@@ -587,7 +622,7 @@ def fetch_bar_persons(request):
                 if selected_categories and item.category not in selected_categories:
                     continue
 
-                # Jeśli płatnik zapłacił za rzecz, którą współdzieli z innymi (min. 2 właścicieli i wśród nich payer)
+                # Wydatki wspólne (payer współdzieli z innymi)
                 if len(owners) > 1 and payer in owners:
                     try:
                         shared_expense_sums[payer]["sum"] += Decimal(item.value)
@@ -595,13 +630,24 @@ def fetch_bar_persons(request):
                     except (ValueError, TypeError):
                         continue
 
-                # Jeśli płatnik zapłacił za rzecz, której nie jest właścicielem
+                # Wydatki na cudze rzeczy (payer nie jest ownerem)
                 if payer not in owners:
                     try:
                         not_own_expense_sums[payer]["sum"] += Decimal(item.value)
                         not_own_expense_sums[payer]["receipt_ids"].add(receipt.id)
                     except (ValueError, TypeError):
                         continue
+
+        # Pobieranie top 3 paragonów dla każdego payera w shared_expenses i not_own_expenses
+        for payer, data in shared_expense_sums.items():
+            shared_expense_sums[payer]["top_outliers"] = get_top_outlier_receipts(
+                data["receipt_ids"]
+            )
+
+        for payer, data in not_own_expense_sums.items():
+            not_own_expense_sums[payer]["top_outliers"] = get_top_outlier_receipts(
+                data["receipt_ids"]
+            )
 
         # Sortowanie wyników
         sorted_shared_expenses = sorted(
@@ -618,6 +664,7 @@ def fetch_bar_persons(request):
                     "payer": payer.id,
                     "expense_sum": float(data["sum"]),
                     "receipt_ids": list(data["receipt_ids"]),  # Konwersja set na listę
+                    "top_outlier_receipts": data["top_outliers"],  # Top 3 paragony
                 }
                 for payer, data in sorted_shared_expenses
             ],
@@ -626,6 +673,7 @@ def fetch_bar_persons(request):
                     "payer": payer.id,
                     "expense_sum": float(data["sum"]),
                     "receipt_ids": list(data["receipt_ids"]),  # Konwersja set na listę
+                    "top_outlier_receipts": data["top_outliers"],  # Top 3 paragony
                 }
                 for payer, data in sorted_not_own_expenses
             ],
@@ -643,13 +691,42 @@ def fetch_bar_persons(request):
     methods=["GET"],
     parameters=[
         OpenApiParameter(
-            name="owner", description="Selected owner ID", required=False, type=int
+            name="owners[]",
+            description="Selected owner ID",
+            required=False,
+            type=int,
+            many="true",
         ),
         OpenApiParameter(
             name="month", description="Selected month", required=True, type=int
         ),
         OpenApiParameter(
             name="year", description="Selected year", required=True, type=int
+        ),
+        OpenApiParameter(
+            name="category[]",
+            description="Selected category",
+            required=False,
+            type=str,
+            many=True,
+            enum=[
+                "fuel",
+                "car_expenses",
+                "fastfood",
+                "alcohol",
+                "food_drinks",
+                "chemistry",
+                "clothes",
+                "electronics_games",
+                "tickets_entrance",
+                "delivery",
+                "other_shopping",
+                "flat_bills",
+                "monthly_subscriptions",
+                "other_cyclical_expenses",
+                "investments_savings",
+                "other",
+            ],
         ),
     ],
     responses={
@@ -662,75 +739,79 @@ def fetch_bar_persons(request):
 def fetch_bar_shops(request):
     try:
         params = get_query_params(request, "month", "year")
-        selected_owner = int(
-            request.GET.get("owner", 0)
-        )  # 0, jeśli owner nie jest podany
-        selected_month = int(params["month"])
-        selected_year = int(params["year"])
+        selected_month = params["month"]
+        selected_year = params["year"]
+
+        # Pobieramy listę parametrów owners (możliwe wielokrotne wartości)
+        owners_param = request.GET.getlist("owners[]")
+        selected_owner_ids = [int(o) for o in owners_param] if owners_param else []
+        if not selected_owner_ids:
+            return handle_error("Nie podano ownersów", 400, "Brak parametru owners")
+
+        # Pobieramy listę kategorii przesłanych przez użytkownika (możliwe wielokrotne wartości)
+        category_param = request.GET.getlist("category[]")
+        if category_param:
+            category = category_param
+        else:
+            # Domyślna lista kategorii, jeśli użytkownik nie przesłał żadnych
+            category = [
+                "fuel",
+                "car_expenses",
+                "fastfood",
+                "alcohol",
+                "food_drinks",
+                "chemistry",
+                "clothes",
+                "electronics_games",
+                "tickets_entrance",
+                "other_shopping",
+            ]
+
+        # Debug: wypisanie wybranych parametrów
+        print("DEBUG: Selected Month:", selected_month)
+        print("DEBUG: Selected Year:", selected_year)
+        print("DEBUG: Selected Owner IDs:", selected_owner_ids)
+        print("DEBUG: Categories:", category)
+
     except ValueError as e:
-        return handle_error(e, 400, "Invalid query parameters")
+        return handle_error(e, 400, "Niepoprawne parametry zapytania")
 
     try:
-        # Wyciągnięcie wszystkich paragonów typu "expense" z powiązanymi pozycjami (items)
-        receipts = (
-            Receipt.objects.prefetch_related("items")
-            .filter(transaction_type="expense")
-            .all()
+        # Filtrowanie i agregacja na poziomie bazy danych
+        queryset = (
+            Receipt.objects.filter(
+                transaction_type="expense",
+                payment_date__year=selected_year,
+                payment_date__month=selected_month,
+                items__category__in=category,
+                items__owners__id__in=selected_owner_ids,
+            )
+            .values("shop")
+            .annotate(expense_sum=Sum("items__value", output_field=FloatField()))
         )
 
-        # Przykładowe kategorie, które nas interesują
-        categories = [
-            "fuel",
-            "car_expenses",
-            "fastfood",
-            "alcohol",
-            "food_drinks",
-            "chemistry",
-            "clothes",
-            "electronics_games",
-            "tickets_entrance",
-            "other_shopping",
-        ]
+        # Debug: wypisanie wygenerowanego zapytania SQL
+        print("DEBUG: QuerySet SQL:", queryset.query)
 
-        # Słownik przechowujący sumy wydatków dla sklepów
-        expense_sums_by_shop = defaultdict(float)
+        sorted_expense_sums = queryset.order_by("-expense_sum")
 
-        # Filtrowanie i sumowanie ręczne w Pythonie
-        for receipt in receipts:
-            # Konwersja daty płatności na obiekt datetime
-            payment_date = receipt.payment_date
-            if (
-                payment_date.year == selected_year
-                and payment_date.month == selected_month
-            ):
-                # Przetwarzanie tylko tych paragonów, które spełniają kryterium daty
-                for item in receipt.items.all():
-                    # Sprawdzenie kategorii i właściciela (jeśli został wybrany)
-                    if item.category in categories and (
-                        not selected_owner or item.owner == selected_owner
-                    ):
-                        try:
-                            # Dodajemy wartość do odpowiedniego sklepu
-                            value = float(item.value)
-                            expense_sums_by_shop[receipt.shop] += value
-                        except ValueError:
-                            # Jeśli wartość nie może być przekonwertowana na float, pomijamy ten wpis
-                            continue
+        # Debug: przekształcamy QuerySet na listę, żeby zobaczyć wyniki
+        sorted_list = list(sorted_expense_sums)
+        print("DEBUG: Sorted Expense Sums:", sorted_list)
 
-        # Sortowanie wyników według sumy wydatków (malejąco)
-        sorted_expense_sums = sorted(
-            expense_sums_by_shop.items(), key=lambda x: x[1], reverse=True
-        )
-
-        # Serializacja danych (zakładam, że ShopExpenseSerializer działa dla listy słowników)
+        # Przygotowanie danych do serializacji – zaokrąglamy sumę do 2 miejsc po przecinku
         serialized_data = [
-            {"shop": shop, "expense_sum": total} for shop, total in sorted_expense_sums
+            {"shop": entry["shop"], "expense_sum": round(entry["expense_sum"], 2)}
+            for entry in sorted_list
         ]
+
         serializer = ShopExpenseSerializer(data=serialized_data, many=True)
 
         if serializer.is_valid():
+            print("DEBUG: Serialized Data:", serializer.data)
             return JsonResponse(serializer.data, safe=False, status=200)
         else:
+            print("DEBUG: Serializer Errors:", serializer.errors)
             return JsonResponse(serializer.errors, status=400)
 
     except Exception as e:

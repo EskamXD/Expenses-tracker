@@ -29,6 +29,7 @@ const defaultState: GlobalState = {
         owners: [],
         month: 0,
         year: 0,
+        category: [],
     },
     setSummaryFilters: () => {},
 };
@@ -47,6 +48,7 @@ export const GlobalProvider: React.FC<{ children: ReactNode }> = ({
         owners: [],
         month: new Date().getMonth() + 1,
         year: new Date().getFullYear(),
+        category: [],
     });
 
     const { data: persons = [] } = useQuery<Person[], Error>({
@@ -73,3 +75,4 @@ export const GlobalProvider: React.FC<{ children: ReactNode }> = ({
 
 // Hook do korzystania z GlobalContext
 export const useGlobalContext = () => useContext(GlobalContext);
+

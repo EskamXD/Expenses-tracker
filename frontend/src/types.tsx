@@ -28,7 +28,7 @@ export type Params = {
     owners?: number[];
     month?: number;
     year?: number;
-    category?: string | string[];
+    category?: string[];
     transaction_type?: string;
 };
 
@@ -36,3 +36,4 @@ export type Shops = {
     id?: number;
     name: string;
 };
+

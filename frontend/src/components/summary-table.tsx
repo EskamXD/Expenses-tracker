@@ -51,10 +51,13 @@ interface ProcessedReceiptForAccordion {
     receipts: {
         id: number;
         shop: string;
+        payment_date: string;
+        transaction_type: "expense" | "income";
         totalValue: number;
         payer: number;
         categories: string[];
         keywords: string[];
+        items: Item[];
     }[];
 }
 
@@ -91,10 +94,13 @@ const groupReceipts = (
         grouped[receipt.payment_date].push({
             id: Number(receipt.id),
             shop: receipt.shop,
+            payment_date: receipt.payment_date,
+            transaction_type: receipt.transaction_type,
             totalValue,
             payer: receipt.payer,
             categories: uniqueCategories,
             keywords,
+            items: receipt.items,
         });
     });
 
@@ -239,7 +245,7 @@ const EditReceiptModal: React.FC<EditReceiptModalProps> = ({
 
     return (
         <Dialog open onOpenChange={onClose}>
-            <DialogContent className="w-screen h-screen !max-w-none rounded-none">
+            <DialogContent className="w-screen h-screen !max-w-none rounded-none overflow-y-auto pb-0">
                 <DialogHeader>
                     <DialogTitle>Edytuj paragon</DialogTitle>
                 </DialogHeader>
@@ -253,38 +259,45 @@ const EditReceiptModal: React.FC<EditReceiptModalProps> = ({
                     onSubmitReceipt={(updatedReceipt: Receipt) =>
                         updateMutation.mutate(updatedReceipt)
                     }
-                />
-                <DialogFooter className="flex justify-end space-x-2">
-                    <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                            <Button variant="destructive">Usuń paragon</Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                            <AlertDialogHeader>
-                                <AlertDialogTitle>
-                                    Potwierdź usunięcie
-                                </AlertDialogTitle>
-                                <AlertDialogDescription>
-                                    Czy na pewno chcesz usunąć ten paragon? Ta
-                                    operacja jest nieodwracalna.
-                                </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                                <AlertDialogCancel>Nie</AlertDialogCancel>
-                                <AlertDialogAction
-                                    onClick={() =>
-                                        deleteMutation.mutate(receipt)
-                                    }>
-                                    Tak, usuń
-                                </AlertDialogAction>
-                            </AlertDialogFooter>
-                        </AlertDialogContent>
-                    </AlertDialog>
+                    footerActions={
+                        <>
+                            <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                    <Button variant="destructive">
+                                        Usuń paragon
+                                    </Button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                    <AlertDialogHeader>
+                                        <AlertDialogTitle>
+                                            Potwierdź usunięcie
+                                        </AlertDialogTitle>
+                                        <AlertDialogDescription>
+                                            Czy na pewno chcesz usunąć ten
+                                            paragon? Ta operacja jest
+                                            nieodwracalna.
+                                        </AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <AlertDialogFooter>
+                                        <AlertDialogCancel>
+                                            Nie
+                                        </AlertDialogCancel>
+                                        <AlertDialogAction
+                                            onClick={() =>
+                                                deleteMutation.mutate(receipt)
+                                            }>
+                                            Tak, usuń
+                                        </AlertDialogAction>
+                                    </AlertDialogFooter>
+                                </AlertDialogContent>
+                            </AlertDialog>
 
-                    <Button variant="secondary" onClick={onClose}>
-                        Anuluj
-                    </Button>
-                </DialogFooter>
+                            <Button variant="secondary" onClick={onClose}>
+                                Anuluj
+                            </Button>
+                        </>
+                    }
+                />
             </DialogContent>
         </Dialog>
     );

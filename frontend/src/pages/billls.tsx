@@ -1,11 +1,15 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useGlobalContext } from "@/context/GlobalContext";
-import { fetchGetReceipts } from "@/api/apiService";
+import {
+    fetchGetReceipts,
+    fetchPostReceipt,
+    fetchPutReceipt,
+} from "@/api/apiService";
 import SummaryFilters from "@/components/summary-filters";
 import { Split } from "lucide-react";
 import { Receipt } from "@/types.tsx";
-import UnifiedDropdown from "@/components/unified-dropdown";
+import PayerDropdown from "@/components/payer-dropdown";
 import { Button } from "@/components/ui/button";
 import {
     Dialog,
@@ -22,70 +26,108 @@ const Bills = () => {
     const [splitModalOpen, setSplitModalOpen] = useState(false);
     const [selectedSplitReceipt, setSelectedSplitReceipt] =
         useState<Receipt | null>(null);
-    const [splitOwner, setSplitOwner] = useState<number[]>([]);
+    const [splitPayer, setSplitPayer] = useState<number>(0);
 
-    // Pobranie rachunków
     const {
         data: receipts,
         isLoading,
         error,
-    } = useQuery<Receipt[], Error>({
+    } = useQuery<Receipt[]>({
         queryKey: ["flat_bills_receipts", summaryFilters],
-        queryFn: () => fetchGetReceipts(summaryFilters),
+        queryFn: async () => {
+            return await fetchGetReceipts({
+                ...summaryFilters,
+                category: ["flat_bills"], // ✅ Ustawiamy kategorię już w zapytaniu
+            });
+        },
         staleTime: 1000 * 60 * 5,
         placeholderData: (previousData) => previousData,
+        enabled: true,
+    });
+
+    const queryClient = useQueryClient();
+
+    const putReceiptMutation = useMutation({
+        mutationFn: ({ id, receipt }: { id: number; receipt: Receipt }) =>
+            fetchPutReceipt(id, receipt),
+        onSuccess: () => {
+            queryClient.invalidateQueries({
+                queryKey: ["flat_bills_receipts", summaryFilters],
+            });
+        },
+    });
+
+    const postReceiptMutation = useMutation({
+        mutationFn: (receipt: Receipt[]) => fetchPostReceipt(receipt),
+        onSuccess: () => {
+            queryClient.invalidateQueries({
+                queryKey: ["flat_bills_receipts", summaryFilters],
+            });
+        },
     });
 
     if (isLoading) return <Skeleton className="h-40 w-full" />;
     if (error) return <p>Wystąpił błąd podczas pobierania danych!</p>;
-
-    // Filtrowanie rachunków
-    const filteredBills = (receipts ?? [])
-        .map((receipt) => ({
-            ...receipt,
-            items: receipt.items.filter(
-                (item) => item.category === "flat_bills"
-            ),
-        }))
-        .filter((receipt) => receipt.items.length > 0);
 
     const handleShowSplitModal = (receipt: Receipt) => {
         const otherOwners = receipt.items[0].owners.filter(
             (owner) => owner !== receipt.payer
         );
         setSelectedSplitReceipt(receipt);
-        setSplitOwner(otherOwners.length > 0 ? otherOwners : []);
+        setSplitPayer(otherOwners.length > 0 ? otherOwners[0] : 0);
         setSplitModalOpen(true);
     };
 
     const handleCloseSplitModal = () => {
         setSplitModalOpen(false);
         setSelectedSplitReceipt(null);
-        setSplitOwner([]);
+        setSplitPayer(0);
     };
 
     const handleSplitReceipt = async () => {
-        if (!selectedSplitReceipt || splitOwner.length === 0) return;
+        console.log("halo", selectedSplitReceipt, splitPayer);
+        if (!selectedSplitReceipt || splitPayer === 0) return;
 
         const halfValue = Number(selectedSplitReceipt.items[0].value) / 2;
 
-        const newReceipts = [
-            {
-                ...selectedSplitReceipt,
-                payer: selectedSplitReceipt.payer,
-                owners: [selectedSplitReceipt.payer],
-                items: [{ ...selectedSplitReceipt.items[0], value: halfValue }],
-            },
-            {
-                ...selectedSplitReceipt,
-                payer: splitOwner[0],
-                owners: [splitOwner[0]],
-                items: [{ ...selectedSplitReceipt.items[0], value: halfValue }],
-            },
-        ];
+        // Nowa wersja oryginalnego rachunku (z połową kwoty)
+        const updatedReceipt = {
+            ...selectedSplitReceipt,
+            items: [
+                {
+                    ...selectedSplitReceipt.items[0],
+                    owners: [selectedSplitReceipt.payer],
+                    value: String(halfValue.toFixed(2)),
+                },
+            ],
+        };
 
-        console.log("Zapisuję nowe rachunki:", newReceipts);
-        handleCloseSplitModal();
+        // Nowy rachunek dla drugiego właściciela
+        const newReceipt = {
+            ...selectedSplitReceipt,
+            payer: splitPayer,
+            items: [
+                {
+                    ...selectedSplitReceipt.items[0],
+                    owners: [splitPayer],
+                    value: String(halfValue.toFixed(2)),
+                },
+            ],
+        };
+
+        try {
+            await putReceiptMutation.mutateAsync({
+                id: selectedSplitReceipt.id,
+                receipt: updatedReceipt,
+            });
+
+            await postReceiptMutation.mutateAsync([newReceipt]);
+
+            console.log("Podział zakończony:", updatedReceipt, newReceipt);
+            handleCloseSplitModal();
+        } catch (error) {
+            console.error("Błąd podczas podziału rachunku:", error);
+        }
     };
 
     // Kolumny dla DataTable
@@ -95,9 +137,12 @@ const Bills = () => {
             header: "Data",
         },
         {
-            accessorKey: "items.0.value",
+            accessorKey: "value",
             header: "Wartość",
-            cell: ({ row }) => `${row.original.items[0].value} zł`,
+            cell: ({ row }) =>
+                `${row.original.items
+                    .reduce((sum, item) => sum + Number(item.value), 0)
+                    .toFixed(2)} zł`,
         },
         {
             accessorKey: "payer",
@@ -107,8 +152,10 @@ const Bills = () => {
                     ?.name,
         },
         {
-            accessorKey: "items.0.description",
+            accessorKey: "items",
             header: "Opis",
+            cell: ({ row }) =>
+                row.original.items.map((item) => item.description).join(", "),
         },
         {
             id: "actions",
@@ -132,13 +179,13 @@ const Bills = () => {
         <div>
             <div className="mb-3">
                 <SummaryFilters
-                    defaultCategory="flat_bills"
+                    showCategories={false}
                     transactionType="expense"
                 />
             </div>
 
-            {filteredBills.length > 0 ? (
-                <DataTable columns={columns} data={filteredBills} />
+            {receipts && receipts.length > 0 ? (
+                <DataTable columns={columns} data={receipts} />
             ) : (
                 <p>Brak rachunków</p>
             )}
@@ -165,10 +212,9 @@ const Bills = () => {
                                 zł
                             </p>
 
-                            <UnifiedDropdown
-                                label="Wybierz drugiego właściciela"
-                                personInDropdown={splitOwner}
-                                setPersonInDropdown={setSplitOwner}
+                            <PayerDropdown
+                                payer={splitPayer || 0}
+                                setPayer={setSplitPayer}
                             />
 
                             <div className="flex justify-end gap-2 mt-4">
@@ -190,3 +236,4 @@ const Bills = () => {
 };
 
 export default Bills;
+

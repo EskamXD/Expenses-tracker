@@ -40,27 +40,30 @@ export const ReceiptRow: React.FC<ReceiptRowProps> = ({ receipt, onEdit }) => {
     );
 
     return (
-        <div className="grid grid-cols-6 gap-4 items-center py-2 border-b">
-            <div className="truncate font-bold">{receipt.shop}</div>
+        <div className="grid grid-cols-7 gap-4 items-center py-2 border-b">
+            <div className="truncate font-bold col-span-2">{receipt.shop}</div>
             <div className="truncate">{totalValue.toFixed(2)} PLN</div>
             <div className="truncate">{payerName}</div>
-            <div className="truncate">
+            {/* <div className="truncate">
                 {owners.length ? [...new Set(owners)].join(", ") : "Brak"}
+            </div> */}
+            <div className="truncate col-span-2">
+                {[
+                    ...new Set(
+                        receipt.items.map(
+                            (item) =>
+                                selectTranslationList.find(
+                                    (t) => t.value === item.category
+                                )?.label || "Nieznane"
+                        )
+                    ),
+                ].map((label, index) => (
+                    <span key={index} className="text-sm text-gray-500 mr-2">
+                        {label}
+                    </span>
+                ))}
             </div>
-            <div className="truncate">
-                {receipt.items.map((item) => {
-                    const translation = selectTranslationList.find(
-                        (t) => t.value === item.category
-                    );
-                    return (
-                        <span
-                            key={item.id}
-                            className="text-sm text-gray-500 mr-2">
-                            {translation ? translation.label : "Nieznane"}
-                        </span>
-                    );
-                })}
-            </div>
+
             <div className="flex justify-end">
                 {onEdit ? (
                     <Button
@@ -98,21 +101,41 @@ export const ReceiptRow: React.FC<ReceiptRowProps> = ({ receipt, onEdit }) => {
                                     <strong className="mb-4">Pozycje:</strong>
                                     <ScrollArea className="h-[300px]">
                                         <ul className="list-disc pl-5">
-                                            {receipt.items.map((item) => (
-                                                <li
-                                                    key={item.id}
-                                                    className="grid grid-cols-3 border-b-2 mb-4">
-                                                    <span>
-                                                        {item.description}
-                                                    </span>
-                                                    <span>{item.value} zł</span>
-                                                    <span>
-                                                        {[
-                                                            ...new Set(owners),
-                                                        ].join(", ")}
-                                                    </span>
-                                                </li>
-                                            ))}
+                                            {receipt.items.map((item) => {
+                                                const ownersNames =
+                                                    item.owners
+                                                        .map(
+                                                            (ownerId) =>
+                                                                persons.find(
+                                                                    (p) =>
+                                                                        p.id ===
+                                                                        ownerId
+                                                                )?.name
+                                                        )
+                                                        .filter(
+                                                            (
+                                                                name
+                                                            ): name is string =>
+                                                                !!name
+                                                        ) // Usuwa undefined
+                                                        .join(", ") || "Brak";
+
+                                                return (
+                                                    <li
+                                                        key={item.id}
+                                                        className="grid grid-cols-3 border-b-2 mb-4">
+                                                        <span>
+                                                            {item.description}
+                                                        </span>
+                                                        <span>
+                                                            {item.value} zł
+                                                        </span>
+                                                        <span>
+                                                            {ownersNames}
+                                                        </span>
+                                                    </li>
+                                                );
+                                            })}
                                         </ul>
                                     </ScrollArea>
                                 </div>

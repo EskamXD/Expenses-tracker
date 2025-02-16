@@ -1,16 +1,14 @@
-import { Button } from "@/components/ui/button"; // Shadcn Button
-import YearDropdown from "@/components/YearDropdown";
-import MonthDropdown from "@/components/MonthDropdown";
+import YearDropdown from "@/components/year-dropdown";
+import MonthDropdown from "@/components/month-dropdown";
 import SummaryDropdown from "@/components/summary-dropdown";
-import { useGlobalContext } from "@/context/GlobalContext";
-
+import PayerDropdown from "./payer-dropdown";
+import CategoriesDropdown from "@/components/categories-dropdown";
 interface SummaryFiltersProps {
     showOwnersDropdown?: boolean;
     showYear?: boolean;
     showMonth?: boolean;
     showCategories?: boolean;
-    defaultCategory?: string;
-    transactionType: string;
+    transactionType: "expense" | "income";
 }
 
 const SummaryFilters: React.FC<SummaryFiltersProps> = ({
@@ -18,11 +16,8 @@ const SummaryFilters: React.FC<SummaryFiltersProps> = ({
     showYear = true,
     showMonth = true,
     showCategories = false,
-    defaultCategory = "",
     transactionType,
 }) => {
-    const { setSummaryFilters } = useGlobalContext();
-
     return (
         <div className="flex flex-wrap gap-2 p-4 border rounded-lg shadow-md">
             {showOwnersDropdown && (
@@ -42,22 +37,27 @@ const SummaryFilters: React.FC<SummaryFiltersProps> = ({
             )}
             {showCategories && (
                 <div className="p-2">
-                    {/* <CategoriesDropdown defaultCategory={defaultCategory} transactionType={transactionType} /> */}
+                    <CategoriesDropdown transactionType={transactionType} />
                 </div>
             )}
-            <div className="p-2">
-                <Button
-                    onClick={() =>
-                        setSummaryFilters((prev) => ({
-                            ...prev,
-                            transaction_type: transactionType,
-                        }))
-                    }>
-                    Filtruj
-                </Button>
-            </div>
         </div>
     );
 };
 
 export default SummaryFilters;
+
+{
+    /* <div className="p-2">
+    <Button
+        onClick={() =>
+            setSummaryFilters((prev) => ({
+                ...prev,
+                transaction_type: transactionType,
+            }))
+        }>
+        Filtruj
+    </Button>
+
+</div> */
+}
+
