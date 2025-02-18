@@ -2,6 +2,7 @@
 from collections import defaultdict
 from django.http import JsonResponse
 from django.utils.timezone import now
+from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiResponse
 from rest_framework.views import APIView
 from backend_api.models import RecentShop, Receipt, ItemPrediction
 

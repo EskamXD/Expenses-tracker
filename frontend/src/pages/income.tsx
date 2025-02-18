@@ -25,7 +25,7 @@ const Income = () => {
     return (
         <>
             <h1 className="text-2xl font-bold mt-4">Przychody</h1>
-            <p className="text-gray-500">Dodaj swoje przychody.</p>
+            <p className="text-muted-foreground">Dodaj swoje przychody.</p>
 
             <UnifiedForm
                 formId="income-form"

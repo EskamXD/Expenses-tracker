@@ -97,13 +97,11 @@ const Settings = () => {
     };
 
     return (
-        <div className="space-y-6 p-4">
-            <div>
-                <h1 className="text-3xl font-bold">Ustawienia</h1>
-                <p className="text-lg text-muted-foreground">
-                    Lista osób zarejestrowanych do użytku
-                </p>
-            </div>
+        <>
+            <h1 className="text-2xl font-bold mt-4">Ustawienia</h1>
+            <p className="text-muted-foreground">
+                Lista osób zarejestrowanych do użytku
+            </p>
 
             <div className="space-y-3">
                 {persons.map((person) => (
@@ -135,7 +133,7 @@ const Settings = () => {
                 updatePersonField={updatePersonField}
                 handleSubmit={handleSubmit}
             />
-        </div>
+        </>
     );
 };
 
@@ -206,3 +204,4 @@ function PersonDialog({
         </Dialog>
     );
 }
+

@@ -14,9 +14,10 @@ import {
     TrendingDown,
     TrendingUp,
     BarChart,
+    ChartArea,
     FileText,
     CreditCard,
-    List,
+    ArrowDownUp,
     Settings,
 } from "lucide-react";
 
@@ -25,10 +26,10 @@ const menuItems = [
     { title: "Wydatki", path: "/expenses", icon: TrendingDown },
     { title: "Przychody", path: "/income", icon: TrendingUp },
     { title: "Podsumowanie", path: "/summary", icon: BarChart },
-    { title: "Wykresy", path: "/charts", icon: List },
+    { title: "Wykresy", path: "/charts", icon: ChartArea },
     { title: "Rachunki", path: "/bills", icon: CreditCard },
     { title: "Bilans", path: "/balance", icon: FileText },
-    { title: "Import/Export", path: "/import-export", icon: FileText },
+    { title: "Import/Export", path: "/import-export", icon: ArrowDownUp },
     { title: "Ustawienia", path: "/settings", icon: Settings },
 ];
 

@@ -1,5 +1,5 @@
 import React, { useEffect, useImperativeHandle, useMemo } from "react";
-import { useForm, useFieldArray, Controller } from "react-hook-form";
+import { Controller, useFieldArray, useForm, useWatch } from "react-hook-form";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -15,6 +15,8 @@ import PayerDropdown from "@/components/payer-dropdown";
 import OwnersDropdown from "@/components/owners-dropdown";
 import { Item, Receipt } from "@/types";
 import { categoryOptions } from "@/lib/select-option";
+import AutoSuggestInput from "@/components/auto-suggest-input";
+import { fetchSearchRecentShops, fetchItemPredictions } from "@/api/apiService";
 
 interface FormValues {
     paymentDate: string;
@@ -65,7 +67,7 @@ const UnifiedForm = React.forwardRef<UnifiedFormRef, UnifiedFormProps>(
                     : [
                           {
                               id: 0,
-                              category: "",
+                              category: "food_drinks",
                               value: "",
                               description: "",
                               owners: [1, 2],
@@ -74,7 +76,7 @@ const UnifiedForm = React.forwardRef<UnifiedFormRef, UnifiedFormProps>(
                       ],
         };
 
-        const { register, control, handleSubmit, watch, formState } =
+        const { register, control, handleSubmit, formState } =
             useForm<FormValues>({
                 defaultValues,
             });
@@ -94,7 +96,12 @@ const UnifiedForm = React.forwardRef<UnifiedFormRef, UnifiedFormProps>(
             name: "items",
         });
 
-        const items = watch("items");
+        const items = useWatch({
+            control,
+            name: "items",
+        });
+        const shopValue = useWatch({ control, name: "shop" });
+
         const totalSum = useMemo(() => {
             return items.reduce((acc, item) => {
                 const value = parseFloat(item.value as string) || 0;
@@ -146,10 +153,19 @@ const UnifiedForm = React.forwardRef<UnifiedFormRef, UnifiedFormProps>(
                         {/* Sklep */}
                         <div className="flex flex-col gap-1">
                             <Label htmlFor="shop">Sklep</Label>
-                            <Input
-                                id="shop"
-                                placeholder="Wpisz nazwę sklepu"
-                                {...register("shop", { required: true })}
+                            <Controller
+                                control={control}
+                                name="shop"
+                                rules={{ required: true }}
+                                render={({ field }) => (
+                                    <AutoSuggestInput
+                                        value={field.value}
+                                        onChange={field.onChange}
+                                        placeholder="Wpisz nazwę sklepu"
+                                        fetcher={fetchSearchRecentShops}
+                                        transformResult={(item) => item.name}
+                                    />
+                                )}
                             />
                         </div>
 
@@ -176,10 +192,10 @@ const UnifiedForm = React.forwardRef<UnifiedFormRef, UnifiedFormProps>(
                                 onClick={() =>
                                     append({
                                         id: 0,
-                                        category: "",
+                                        category: "food_drinks",
                                         value: "",
                                         description: "",
-                                        owners: [],
+                                        owners: [1, 2],
                                         quantity: 1,
                                     })
                                 }>
@@ -253,12 +269,26 @@ const UnifiedForm = React.forwardRef<UnifiedFormRef, UnifiedFormProps>(
                                             htmlFor={`items.${index}.description`}>
                                             Opis/Nazwa
                                         </Label>
-                                        <Input
-                                            id={`items.${index}.description`}
-                                            placeholder="Opis/Nazwa"
-                                            {...register(
-                                                `items.${index}.description` as const,
-                                                { required: true }
+                                        <Controller
+                                            control={control}
+                                            name={`items.${index}.description`}
+                                            rules={{ required: true }}
+                                            render={({ field }) => (
+                                                <AutoSuggestInput
+                                                    value={field.value}
+                                                    onChange={field.onChange}
+                                                    placeholder="Opis/Nazwa"
+                                                    // Przekazujemy funkcję fetchera – dodatkowo wykorzystujemy wartość sklepu
+                                                    fetcher={(query: string) =>
+                                                        fetchItemPredictions(
+                                                            shopValue,
+                                                            query
+                                                        )
+                                                    }
+                                                    transformResult={(item) =>
+                                                        item.name
+                                                    }
+                                                />
                                             )}
                                         />
                                     </div>

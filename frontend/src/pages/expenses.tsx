@@ -25,7 +25,7 @@ const Expenses = () => {
     return (
         <>
             <h1 className="text-2xl font-bold mt-4">Wydatki</h1>
-            <p className="text-gray-500">Dodaj swoje wydatki.</p>
+            <p className="text-muted-foreground">Dodaj swoje wydatki.</p>
 
             <UnifiedForm
                 formId="expense-form"
