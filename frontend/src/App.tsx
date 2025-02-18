@@ -12,7 +12,7 @@ import Charts from "@/pages/charts";
 import Bills from "@/pages/billls";
 import Balance from "@/pages/balance";
 import ImportExport from "@/pages/import-export";
-import Settings from "@/pages/settings";
+import Settings from "@/pages/Settings";
 function App() {
     const queryClient = new QueryClient();
 

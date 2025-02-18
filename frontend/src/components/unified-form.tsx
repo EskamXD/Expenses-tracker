@@ -15,7 +15,6 @@ import PayerDropdown from "@/components/payer-dropdown";
 import OwnersDropdown from "@/components/owners-dropdown";
 import { Item, Receipt } from "@/types";
 import { categoryOptions } from "@/config/selectOption";
-import { ScrollArea } from "@radix-ui/react-scroll-area";
 
 interface FormValues {
     paymentDate: string;
@@ -78,7 +77,7 @@ const UnifiedForm = React.forwardRef<UnifiedFormRef, UnifiedFormProps>(
                       ],
         };
 
-        const { register, control, handleSubmit, setValue, watch, formState } =
+        const { register, control, handleSubmit, watch, formState } =
             useForm<FormValues>({
                 defaultValues,
             });

@@ -1,7 +1,8 @@
 from django.urls import path, include
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 from rest_framework.routers import DefaultRouter
-from .views import (
+
+from backend_api.views import (
     PersonViewSet,
     ItemViewSet,
     ReceiptListCreateView,

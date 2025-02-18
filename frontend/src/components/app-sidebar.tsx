@@ -1,9 +1,7 @@
 import { Link, useLocation } from "react-router-dom";
-import { ModeToggle } from "@/components/mode-toggle";
 import {
     Sidebar,
     SidebarContent,
-    SidebarFooter,
     SidebarGroup,
     SidebarGroupContent,
     SidebarGroupLabel,
@@ -67,10 +65,8 @@ export default function AppSidebar() {
                         </SidebarGroupContent>
                     </SidebarGroup>
                 </SidebarContent>
-                <SidebarFooter>
-                    <ModeToggle />
-                </SidebarFooter>
             </Sidebar>
         </div>
     );
 }
+
