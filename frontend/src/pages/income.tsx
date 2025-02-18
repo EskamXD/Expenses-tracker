@@ -7,8 +7,6 @@ import { toast } from "sonner";
 const Income = () => {
     const queryClient = useQueryClient();
 
-    // Tworzymy mutację do zapisu paragonu.
-    // Zauważ, że opakowujemy newReceipt w tablicę, ponieważ fetchPostReceipt oczekuje Receipt[].
     const postReceiptMutation = useMutation({
         mutationFn: (newReceipt: Receipt) => fetchPostReceipt([newReceipt]),
         onSuccess: () => {
@@ -20,7 +18,6 @@ const Income = () => {
         },
     });
 
-    // Callback, który przekazujemy do UnifiedForm.
     const handleSubmitReceipt = (newReceipt: Receipt) => {
         postReceiptMutation.mutate(newReceipt);
     };
@@ -28,7 +25,7 @@ const Income = () => {
     return (
         <>
             <h1 className="text-2xl font-bold mt-4">Przychody</h1>
-            <p className="text-gray-600">Dodaj swoje przychody</p>
+            <p className="text-gray-500">Dodaj swoje przychody.</p>
 
             <UnifiedForm
                 formId="income-form"
@@ -42,3 +39,4 @@ const Income = () => {
 };
 
 export default Income;
+

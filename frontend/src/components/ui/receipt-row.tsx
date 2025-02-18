@@ -11,7 +11,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 
 import { ArrowRight } from "lucide-react";
 import { useGlobalContext } from "@/context/GlobalContext";
-import { selectTranslationList } from "@/config/selectOption";
+import { selectTranslationList } from "@/lib/select-option";
 import { Receipt } from "@/types";
 
 interface ReceiptRowProps {

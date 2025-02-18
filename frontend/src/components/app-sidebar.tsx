@@ -20,7 +20,6 @@ import {
     Settings,
 } from "lucide-react";
 
-// Lista zakładek do menu
 const menuItems = [
     { title: "Dashboard", path: "/", icon: Home },
     { title: "Wydatki", path: "/expenses", icon: TrendingDown },

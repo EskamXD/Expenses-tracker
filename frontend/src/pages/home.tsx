@@ -1,10 +1,11 @@
 const Home = () => {
     return (
-        <div className="mt-3 mb-3">
-            <h1>Home Page</h1>
-            <p>This is home page.</p>
-        </div>
+        <>
+            <h1 className="text-2xl font-bold mt-4">Dashboard</h1>
+            <h3 className="text-gray-500">Aktualności</h3>
+        </>
     );
 };
 
 export default Home;
+

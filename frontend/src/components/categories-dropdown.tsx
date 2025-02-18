@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useGlobalContext } from "../context/GlobalContext";
-import { categoryOptions } from "../config/selectOption";
+import { categoryOptions } from "../lib/select-option";
 import {
     Popover,
     PopoverTrigger,

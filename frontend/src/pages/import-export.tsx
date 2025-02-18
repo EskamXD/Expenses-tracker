@@ -22,14 +22,12 @@ interface toastInterface {
 const ImportExport = () => {
     const [toastArray, setToastArray] = useState<toastInterface[]>([]);
 
-    // ** Pobieranie danych do eksportu **
     const { data: receipts, isFetching } = useQuery({
         queryKey: ["receipts"],
-        queryFn: () => fetchGetReceipts(), // 🔹 Przekazanie domyślnych parametrów
+        queryFn: () => fetchGetReceipts(),
         staleTime: 1000 * 60 * 5,
     });
 
-    // ** Eksportowanie danych **
     const exportMutation = useMutation({
         mutationFn: async () => {
             if (!receipts) throw new Error("Brak danych do eksportu");
@@ -65,7 +63,6 @@ const ImportExport = () => {
         },
     });
 
-    // ** Importowanie danych **
     const importMutation = useMutation({
         mutationFn: async (file: File) => {
             const fileReader = new FileReader();
@@ -110,22 +107,21 @@ const ImportExport = () => {
     });
 
     return (
-        <div className="p-6">
-            <h1 className="text-2xl font-bold">Import/Export</h1>
+        <>
+            <h1 className="text-2xl font-bold mt-4">Import/Export</h1>
 
-            {/* Tabsy */}
             <Tabs defaultValue="export" className="mt-4">
                 <TabsList>
                     <TabsTrigger value="export">Eksport</TabsTrigger>
                     <TabsTrigger value="import">Import</TabsTrigger>
                 </TabsList>
 
-                {/* Eksport */}
                 <TabsContent value="export">
                     <h2 className="text-xl font-semibold mt-4">Eksport</h2>
                     <Button
                         onClick={() => exportMutation.mutate()}
-                        disabled={exportMutation.isPending || isFetching}>
+                        disabled={exportMutation.isPending || isFetching}
+                        className="mt-4">
                         {exportMutation.isPending
                             ? "Pobieranie..."
                             : "Eksportuj dane"}
@@ -135,7 +131,6 @@ const ImportExport = () => {
                     )}
                 </TabsContent>
 
-                {/* Import */}
                 <TabsContent value="import">
                     <h2 className="text-xl font-semibold mt-4">Import</h2>
                     <div className="flex flex-col gap-3">
@@ -156,20 +151,9 @@ const ImportExport = () => {
                     </div>
                 </TabsContent>
             </Tabs>
-
-            {/* Toastery */}
-            {/* <div className="fixed bottom-10 left-10 w-96 space-y-3">
-                {toastArray.map((toast, index) => (
-                    <Toaster
-                        key={index}
-                        type={toast.type}
-                        header={toast.header}
-                        message={toast.message}
-                    />
-                ))}
-            </div> */}
-        </div>
+        </>
     );
 };
 
 export default ImportExport;
+

@@ -33,7 +33,7 @@ import {
     fetchDeleteReceipt,
 } from "@/api/apiService";
 import UnifiedForm, { UnifiedFormRef } from "@/components/unified-form";
-import { selectTranslationList } from "@/config/selectOption";
+import { selectTranslationList } from "@/lib/select-option";
 import { Item, Params, Receipt } from "@/types";
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";

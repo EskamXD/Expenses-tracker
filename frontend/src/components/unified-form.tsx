@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import React, { useEffect, useImperativeHandle, useMemo } from "react";
 import { useForm, useFieldArray, Controller } from "react-hook-form";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,7 +14,7 @@ import { X } from "lucide-react";
 import PayerDropdown from "@/components/payer-dropdown";
 import OwnersDropdown from "@/components/owners-dropdown";
 import { Item, Receipt } from "@/types";
-import { categoryOptions } from "@/config/selectOption";
+import { categoryOptions } from "@/lib/select-option";
 
 interface FormValues {
     paymentDate: string;
@@ -34,8 +34,6 @@ interface UnifiedFormProps {
     onDirtyChange?: (isDirty: boolean) => void;
     footerActions?: React.ReactNode;
 }
-
-// Definicja ref, który pozwala wywołać submitForm programatycznie
 export interface UnifiedFormRef {
     submitForm: () => void;
 }
@@ -54,7 +52,6 @@ const UnifiedForm = React.forwardRef<UnifiedFormRef, UnifiedFormProps>(
         },
         ref
     ) => {
-        // Ustawiamy defaultValues – jeśli mamy receipt, używamy jego danych, w przeciwnym razie ustawiamy wartości domyślne
         const defaultValues: FormValues = {
             paymentDate: receipt
                 ? receipt.payment_date
@@ -82,19 +79,16 @@ const UnifiedForm = React.forwardRef<UnifiedFormRef, UnifiedFormProps>(
                 defaultValues,
             });
 
-        // Informujemy rodzica o zmianach w formularzu
-        React.useEffect(() => {
+        useEffect(() => {
             if (onDirtyChange) {
                 onDirtyChange(formState.isDirty);
             }
         }, [formState.isDirty, onDirtyChange]);
 
-        // Umożliwiamy rodzicowi wywołanie submitu formularza
-        React.useImperativeHandle(ref, () => ({
+        useImperativeHandle(ref, () => ({
             submitForm: handleSubmit(onSubmit),
         }));
 
-        // useFieldArray do dynamicznego zarządzania pozycjami
         const { fields, append, remove } = useFieldArray({
             control,
             name: "items",
