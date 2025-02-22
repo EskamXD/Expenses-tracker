@@ -1,39 +1,130 @@
 import { useState } from "react";
+import { useGlobalContext } from "@/context/GlobalContext";
+import { Person, Receipt } from "@/types";
 import { Button } from "@/components/ui/button";
 import {
     Dialog,
+    DialogTrigger,
     DialogContent,
     DialogHeader,
     DialogTitle,
-    DialogTrigger,
 } from "@/components/ui/dialog";
+import { ArrowRight } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
-import { ArrowRight } from "lucide-react";
-import { useGlobalContext } from "@/context/GlobalContext";
-import { selectTranslationList } from "@/lib/select-option";
-import { Receipt } from "@/types";
-
-interface ReceiptRowProps {
+interface ReceiptPreviewDialogProps {
     receipt: Receipt;
-    onEdit?: (receiptId: number) => void;
+    receiptPayerName: string;
+    totalValue: string;
+    highlightOwners?: boolean;
 }
 
-export const ReceiptRow: React.FC<ReceiptRowProps> = ({ receipt, onEdit }) => {
-    const { persons } = useGlobalContext();
+const ReceiptPreviewDialog: React.FC<ReceiptPreviewDialogProps> = ({
+    receipt,
+    receiptPayerName,
+    totalValue,
+    highlightOwners = false,
+}) => {
     const [isDialogOpen, setDialogOpen] = useState(false);
+    const { persons } = useGlobalContext();
 
-    // Znajdź imię płatnika
-    const payer = persons.find((p) => p.id === receipt.payer);
-    const payerName = payer ? payer.name : "Nieznany";
+    // Wyliczenie unikalnych właścicieli z paragonu
+    const uniqueOwnerIds = Array.from(
+        new Set(receipt.items.flatMap((item) => item.owners))
+    );
 
-    // Znajdź właścicieli przedmiotów
-    const owners = receipt.items
-        .flatMap((item) => item.owners)
-        .map((ownerId) => persons.find((p) => p.id === ownerId)?.name)
-        .filter((name): name is string => !!name); // Usuwamy undefined
+    return (
+        <Dialog open={isDialogOpen} onOpenChange={setDialogOpen}>
+            <DialogTrigger asChild>
+                <Button variant="outline">
+                    <ArrowRight className="w-4 h-4" />
+                </Button>
+            </DialogTrigger>
+            <DialogContent>
+                <DialogHeader>
+                    <DialogTitle>Podgląd paragonu</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-2">
+                    <p>
+                        <strong>Sklep:</strong> {receipt.shop}
+                    </p>
+                    <p>
+                        <strong>Data:</strong> {receipt.payment_date}
+                    </p>
+                    <p>
+                        <strong>Płatnik:</strong> {receiptPayerName}
+                    </p>
+                    <p>
+                        <strong>Wartość:</strong> {totalValue} PLN
+                    </p>
+                    <div>
+                        <strong className="mb-4 block">Właściciele:</strong>
+                        <ScrollArea className="h-[300px]">
+                            <ul className="list-disc pl-5">
+                                {receipt.items.map((item) => (
+                                    <li key={item.id} className="mb-2">
+                                        {item.description} –{" "}
+                                        {Number(item.value).toFixed(2)} zł{" "}
+                                        <span className="text-xs">
+                                            (
+                                            {item.owners.map(
+                                                (ownerId, index) => {
+                                                    const owner = persons.find(
+                                                        (p) => p.id === ownerId
+                                                    );
+                                                    const ownerClass =
+                                                        highlightOwners &&
+                                                        ownerId !==
+                                                            receipt.payer
+                                                            ? "text-red-500"
+                                                            : "text-gray-500";
+                                                    return (
+                                                        <span
+                                                            key={index}
+                                                            className={`${ownerClass} mr-1`}>
+                                                            {owner
+                                                                ? owner.name
+                                                                : "Nieznany"}
+                                                            {index <
+                                                            item.owners.length -
+                                                                1
+                                                                ? ","
+                                                                : ""}
+                                                        </span>
+                                                    );
+                                                }
+                                            )}
+                                            )
+                                        </span>
+                                    </li>
+                                ))}
+                            </ul>
+                        </ScrollArea>
+                    </div>
+                </div>
+            </DialogContent>
+        </Dialog>
+    );
+};
 
-    // Obliczanie wartości paragonu (suma wartości przedmiotów)
+export interface ReceiptRowProps {
+    receipt: Receipt;
+    highlightOwners?: boolean; // opcjonalnie, nie używamy już tej wartości
+    onEdit?: (id: number) => void;
+}
+
+export const ReceiptRow: React.FC<ReceiptRowProps> = ({
+    receipt,
+    highlightOwners = false,
+    onEdit,
+}) => {
+    const { persons } = useGlobalContext();
+
+    // Znalezienie płatnika przypisanego do paragonu (może być inny niż activePayer)
+    const receiptPayer = persons.find((p) => p.id === receipt.payer);
+    const receiptPayerName = receiptPayer ? receiptPayer.name : "Nieznany";
+
+    // Obliczenie całkowitej wartości paragonu
     const totalValue = receipt.items.reduce(
         (sum, item) => sum + Number(item.value),
         0
@@ -43,27 +134,10 @@ export const ReceiptRow: React.FC<ReceiptRowProps> = ({ receipt, onEdit }) => {
         <div className="grid grid-cols-7 gap-4 items-center py-2 border-b">
             <div className="truncate font-bold col-span-2">{receipt.shop}</div>
             <div className="truncate">{totalValue.toFixed(2)} PLN</div>
-            <div className="truncate">{payerName}</div>
-            {/* <div className="truncate">
-                {owners.length ? [...new Set(owners)].join(", ") : "Brak"}
-            </div> */}
+            <div className="truncate">{receiptPayerName}</div>
             <div className="truncate col-span-2">
-                {[
-                    ...new Set(
-                        receipt.items.map(
-                            (item) =>
-                                selectTranslationList.find(
-                                    (t) => t.value === item.category
-                                )?.label || "Nieznane"
-                        )
-                    ),
-                ].map((label, index) => (
-                    <span key={index} className="text-sm text-gray-500 mr-2">
-                        {label}
-                    </span>
-                ))}
+                {/* Usunięto ReceiptItemList */}
             </div>
-
             <div className="flex justify-end">
                 {onEdit ? (
                     <Button
@@ -72,76 +146,12 @@ export const ReceiptRow: React.FC<ReceiptRowProps> = ({ receipt, onEdit }) => {
                         <ArrowRight className="w-4 h-4" />
                     </Button>
                 ) : (
-                    <Dialog open={isDialogOpen} onOpenChange={setDialogOpen}>
-                        <DialogTrigger asChild>
-                            <Button variant="outline">
-                                <ArrowRight className="w-4 h-4" />
-                            </Button>
-                        </DialogTrigger>
-                        <DialogContent>
-                            <DialogHeader>
-                                <DialogTitle>Podgląd paragonu</DialogTitle>
-                            </DialogHeader>
-                            <div className="space-y-2">
-                                <p>
-                                    <strong>Sklep:</strong> {receipt.shop}
-                                </p>
-                                <p>
-                                    <strong>Data:</strong>{" "}
-                                    {receipt.payment_date}
-                                </p>
-                                <p>
-                                    <strong>Płatnik:</strong> {payerName}
-                                </p>
-                                <p>
-                                    <strong>Wartość:</strong>{" "}
-                                    {totalValue.toFixed(2)} PLN
-                                </p>
-                                <div>
-                                    <strong className="mb-4">Pozycje:</strong>
-                                    <ScrollArea className="h-[300px]">
-                                        <ul className="list-disc pl-5">
-                                            {receipt.items.map((item) => {
-                                                const ownersNames =
-                                                    item.owners
-                                                        .map(
-                                                            (ownerId) =>
-                                                                persons.find(
-                                                                    (p) =>
-                                                                        p.id ===
-                                                                        ownerId
-                                                                )?.name
-                                                        )
-                                                        .filter(
-                                                            (
-                                                                name
-                                                            ): name is string =>
-                                                                !!name
-                                                        ) // Usuwa undefined
-                                                        .join(", ") || "Brak";
-
-                                                return (
-                                                    <li
-                                                        key={item.id}
-                                                        className="grid grid-cols-3 border-b-2 mb-4">
-                                                        <span>
-                                                            {item.description}
-                                                        </span>
-                                                        <span>
-                                                            {item.value} zł
-                                                        </span>
-                                                        <span>
-                                                            {ownersNames}
-                                                        </span>
-                                                    </li>
-                                                );
-                                            })}
-                                        </ul>
-                                    </ScrollArea>
-                                </div>
-                            </div>
-                        </DialogContent>
-                    </Dialog>
+                    <ReceiptPreviewDialog
+                        receipt={receipt}
+                        receiptPayerName={receiptPayerName}
+                        totalValue={totalValue.toFixed(2)}
+                        highlightOwners={highlightOwners}
+                    />
                 )}
             </div>
         </div>

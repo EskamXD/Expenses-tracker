@@ -2,7 +2,17 @@ from django.utils.timezone import now
 
 from rest_framework import serializers
 
-from .models import Person, Item, Receipt, RecentShop, ItemPrediction
+from .models import (
+    Person,
+    Item,
+    Receipt,
+    RecentShop,
+    ItemPrediction,
+    Wallet,
+    Invest,
+    Instrument,
+    WalletSnapshot,
+)
 
 
 # Serializator dla PersonPayer
@@ -114,7 +124,6 @@ class ReceiptSerializer(serializers.ModelSerializer):
 
         return instance
 
-
     def update_item_prediction(self, item, shop_name):
         """
         Aktualizuje model ItemPrediction z danymi przedmiotu z paragonu.
@@ -176,6 +185,57 @@ class CategoryPieExpenseSerializer(serializers.Serializer):
         source="transactions__category"
     )  # Poprawiona referencja
     expense_sum = serializers.FloatField()
+    fill = serializers.CharField()
 
     class Meta:
-        fields = ["category", "expense_sum"]
+        fields = ["category", "expense_sum", "fill"]
+
+
+class InstrumentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Instrument
+        fields = [
+            "id",
+            "name",
+            "symbol",
+            "category",
+            "market",
+            "currency",
+            "description",
+            "current_price",
+            "last_updated",
+        ]
+
+
+class InvestSerializer(serializers.ModelSerializer):
+    instrument = InstrumentSerializer(read_only=True)
+    instrument_id = serializers.PrimaryKeyRelatedField(
+        queryset=Instrument.objects.all(), source="instrument", write_only=True
+    )
+
+    class Meta:
+        model = Invest
+        fields = [
+            "id",
+            "wallet",
+            "instrument",
+            "instrument_id",
+            "value",
+            "current_value",
+            "payment_date",
+            "transaction_type",
+        ]
+
+
+class WalletSnapshotSerializer(serializers.ModelSerializer):
+    wallet = serializers.PrimaryKeyRelatedField(read_only=True)
+
+    class Meta:
+        model = WalletSnapshot
+        fields = [
+            "id",
+            "wallet",
+            "snapshot_date",
+            "total_value",
+            "total_invest_income",
+        ]

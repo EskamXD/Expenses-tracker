@@ -22,23 +22,16 @@ export type ShopExpense = {
 const chartConfig = {
     bar: {
         label: "Wydatki",
-        color: "#8884d8",
+        color: "var(--chart-10)",
     },
 } satisfies ChartConfig;
 
 const ChartBarShops: React.FC = () => {
     const { summaryFilters } = useGlobalContext();
 
-    // Upewnij się, że został wybrany owner (lub owners) – dla "dla danego ownera"
-    if (!summaryFilters.owners || summaryFilters.owners.length === 0) {
-        return <div className="w-full text-center">Brak wybranych osób.</div>;
-    }
-
-    console.log(summaryFilters.category);
-    // Pobieramy dane dla sklepów
-    const { data: shopData, isLoading } = useQuery<ShopExpense[]>({
+    const { data: barShopsData, isLoading } = useQuery<ShopExpense[]>({
         queryKey: [
-            "barShops",
+            "barShopsData",
             summaryFilters.month,
             summaryFilters.year,
             summaryFilters.owners,
@@ -51,23 +44,26 @@ const ChartBarShops: React.FC = () => {
                 owners: summaryFilters.owners,
                 category: summaryFilters.category,
             }),
-        enabled: summaryFilters.owners.length > 0,
+        enabled: !!summaryFilters.owners && summaryFilters.owners.length > 0,
     });
 
+    if (!summaryFilters.owners || summaryFilters.owners.length === 0) {
+        return <div className="w-full text-center">Brak wybranych osób.</div>;
+    }
     if (isLoading) return <Skeleton className="h-full w-full" />;
-    if (!shopData || shopData.length === 0)
+    if (!barShopsData)
         return <div className="w-full text-center">Brak danych</div>;
 
     // Jeśli liczba sklepów > 15, wyświetlamy top 15, a resztę agregujemy jako "Inne"
     let chartData: ShopExpense[];
-    if (shopData.length > 15) {
-        const top15 = shopData.slice(0, 15);
-        const othersSum = shopData
+    if (barShopsData.length > 15) {
+        const top15 = barShopsData.slice(0, 15);
+        const othersSum = barShopsData
             .slice(15)
             .reduce((acc, curr) => acc + curr.expense_sum, 0);
         chartData = [...top15, { shop: "Inne", expense_sum: othersSum }];
     } else {
-        chartData = shopData;
+        chartData = barShopsData;
     }
 
     return (
@@ -83,19 +79,25 @@ const ChartBarShops: React.FC = () => {
                             value.length > 7 ? value.slice(0, 5) + "..." : value
                         }
                     />
-
                     <YAxis />
                     <ChartTooltip
+                        cursor={false}
                         content={<ChartTooltipContent />}
-                        formatter={(value: number, name: string) => {
-                            return [`${name} `, `${value} zł`];
+                        formatter={(value, name) => {
+                            const key = name as keyof typeof chartConfig;
+                            return [
+                                chartConfig[key]?.label || name,
+                                " ",
+                                <strong>{value}</strong>,
+                                " zł",
+                            ];
                         }}
                     />
-                    <ChartLegend content={<ChartLegendContent />} />
                     <Bar
                         dataKey="expense_sum"
-                        fill={chartConfig.bar.color}
+                        fill="var(--color-bar)"
                         name={chartConfig.bar.label}
+                        radius={6}
                     />
                 </BarChart>
             </ChartContainer>

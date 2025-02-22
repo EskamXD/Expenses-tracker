@@ -6,6 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import ChartBarPersons from "@/components/chart-bar-persons";
 import ChartLinesPerson from "@/components/chart-lines-persons";
 import ChartBarShops from "@/components/chart-bar-shops";
+import ChartPieCategories from "@/components/chart-pie-category";
 
 const chartConfig = {
     desktop: {
@@ -40,6 +41,9 @@ const Charts = () => {
                     <TabsTrigger value="barShops">
                         Wykres wydatków w sklepach
                     </TabsTrigger>
+                    <TabsTrigger value="pieCategories">
+                        Wykres wydatków w kategoriach
+                    </TabsTrigger>
                 </TabsList>
                 <TabsContent value="barPersons">
                     <ChartBarPersons />
@@ -49,6 +53,9 @@ const Charts = () => {
                 </TabsContent>
                 <TabsContent value="barShops">
                     <ChartBarShops />
+                </TabsContent>
+                <TabsContent value="pieCategories">
+                    <ChartPieCategories />
                 </TabsContent>
             </Tabs>
         </div>

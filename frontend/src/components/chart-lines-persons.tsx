@@ -1,6 +1,6 @@
 import React from "react";
 import { useQuery } from "@tanstack/react-query";
-import { LineChart, Line, XAxis, YAxis, CartesianGrid } from "recharts";
+import { Area, AreaChart, XAxis, CartesianGrid } from "recharts";
 import {
     ChartContainer,
     ChartConfig,
@@ -12,48 +12,28 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { useGlobalContext } from "@/context/GlobalContext";
 import { fetchLineSums } from "@/api/apiService";
+import "@/index.css";
 
-interface OwnerData {
-    expense: number[];
-    income: number[];
-}
+export type PersonLinesResponse = {
+    day: string;
+    expense: number;
+    income: number;
+}[];
 
-export type PersonLinesResponse = Record<string, OwnerData>;
-
-// Typ dla danych wykresu przy wielu właścicielach
-interface DayData {
-    day: number;
-    [key: string]: number;
-}
-
-// Konfiguracja wykresu – z kluczami "expense" i "income"
 const chartConfig = {
     expense: {
         label: "Wydatki",
-        color: "#8884d8",
+        color: "var(--chart-1)",
     },
     income: {
         label: "Przychody",
-        color: "#82ca9d",
+        color: "var(--chart-10)",
     },
 } satisfies ChartConfig;
 
-// Paleta kolorów – przydzielana kolejno właścicielom
-const colorPalette = [
-    "#8884d8",
-    "#82ca9d",
-    "#ff7300",
-    "#0088FE",
-    "#00C49F",
-    "#FFBB28",
-    "#FF8042",
-];
-
 const ChartLinesPerson: React.FC = () => {
-    const { summaryFilters, persons } = useGlobalContext();
-
-    if (!summaryFilters.owners || summaryFilters.owners.length === 0)
-        return <div className="w-full text-center">Brak wybranych osób.</div>;
+    const { summaryFilters } = useGlobalContext();
+    console.log(summaryFilters, !!summaryFilters.owners);
 
     const { data: lineSumsData, isLoading: isLoadingLineSums } =
         useQuery<PersonLinesResponse>({
@@ -69,82 +49,102 @@ const ChartLinesPerson: React.FC = () => {
                     year: summaryFilters.year,
                     owners: summaryFilters.owners,
                 }),
-            enabled: summaryFilters.owners.length > 0,
+            enabled:
+                !!summaryFilters.owners && summaryFilters.owners.length > 0,
         });
 
+    if (!summaryFilters.owners || summaryFilters.owners.length === 0)
+        return <div className="w-full text-center">Brak wybranych osób.</div>;
     if (isLoadingLineSums) return <Skeleton className="h-full w-full" />;
     if (!lineSumsData)
         return <div className="w-full text-center">Brak danych</div>;
 
-    // Pobieramy listę ownerów z kluczy zwróconego obiektu
-    const ownerIds = Object.keys(lineSumsData);
-    // Zakładamy, że wszystkie tablice mają tę samą długość (np. liczbę dni w miesiącu)
-    const numDays = lineSumsData[ownerIds[0]].expense.length;
-
-    // Tworzymy dane wykresu – każdy obiekt reprezentuje jeden dzień
-    const lineChartData: DayData[] = Array.from(
-        { length: numDays },
-        (_, i: number) => {
-            const dayObj: DayData = { day: i + 1 };
-            ownerIds.forEach((owner: string) => {
-                dayObj[`expense_${owner}`] = lineSumsData[owner].expense[i];
-                dayObj[`income_${owner}`] = lineSumsData[owner].income[i];
-            });
-            return dayObj;
-        }
-    );
-
-    // Renderujemy linie dla każdego właściciela – etykiety zawierają imię właściciela
-    const linesToRender: React.ReactNode[] = ownerIds.flatMap(
-        (owner: string, index: number) => {
-            // Znajdź obiekt osoby po id (konwertujemy klucz na liczbę)
-            const ownerObj = persons.find(
-                (person) => person.id === Number(owner)
-            );
-            const ownerName = ownerObj ? ownerObj.name : `Owner ${owner}`;
-            const expenseColor =
-                colorPalette[(index * 2) % colorPalette.length];
-            const incomeColor =
-                colorPalette[(index * 2 + 1) % colorPalette.length];
-            return [
-                <Line
-                    key={`expense_${owner}`}
-                    type="monotone"
-                    dataKey={`expense_${owner}`}
-                    stroke={expenseColor}
-                    name={`Wydatki ${ownerName}`}
-                    dot={false}
-                />,
-                <Line
-                    key={`income_${owner}`}
-                    type="monotone"
-                    dataKey={`income_${owner}`}
-                    stroke={incomeColor}
-                    name={`Przychody ${ownerName}`}
-                    dot={false}
-                />,
-            ];
-        }
-    );
-
     return (
-        <div className="flex flex-col items-center">
-            <ChartContainer
-                config={chartConfig}
-                className="min-h-[500px] h-full">
-                <LineChart data={lineChartData} height={300}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="day" />
-                    <YAxis />
+        <div className="flex flex-col items-center w-full">
+            <ChartContainer config={chartConfig} className="min-h-[500px]">
+                <AreaChart
+                    accessibilityLayer
+                    data={lineSumsData}
+                    margin={{
+                        left: 12,
+                        right: 12,
+                    }}>
+                    <CartesianGrid vertical={false} />
+                    <XAxis
+                        dataKey="day"
+                        tickLine={false}
+                        axisLine={false}
+                        tickMargin={8}
+                        tickFormatter={(value) => value.slice(5, 10)}
+                    />
                     <ChartTooltip
+                        cursor={false}
                         content={<ChartTooltipContent />}
-                        formatter={(value: number, name: string) => {
-                            return [`${name} `, `${value} zł`];
+                        formatter={(value, name) => {
+                            const key = name as keyof typeof chartConfig;
+                            return [
+                                chartConfig[key]?.label || name,
+                                " ",
+                                <strong>{value}</strong>,
+                                " zł",
+                            ];
                         }}
                     />
+
                     <ChartLegend content={<ChartLegendContent />} />
-                    {linesToRender}
-                </LineChart>
+                    <defs>
+                        <linearGradient
+                            id="fillExpense"
+                            x1="0"
+                            y1="0"
+                            x2="0"
+                            y2="1">
+                            <stop
+                                offset="5%"
+                                stopColor="var(--color-expense)"
+                                stopOpacity={0.8}
+                            />
+                            <stop
+                                offset="95%"
+                                stopColor="var(--ccolor-expense)"
+                                stopOpacity={0.1}
+                            />
+                        </linearGradient>
+                        <linearGradient
+                            id="fillIncome"
+                            x1="0"
+                            y1="0"
+                            x2="0"
+                            y2="1">
+                            <stop
+                                offset="5%"
+                                stopColor="var(--chart-10)"
+                                stopOpacity={0.8}
+                            />
+                            <stop
+                                offset="95%"
+                                stopColor="var(--chart-10)"
+                                stopOpacity={0.1}
+                            />
+                        </linearGradient>
+                    </defs>
+                    <Area
+                        dataKey="income"
+                        type="natural"
+                        fill="url(#fillIncome)"
+                        fillOpacity={0.4}
+                        stroke="var(--chart-10)"
+                        stackId="a"
+                    />
+                    <Area
+                        dataKey="expense"
+                        type="natural"
+                        fill="url(#fillExpense)"
+                        fillOpacity={0.4}
+                        stroke="var(--color-expense)"
+                        stackId="a"
+                    />
+                </AreaChart>
             </ChartContainer>
         </div>
     );

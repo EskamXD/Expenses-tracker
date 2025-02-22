@@ -11,8 +11,9 @@ import Summary from "@/pages/summary";
 import Charts from "@/pages/charts";
 import Bills from "@/pages/billls";
 import Balance from "@/pages/balance";
+import Investments from "@/pages/investments";
 import ImportExport from "@/pages/import-export";
-import Settings from "@/pages/Settings";
+import Settings from "@/pages/settings";
 function App() {
     const queryClient = new QueryClient();
 
@@ -32,7 +33,11 @@ function App() {
                                 <Route path="/summary" element={<Summary />} />
                                 <Route path="/charts" element={<Charts />} />
                                 <Route path="/bills" element={<Bills />} />
-                                <Route path="/balance" element={<Balance />} />
+                                {/* <Route path="/balance" element={<Balance />} /> */}
+                                <Route
+                                    path="/investments"
+                                    element={<Investments />}
+                                />
                                 <Route
                                     path="/import-export"
                                     element={<ImportExport />}

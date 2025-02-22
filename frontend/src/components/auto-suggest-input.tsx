@@ -45,6 +45,7 @@ const AutoSuggestInput: React.FC<AutoSuggestInputProps> = ({
     // Flaga zapobiegająca automatycznemu pokazywaniu dropdownu po wyborze sugestii
     const [ignoreAutoShow, setIgnoreAutoShow] = useState(false);
     const [showSuggestions, setShowSuggestions] = useState(false);
+    const [isFocused, setIsFocused] = useState(false);
 
     const inputRef = useRef<HTMLInputElement>(null);
     const [inputRect, setInputRect] = useState<DOMRect | null>(null);
@@ -56,7 +57,7 @@ const AutoSuggestInput: React.FC<AutoSuggestInputProps> = ({
     }, [value, showSuggestions]);
 
     useEffect(() => {
-        if (ignoreAutoShow) {
+        if (!isFocused || ignoreAutoShow) {
             setShowSuggestions(false);
         } else if (
             debouncedValue.length >= 3 &&
@@ -66,7 +67,7 @@ const AutoSuggestInput: React.FC<AutoSuggestInputProps> = ({
         } else {
             setShowSuggestions(false);
         }
-    }, [debouncedValue, suggestions, isLoading, ignoreAutoShow]);
+    }, [debouncedValue, suggestions, isLoading, ignoreAutoShow, isFocused]);
 
     const handleInputChange = (newValue: string) => {
         if (ignoreAutoShow) {
@@ -125,6 +126,7 @@ const AutoSuggestInput: React.FC<AutoSuggestInputProps> = ({
                 onChange={(e) => handleInputChange(e.target.value)}
                 placeholder={placeholder}
                 onFocus={() => {
+                    setIsFocused(true);
                     if (
                         (suggestions.length > 0 || isLoading) &&
                         !ignoreAutoShow

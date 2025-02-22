@@ -38,9 +38,9 @@ def fetch_pie_categories(request):
         params = get_query_params(request, "month", "year")
         selected_month = params["month"]
         selected_year = params["year"]
-        print(
-            "DEBUG: selected_month =", selected_month, "selected_year =", selected_year
-        )
+        # print(
+        #     "DEBUG: selected_month =", selected_month, "selected_year =", selected_year
+        # )
 
         # Filtrujemy paragony o typie "expense" dla wybranego miesiąca i roku
         receipts = Receipt.objects.filter(
@@ -48,23 +48,23 @@ def fetch_pie_categories(request):
             payment_date__month=selected_month,
             payment_date__year=selected_year,
         ).distinct()
-        print("DEBUG: receipts count =", receipts.count())
+        # print("DEBUG: receipts count =", receipts.count())
 
         # Pobieramy parametr owners[] (lista właścicieli)
         owners_param = request.GET.getlist("owners[]")
-        print("DEBUG: owners_param =", owners_param)
+        # print("DEBUG: owners_param =", owners_param)
         if owners_param:
             selected_owner_ids = [int(o) for o in owners_param]
             receipts = receipts.filter(
                 items__owners__id__in=selected_owner_ids
             ).distinct()
-            print("DEBUG: receipts count after owners filter =", receipts.count())
+            # print("DEBUG: receipts count after owners filter =", receipts.count())
 
         # Pobieramy przedmioty powiązane z wybranymi paragonami
         from backend_api.models import Item  # dostosuj import do swojej struktury
 
         item_qs = Item.objects.filter(receipts__in=receipts).distinct()
-        print("DEBUG: initial item_qs count =", item_qs.count())
+        # print("DEBUG: initial item_qs count =", item_qs.count())
 
         # Agregujemy wyniki w Pythonie – dla każdego przedmiotu:
         # fractional_value = value / (liczba właścicieli)
@@ -81,22 +81,26 @@ def fetch_pie_categories(request):
 
         # Przekształcamy słownik na listę słowników i sortujemy malejąco po sumie
         aggregated_data = [
-            {"category": cat, "expense_sum": round(total, 2)}
+            {
+                "category": cat,
+                "expense_sum": round(total, 2),
+                "fill": f"var(--color-{cat})",
+            }
             for cat, total in category_totals.items()
         ]
-        aggregated_data.sort(key=lambda x: x["expense_sum"], reverse=True)
-        print("DEBUG: aggregated data =", aggregated_data)
+        aggregated_data.sort(key=lambda x: x["category"])
+        # print("DEBUG: aggregated data =", aggregated_data)
 
         serializer = CategoryPieExpenseSerializer(data=aggregated_data, many=True)
         if serializer.is_valid():
-            print("DEBUG: serializer data =", serializer.data)
+            # print("DEBUG: serializer data =", serializer.data)
             return JsonResponse(serializer.data, safe=False, status=200)
         else:
-            print("DEBUG: serializer errors =", serializer.errors)
+            # print("DEBUG: serializer errors =", serializer.errors)
             return JsonResponse(serializer.errors, safe=False, status=400)
     except ValidationError as e:
-        print("DEBUG: ValidationError =", e)
+        # print("DEBUG: ValidationError =", e)
         return handle_error(e, 400, "Invalid category")
     except Exception as e:
-        print("DEBUG: Exception =", e)
+        # print("DEBUG: Exception =", e)
         return handle_error(e, 500, "Error while fetching pie categories")
