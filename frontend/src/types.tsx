@@ -6,7 +6,7 @@ export type Person = {
 };
 
 export type Item = {
-    id?: number;
+    id: number;
     category: string;
     value: string;
     description: string;
@@ -15,7 +15,7 @@ export type Item = {
 };
 
 export type Receipt = {
-    id?: number;
+    id: number;
     payment_date: string;
     payer: number;
     shop: string;
@@ -25,10 +25,10 @@ export type Receipt = {
 
 export type Params = {
     id?: number;
-    owners: number[];
-    month: number;
-    year: number;
-    category?: string | string[];
+    owners?: number[];
+    month?: number;
+    year?: number;
+    category?: string[];
     transaction_type?: string;
 };
 

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import Spinner from "react-bootstrap/Spinner";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
     fetchGetReceipts,
     fetchLineSums,
@@ -7,7 +7,7 @@ import {
     fetchPutReceipt,
 } from "../api/apiService";
 import { Item, Params, Receipt } from "../types";
-import { Col, Modal } from "react-bootstrap";
+import Dialog from "@/components/ui/dialog";
 import { colors } from "../config/colors";
 import moment from "moment";
 
@@ -250,9 +250,9 @@ const BalanceTab: React.FC<BalanceTabProps> = ({
                     !!itemsLoaded &&
                     !!showAddModal &&
                     !!showUpdateModal ? (
-                        <Spinner animation="border" role="status">
+                        <Skeleton animation="border" role="status">
                             <span className="sr-only"></span>
-                        </Spinner>
+                        </Skeleton>
                     ) : currentBalanceData ? (
                         <div className="mt-1rem">
                             {currentBalanceData.total_income ||
@@ -406,3 +406,4 @@ const BalanceTab: React.FC<BalanceTabProps> = ({
 };
 
 export default BalanceTab;
+

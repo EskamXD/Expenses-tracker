@@ -1,96 +1,59 @@
-import { useEffect, useState } from "react";
-import { Routes, Route } from "react-router-dom";
-import ExpensesPage from "./pages/ExpensesPage";
-import HomePage from "./pages/HomePage";
-import IncomePage from "./pages/IncomePage";
-import SummaryPage from "./pages/SummaryPage";
-import FlatBills from "./pages/FlatBills";
-import ImportExportPage from "./pages/ImportExportPage";
-import Settings from "./pages/Settings";
-import Loader from "./pages/Loader";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { ThemeProvider } from "@/components/theme-provider";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { GlobalProvider } from "@/context/GlobalContext";
+import Layout from "@/pages/layout";
 
-import SiteNavbar from "./components/SiteNavbar";
-import Container from "react-bootstrap/Container";
-
-import { Params } from "./types.tsx";
-import { fetchGetPerson, fetchGetReceipts } from "./api/apiService";
-
-import { useGlobalContext } from "./context/GlobalContext";
-
-import "./App.css";
-import "bootstrap/dist/css/bootstrap.min.css";
-import { Spinner } from "react-bootstrap";
-
-const App: React.FC = () => {
-    const [loading, setLoading] = useState(false);
-
-    const { persons, setPersons, setReceipts } = useGlobalContext();
-
-    useEffect(() => {
-        setLoading(true);
-
-        fetchGetPerson()
-            .then((response) => {
-                if (JSON.stringify(response) !== JSON.stringify(persons)) {
-                    setPersons(response.length !== 0 ? response : []);
-                }
-            })
-            .finally(() => {
-                setLoading(false);
-            });
-    }, []);
-
-    useEffect(() => {
-        setLoading(true);
-
-        const params = {
-            month: new Date().getMonth() + 1,
-            year: new Date().getFullYear(),
-        } as Params;
-
-        fetchGetReceipts(params)
-            .then((response) => {
-                response.length !== 0 ? setReceipts(response) : setReceipts([]);
-            })
-            .finally(() => {
-                setLoading(false);
-            });
-    }, [persons]);
+import Home from "@/pages/home";
+import Expenses from "@/pages/expenses";
+import Income from "@/pages/income";
+import Summary from "@/pages/summary";
+import Charts from "@/pages/charts";
+import Bills from "@/pages/billls";
+import Balance from "@/pages/balance";
+import Investments from "@/pages/investments";
+import ImportExport from "@/pages/import-export";
+import Settings from "@/pages/settings";
+function App() {
+    const queryClient = new QueryClient();
 
     return (
-        <>
-            {persons.length === 0 && loading === true && <Spinner />}
-            {persons.length === 0 && loading === false && (
-                /* Tutaj możesz dodać loader, np. */
-                <Loader />
-            )}
-            {persons.length > 0 && loading === false && (
-                // save Persons in local storage
-                <>
-                    <SiteNavbar />
-
-                    <Container data-bs-theme="dark">
-                        <Routes>
-                            <Route
-                                path="/expenses/"
-                                element={<ExpensesPage />}
-                            />
-                            <Route path="/income/" element={<IncomePage />} />
-                            <Route path="/summary/" element={<SummaryPage />} />
-                            <Route path="/bills/" element={<FlatBills />} />
-                            <Route
-                                path="/import-export/"
-                                element={<ImportExportPage />}
-                            />
-                            <Route path="/settings/" element={<Settings />} />
-                            {/* Możesz również dodać stronę domyślną, np. */}
-                            <Route path="/" element={<HomePage />} />
-                        </Routes>
-                    </Container>
-                </>
-            )}
-        </>
+        <ThemeProvider defaultTheme="dark" storageKey="vite-ui-theme">
+            <QueryClientProvider client={queryClient}>
+                <GlobalProvider>
+                    <BrowserRouter>
+                        <Layout>
+                            <Routes>
+                                <Route path="/" element={<Home />} />
+                                <Route
+                                    path="/expenses"
+                                    element={<Expenses />}
+                                />
+                                <Route path="/income" element={<Income />} />
+                                <Route path="/summary" element={<Summary />} />
+                                <Route path="/charts" element={<Charts />} />
+                                <Route path="/bills" element={<Bills />} />
+                                {/* <Route path="/balance" element={<Balance />} /> */}
+                                <Route
+                                    path="/investments"
+                                    element={<Investments />}
+                                />
+                                <Route
+                                    path="/import-export"
+                                    element={<ImportExport />}
+                                />
+                                <Route
+                                    path="/settings"
+                                    element={<Settings />}
+                                />
+                            </Routes>
+                        </Layout>
+                    </BrowserRouter>
+                </GlobalProvider>
+            </QueryClientProvider>
+        </ThemeProvider>
     );
-};
+}
 
 export default App;
+

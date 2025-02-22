@@ -2,7 +2,17 @@ from django.utils.timezone import now
 
 from rest_framework import serializers
 
-from .models import Person, Item, Receipt, RecentShop, ItemPrediction
+from .models import (
+    Person,
+    Item,
+    Receipt,
+    RecentShop,
+    ItemPrediction,
+    Wallet,
+    Invest,
+    Instrument,
+    WalletSnapshot,
+)
 
 
 # Serializator dla PersonPayer
@@ -89,18 +99,28 @@ class ReceiptSerializer(serializers.ModelSerializer):
 
     def update(self, instance, validated_data):
         items_data = validated_data.pop("items", [])
+        # Aktualizacja pozostałych pól obiektu Receipt
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
         instance.save()
 
+        # Czyścimy poprzednie pozycje
         instance.items.clear()
+
+        # Przetwarzamy listę pozycji
         for item_data in items_data:
+            # Konwertujemy właścicieli – upewniamy się, że przekazujemy klucze główne
+            item_data["owners"] = [
+                owner.id if hasattr(owner, "id") else owner
+                for owner in item_data.get("owners", [])
+            ]
             item_serializer = ItemSerializer(data=item_data)
             item_serializer.is_valid(raise_exception=True)
             item = item_serializer.save()
             instance.items.add(item)
 
-            self.update_item_prediction(item, receipt.shop.lower())
+            # Używamy instance.shop, a nie niezdefiniowanego receipt
+            self.update_item_prediction(item, instance.shop.lower())
 
         return instance
 
@@ -165,6 +185,57 @@ class CategoryPieExpenseSerializer(serializers.Serializer):
         source="transactions__category"
     )  # Poprawiona referencja
     expense_sum = serializers.FloatField()
+    fill = serializers.CharField()
 
     class Meta:
-        fields = ["category", "expense_sum"]
+        fields = ["category", "expense_sum", "fill"]
+
+
+class InstrumentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Instrument
+        fields = [
+            "id",
+            "name",
+            "symbol",
+            "category",
+            "market",
+            "currency",
+            "description",
+            "current_price",
+            "last_updated",
+        ]
+
+
+class InvestSerializer(serializers.ModelSerializer):
+    instrument = InstrumentSerializer(read_only=True)
+    instrument_id = serializers.PrimaryKeyRelatedField(
+        queryset=Instrument.objects.all(), source="instrument", write_only=True
+    )
+
+    class Meta:
+        model = Invest
+        fields = [
+            "id",
+            "wallet",
+            "instrument",
+            "instrument_id",
+            "value",
+            "current_value",
+            "payment_date",
+            "transaction_type",
+        ]
+
+
+class WalletSnapshotSerializer(serializers.ModelSerializer):
+    wallet = serializers.PrimaryKeyRelatedField(read_only=True)
+
+    class Meta:
+        model = WalletSnapshot
+        fields = [
+            "id",
+            "wallet",
+            "snapshot_date",
+            "total_value",
+            "total_invest_income",
+        ]
