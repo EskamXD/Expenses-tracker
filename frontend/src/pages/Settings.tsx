@@ -1,9 +1,3 @@
-<<<<<<< HEAD
-import { useEffect, useState } from "react";
-import { Button } from "react-bootstrap";
-import ModalPerson from "../components/ModalPerson";
-import { Person } from "../types";
-=======
 import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Pencil } from "lucide-react";
@@ -19,81 +13,10 @@ import {
     DialogFooter,
 } from "@/components/ui/dialog";
 
->>>>>>> origin/dev
 import {
     fetchGetPerson,
     fetchPostPerson,
     fetchPutPerson,
-<<<<<<< HEAD
-} from "../services/apiService";
-import EditRoundedIcon from "@mui/icons-material/EditRounded";
-import "../assets/styles/main.css";
-
-const Settings = () => {
-    const [personList, setPersonList] = useState<Person[]>([]);
-    const [personID, setPersonID] = useState(0);
-    const [name, setName] = useState("");
-    const [payer, setPayer] = useState(false);
-    const [showModal, setShowModal] = useState(false);
-    const [reload, setReload] = useState(false);
-    const [modalMethod, setModalMethod] = useState("post");
-
-    useEffect(() => {
-        fetchGetPerson()
-            .then((response) => {
-                setPersonList(response);
-            })
-            .finally(() => {
-                setReload(false);
-            });
-    }, [reload]);
-
-    useEffect(() => {
-        setReload(true);
-    }, []);
-
-    // Obsługuje zdarzenie przesłania formularza
-    const handleSubmit = async (e: any) => {
-        e.preventDefault();
-
-        if (modalMethod === "post") {
-            const person = {
-                name: name,
-                payer: payer,
-            } as Person;
-            await fetchPostPerson(person);
-        } else {
-            const person = {
-                id: personID,
-                name: name,
-                payer: payer,
-            } as Person;
-            await fetchPutPerson(person);
-        }
-
-        setShowModal(false);
-        setName("");
-        setPayer(false);
-        setReload(true);
-    };
-
-    const showModalToPost = () => {
-        setName("");
-        setPayer(false);
-        setModalMethod("post");
-        setShowModal(true);
-    };
-
-    const showModalToPut = (ID: number) => {
-        // console.log(ID);
-        fetchGetPerson(ID).then((response) => {
-            setPersonID(response.id);
-            setName(response.name);
-            setPayer(response.payer);
-        });
-        setModalMethod("put");
-        setShowModal(true);
-=======
 } from "@/api/apiService";
 import { useGlobalContext } from "@/context/GlobalContext";
 import { Person } from "@/types";
@@ -171,44 +94,10 @@ const Settings = () => {
             ...prev,
             person: { ...prev.person, [field]: value },
         }));
->>>>>>> origin/dev
     };
 
     return (
         <>
-<<<<<<< HEAD
-            <div className="mb-3">
-                <h1>Ustawienia</h1>
-                <h2>Lista osób zarejstrowanych do użytku</h2>
-            </div>
-            {personList.map((person) => (
-                <>
-                    <div key={person.id} className="d-flex space-between">
-                        <h5>{person.name}</h5>
-                        <Button
-                            variant="light"
-                            onClick={() => showModalToPut(Number(person.id))}>
-                            <EditRoundedIcon />
-                        </Button>
-                    </div>
-                    <hr key={`hr-${person.id}`}></hr>
-                </>
-            ))}
-
-            <Button variant="primary" type="button" onClick={showModalToPost}>
-                Dodaj osobę
-            </Button>
-
-            <ModalPerson
-                showModal={showModal}
-                setShowModal={setShowModal}
-                name={name}
-                setName={setName}
-                payer={payer}
-                setPayer={setPayer}
-                handleSubmit={handleSubmit}
-                canCloseModal={true}
-=======
             <h1 className="text-2xl font-bold mt-4">Ustawienia</h1>
             <p className="text-muted-foreground">
                 Lista osób zarejestrowanych do użytku
@@ -243,15 +132,12 @@ const Settings = () => {
                 person={dialogState.person}
                 updatePersonField={updatePersonField}
                 handleSubmit={handleSubmit}
->>>>>>> origin/dev
             />
         </>
     );
 };
 
 export default Settings;
-<<<<<<< HEAD
-=======
 
 /**
  * Nowy komponent dialogowy oparty na shadcn UI.
@@ -319,4 +205,3 @@ function PersonDialog({
     );
 }
 
->>>>>>> origin/dev
