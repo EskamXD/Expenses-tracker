@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useGlobalContext } from "@/context/GlobalContext";
-import { Person, Receipt } from "@/types";
+import { Receipt } from "@/types";
 import { Button } from "@/components/ui/button";
 import {
     Dialog,
@@ -27,11 +27,6 @@ const ReceiptPreviewDialog: React.FC<ReceiptPreviewDialogProps> = ({
 }) => {
     const [isDialogOpen, setDialogOpen] = useState(false);
     const { persons } = useGlobalContext();
-
-    // Wyliczenie unikalnych właścicieli z paragonu
-    const uniqueOwnerIds = Array.from(
-        new Set(receipt.items.flatMap((item) => item.owners))
-    );
 
     return (
         <Dialog open={isDialogOpen} onOpenChange={setDialogOpen}>

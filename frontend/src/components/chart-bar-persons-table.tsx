@@ -19,7 +19,7 @@ import {
 import { Info } from "lucide-react";
 import { useGlobalContext } from "@/context/GlobalContext";
 import { fetchGetReceiptsByID } from "@/api/apiService";
-import { Person, Receipt } from "@/types";
+import { Receipt } from "@/types";
 import { DialogDescription } from "@radix-ui/react-dialog";
 
 export type TBarPersons = {

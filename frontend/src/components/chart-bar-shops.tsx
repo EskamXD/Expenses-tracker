@@ -6,8 +6,6 @@ import {
     ChartConfig,
     ChartTooltip,
     ChartTooltipContent,
-    ChartLegend,
-    ChartLegendContent,
 } from "@/components/ui/chart";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useGlobalContext } from "@/context/GlobalContext";

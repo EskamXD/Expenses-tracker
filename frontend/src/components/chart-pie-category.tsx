@@ -6,17 +6,9 @@ import {
     ChartContainer,
     ChartTooltip,
     ChartTooltipContent,
-    ChartLegend,
-    ChartLegendContent,
     ChartStyle,
 } from "@/components/ui/chart";
-import {
-    Card,
-    CardContent,
-    CardDescription,
-    CardHeader,
-    CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import {
     Select,
     SelectContent,
