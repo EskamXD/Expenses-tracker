@@ -6,7 +6,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('expenses_api', '0016_delete_investment'),
+        ('backend_api', '0016_delete_investment'),
     ]
 
     operations = [

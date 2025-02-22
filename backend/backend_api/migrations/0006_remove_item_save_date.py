@@ -6,7 +6,7 @@ from django.db import migrations
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('expenses_api', '0005_alter_item_save_date'),
+        ('backend_api', '0005_alter_item_save_date'),
     ]
 
     operations = [

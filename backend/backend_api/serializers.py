@@ -1,5 +1,18 @@
+from django.utils.timezone import now
+
 from rest_framework import serializers
-from .models import Person, Item, Receipt
+
+from .models import (
+    Person,
+    Item,
+    Receipt,
+    RecentShop,
+    ItemPrediction,
+    Wallet,
+    Invest,
+    Instrument,
+    WalletSnapshot,
+)
 
 
 # Serializator dla PersonPayer
@@ -9,11 +22,10 @@ class PersonSerializer(serializers.ModelSerializer):
         fields = ["id", "name", "payer", "owner"]
 
 
-# Serializator dla Item
 class ItemSerializer(serializers.ModelSerializer):
-    def validate_value(self, value):
-        print(f"Received value: {value}")
-        return value
+    owners = serializers.PrimaryKeyRelatedField(
+        many=True, queryset=Person.objects.all()
+    )
 
     class Meta:
         model = Item
@@ -24,22 +36,34 @@ class ItemSerializer(serializers.ModelSerializer):
             "value",
             "description",
             "quantity",
-            "owner",
+            "owners",
         ]
 
+    def create(self, validated_data):
+        owners_data = validated_data.pop("owners", [])
+        item = Item.objects.create(**validated_data)
+        item.owners.set(owners_data)
+        return item
 
-# Serializator dla Receipt
+    def update(self, instance, validated_data):
+        owners_data = validated_data.pop("owners", [])
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+        instance.save()
+        instance.owners.set(owners_data)
+        return instance
+
+
 class ReceiptSerializer(serializers.ModelSerializer):
-    # url = serializers.HyperlinkedIdentityField(
-    #     view_name="receipt-detail", read_only=True
-    # )
-    items = ItemSerializer(many=True)  # Serializator dla itemów
+    payer = serializers.PrimaryKeyRelatedField(
+        queryset=Person.objects.filter(payer=True)
+    )
+    items = ItemSerializer(many=True)
 
     class Meta:
         model = Receipt
         fields = [
             "id",
-            # "url",
             "save_date",
             "payment_date",
             "payer",
@@ -50,52 +74,102 @@ class ReceiptSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         items_data = validated_data.pop("items", [])
+        receipt = Receipt.objects.create(**validated_data)
 
-        # Tworzenie obiektu Receipt
-        receipt = super().create(validated_data)
+        shop_name = validated_data.get("shop", "").strip().lower()
+        if shop_name:
+            recent_shop, created = RecentShop.objects.get_or_create(name=shop_name)
+            if not created:
+                recent_shop.last_used = now()
+                recent_shop.save()
 
-        # Dodanie itemów do Receipt
         for item_data in items_data:
-            item = Item.objects.create(**item_data)
+            item_data["owners"] = [
+                owner.id if isinstance(owner, Person) else owner
+                for owner in item_data.get("owners", [])
+            ]
+            item_serializer = ItemSerializer(data=item_data)
+            item_serializer.is_valid(raise_exception=True)
+            item = item_serializer.save()
             receipt.items.add(item)
+
+            self.update_item_prediction(item, receipt.shop.lower())
 
         return receipt
 
     def update(self, instance, validated_data):
         items_data = validated_data.pop("items", [])
-        instance = super().update(instance, validated_data)
+        # Aktualizacja pozostałych pól obiektu Receipt
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+        instance.save()
 
-        # Usuń istniejące itemy
+        # Czyścimy poprzednie pozycje
         instance.items.clear()
 
+        # Przetwarzamy listę pozycji
         for item_data in items_data:
-            # Szukaj itemu, który może być już w bazie
-            item, _ = Item.objects.get_or_create(
-                id=item_data.get("id"),
-                category=item_data["category"],
-                description=item_data["description"],
-                owner=item_data["owner"],
-                defaults={
-                    "value": item_data["value"],
-                    "quantity": item_data["quantity"],
-                },
-            )
-
-            # Dodaj item do Receipt
+            # Konwertujemy właścicieli – upewniamy się, że przekazujemy klucze główne
+            item_data["owners"] = [
+                owner.id if hasattr(owner, "id") else owner
+                for owner in item_data.get("owners", [])
+            ]
+            item_serializer = ItemSerializer(data=item_data)
+            item_serializer.is_valid(raise_exception=True)
+            item = item_serializer.save()
             instance.items.add(item)
 
+            # Używamy instance.shop, a nie niezdefiniowanego receipt
+            self.update_item_prediction(item, instance.shop.lower())
+
         return instance
+
+    def update_item_prediction(self, item, shop_name):
+        """
+        Aktualizuje model ItemPrediction z danymi przedmiotu z paragonu.
+        """
+        item_description = item.description.strip().lower()
+        if not item_description:
+            return
+
+        # Pobierz lub utwórz predykcję na podstawie opisu przedmiotu
+        prediction, created = ItemPrediction.objects.get_or_create(
+            item_description=item_description
+        )
+
+        # Zwiększ częstotliwość, jeśli predykcja już istnieje
+        if not created:
+            prediction.frequency += 1
+        else:
+            prediction.frequency = 1  # Ustaw początkową wartość częstotliwości
+
+        prediction.save()
+
+
+class ItemPredictionSerializer(serializers.ModelSerializer):
+    item_description = serializers.CharField(source="item.description", read_only=True)
+    shop_name = serializers.CharField(source="shop.name", read_only=True)
+
+    class Meta:
+        model = ItemPrediction
+        fields = [
+            "id",
+            "item",
+            "item_description",
+            "shop",
+            "shop_name",
+            "frequency",
+        ]
 
 
 class PersonExpenseSerializer(serializers.Serializer):
     payer = serializers.PrimaryKeyRelatedField(
         queryset=Person.objects.all()
     )  # Zmieniono na ID użytkownika
-    common = serializers.FloatField()
-    mutual = serializers.FloatField()
+    expense_sum = serializers.FloatField()
 
     class Meta:
-        fields = ["payer", "common", "mutual"]
+        fields = ["payer", "expense_sum"]
 
 
 class ShopExpenseSerializer(serializers.Serializer):
@@ -111,6 +185,57 @@ class CategoryPieExpenseSerializer(serializers.Serializer):
         source="transactions__category"
     )  # Poprawiona referencja
     expense_sum = serializers.FloatField()
+    fill = serializers.CharField()
 
     class Meta:
-        fields = ["category", "expense_sum"]
+        fields = ["category", "expense_sum", "fill"]
+
+
+class InstrumentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Instrument
+        fields = [
+            "id",
+            "name",
+            "symbol",
+            "category",
+            "market",
+            "currency",
+            "description",
+            "current_price",
+            "last_updated",
+        ]
+
+
+class InvestSerializer(serializers.ModelSerializer):
+    instrument = InstrumentSerializer(read_only=True)
+    instrument_id = serializers.PrimaryKeyRelatedField(
+        queryset=Instrument.objects.all(), source="instrument", write_only=True
+    )
+
+    class Meta:
+        model = Invest
+        fields = [
+            "id",
+            "wallet",
+            "instrument",
+            "instrument_id",
+            "value",
+            "current_value",
+            "payment_date",
+            "transaction_type",
+        ]
+
+
+class WalletSnapshotSerializer(serializers.ModelSerializer):
+    wallet = serializers.PrimaryKeyRelatedField(read_only=True)
+
+    class Meta:
+        model = WalletSnapshot
+        fields = [
+            "id",
+            "wallet",
+            "snapshot_date",
+            "total_value",
+            "total_invest_income",
+        ]

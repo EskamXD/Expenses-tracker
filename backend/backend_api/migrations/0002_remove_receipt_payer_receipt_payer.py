@@ -6,7 +6,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('expenses_api', '0001_initial'),
+        ('backend_api', '0001_initial'),
     ]
 
     operations = [
@@ -17,6 +17,6 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='receipt',
             name='payer',
-            field=models.ManyToManyField(related_name='receipts', to='expenses_api.person'),
+            field=models.ManyToManyField(related_name='receipts', to='backend_api.person'),
         ),
     ]

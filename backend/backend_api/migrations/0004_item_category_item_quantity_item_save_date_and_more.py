@@ -7,7 +7,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('expenses_api', '0003_personowner_rename_person_personpayer_and_more'),
+        ('backend_api', '0003_personowner_rename_person_personpayer_and_more'),
     ]
 
     operations = [

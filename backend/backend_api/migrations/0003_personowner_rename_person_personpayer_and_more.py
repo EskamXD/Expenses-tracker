@@ -6,7 +6,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('expenses_api', '0002_remove_receipt_payer_receipt_payer'),
+        ('backend_api', '0002_remove_receipt_payer_receipt_payer'),
     ]
 
     operations = [
@@ -24,6 +24,6 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name='item',
             name='owners',
-            field=models.ManyToManyField(related_name='items', to='expenses_api.personowner'),
+            field=models.ManyToManyField(related_name='items', to='backend_api.personowner'),
         ),
     ]

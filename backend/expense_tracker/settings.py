@@ -42,6 +42,7 @@ INSTALLED_APPS = [
     "rest_framework",
     "drf_spectacular",
     "django_filters",
+    "django_crontab",
 ]
 
 MIDDLEWARE = [
@@ -158,3 +159,7 @@ SPECTACULAR_SETTINGS = {
     "SERVE_INCLUDE_SCHEMA": False,
     # OTHER SETTINGS
 }
+
+CRONJOBS = [
+    ("0 0 * * *", "backend_api.cron.update_instruments_prices"),
+]

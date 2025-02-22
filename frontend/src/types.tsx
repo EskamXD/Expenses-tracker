@@ -1,21 +1,21 @@
 export type Person = {
-    id?: number;
+    id: number;
     name: string;
     payer: boolean;
     owner: boolean;
 };
 
 export type Item = {
-    id?: number;
+    id: number;
     category: string;
-    value: number | string;
+    value: string;
     description: string;
     quantity: number;
-    owner: number;
+    owners: number[];
 };
 
 export type Receipt = {
-    id?: number;
+    id: number;
     payment_date: string;
     payer: number;
     shop: string;
@@ -24,10 +24,16 @@ export type Receipt = {
 };
 
 export type Params = {
-    owner?: number;
+    id?: number;
+    owners?: number[];
     month?: number;
     year?: number;
-    category?: string | string[];
+    category?: string[];
     transaction_type?: string;
+};
+
+export type Shops = {
+    id?: number;
+    name: string;
 };
 

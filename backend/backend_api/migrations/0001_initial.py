@@ -24,7 +24,7 @@ class Migration(migrations.Migration):
             fields=[
                 ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
                 ('description', models.CharField(max_length=255)),
-                ('owners', models.ManyToManyField(related_name='items', to='expenses_api.person')),
+                ('owners', models.ManyToManyField(related_name='items', to='backend_api.person')),
             ],
         ),
         migrations.CreateModel(
@@ -33,8 +33,8 @@ class Migration(migrations.Migration):
                 ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
                 ('payment_date', models.DateField()),
                 ('save_date', models.DateField()),
-                ('items', models.ManyToManyField(related_name='receipts', to='expenses_api.item')),
-                ('payer', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='receipts', to='expenses_api.person')),
+                ('items', models.ManyToManyField(related_name='receipts', to='backend_api.item')),
+                ('payer', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='receipts', to='backend_api.person')),
             ],
         ),
     ]
