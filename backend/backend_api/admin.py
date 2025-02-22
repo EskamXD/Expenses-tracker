@@ -19,7 +19,19 @@ class ItemAdmin(admin.ModelAdmin):
 
 @admin.register(Receipt)
 class ReceiptAdmin(admin.ModelAdmin):
-    list_display = ("id", "payer", "payment_date", "shop", "transaction_type")  # Widok listy
-    search_fields = ("shop", "payer__name")  # Wyszukiwanie po sklepie i imieniu płatnika
-    list_filter = ("transaction_type", "payment_date")  # Filtry po typie transakcji i dacie
+    list_display = (
+        "id",
+        "payer",
+        "payment_date",
+        "shop",
+        "transaction_type",
+    )  # Widok listy
+    search_fields = (
+        "shop",
+        "payer__name",
+    )  # Wyszukiwanie po sklepie i imieniu płatnika
+    list_filter = (
+        "transaction_type",
+        "payment_date",
+    )  # Filtry po typie transakcji i dacie
     filter_horizontal = ("items",)  # Interfejs do zarządzania relacją ManyToMany
