@@ -10,7 +10,7 @@ import Income from "@/pages/income";
 import Summary from "@/pages/summary";
 import Charts from "@/pages/charts";
 import Bills from "@/pages/billls";
-import Balance from "@/pages/balance";
+// import Balance from "@/pages/balance";
 import Investments from "@/pages/investments";
 import ImportExport from "@/pages/import-export";
 import Settings from "@/pages/settings";
