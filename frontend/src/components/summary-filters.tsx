@@ -1,7 +1,6 @@
 import YearDropdown from "@/components/year-dropdown";
 import MonthDropdown from "@/components/month-dropdown";
 import SummaryDropdown from "@/components/summary-dropdown";
-import PayerDropdown from "./payer-dropdown";
 import CategoriesDropdown from "@/components/categories-dropdown";
 interface SummaryFiltersProps {
     showOwnersDropdown?: boolean;

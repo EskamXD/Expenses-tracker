@@ -25,7 +25,7 @@ export type Receipt = {
 
 export type Params = {
     id?: number;
-    owners?: number[];
+    owners: number[];
     month?: number;
     year?: number;
     category?: string[];

@@ -48,6 +48,7 @@ const ChartBarPersons = () => {
             return await fetchBarPersons({
                 month: summaryFilters.month,
                 year: summaryFilters.year,
+                owners: summaryFilters.owners,
             });
         },
         enabled: !!summaryFilters.owners && summaryFilters.owners.length > 0,
