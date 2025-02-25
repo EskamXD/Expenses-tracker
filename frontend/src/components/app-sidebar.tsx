@@ -15,7 +15,6 @@ import {
     TrendingUp,
     BarChart,
     ChartArea,
-    FileText,
     BadgeDollarSign,
     CreditCard,
     ArrowDownUp,

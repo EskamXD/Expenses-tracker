@@ -76,7 +76,7 @@ const UnifiedForm = React.forwardRef<UnifiedFormRef, UnifiedFormProps>(
                       ],
         };
 
-        const { register, control, handleSubmit, formState } =
+        const { register, control, handleSubmit, formState, reset } =
             useForm<FormValues>({
                 defaultValues,
             });
@@ -130,6 +130,23 @@ const UnifiedForm = React.forwardRef<UnifiedFormRef, UnifiedFormProps>(
             } else {
                 console.log("Gotowy paragon:", finalReceipt);
             }
+
+            reset({
+                paymentDate: new Date().toISOString().split("T")[0],
+                payer: 1,
+                shop: "",
+                transactionType: transactionType,
+                items: [
+                    {
+                        id: 0,
+                        category: "food_drinks",
+                        value: "",
+                        description: "",
+                        owners: [1, 2],
+                        quantity: 1,
+                    },
+                ],
+            });
         };
 
         return (
@@ -363,7 +380,9 @@ const UnifiedForm = React.forwardRef<UnifiedFormRef, UnifiedFormProps>(
                         <strong>{totalSum.toFixed(2)}</strong>
                     </div>
                     <div className="grid grid-cols-3 gap-4 w-full">
-                        <Button type="submit" variant="default">
+                        <Button
+                            onClick={() => handleSubmit(onSubmit)()}
+                            variant="default">
                             {buttonLabel}
                         </Button>
                         {footerActions}
@@ -375,4 +394,3 @@ const UnifiedForm = React.forwardRef<UnifiedFormRef, UnifiedFormProps>(
 );
 
 export default UnifiedForm;
-

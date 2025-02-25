@@ -93,7 +93,7 @@ class ReceiptSerializer(serializers.ModelSerializer):
             item = item_serializer.save()
             receipt.items.add(item)
 
-            self.update_item_prediction(item, receipt.shop.lower())
+            # self.update_item_prediction(item, receipt.shop.lower())
 
         return receipt
 
@@ -120,7 +120,7 @@ class ReceiptSerializer(serializers.ModelSerializer):
             instance.items.add(item)
 
             # Używamy instance.shop, a nie niezdefiniowanego receipt
-            self.update_item_prediction(item, instance.shop.lower())
+            # self.update_item_prediction(item, instance.shop.lower())
 
         return instance
 
