@@ -19,6 +19,7 @@ const Income = () => {
     });
 
     const handleSubmitReceipt = (newReceipt: Receipt) => {
+        console.log(newReceipt);
         postReceiptMutation.mutate(newReceipt);
     };
 
@@ -39,4 +40,3 @@ const Income = () => {
 };
 
 export default Income;
-

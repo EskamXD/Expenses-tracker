@@ -27,7 +27,30 @@ SECRET_KEY = "django-insecure-!mll8mvl7egv#i3n&l*myehkea5f2@_vw&rc8ww$g@#xbj(pjm
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ["192.168.100.4"]
+with open("django_error.log", "w") as f:
+    f.write("This is a test log file.\n")
+
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "handlers": {
+        "file": {
+            "level": "ERROR",
+            "class": "logging.FileHandler",
+            "filename": "django_error.log",
+        },
+    },
+    "loggers": {
+        "django": {
+            "handlers": ["file"],
+            "level": "ERROR",
+            "propagate": True,
+        },
+    },
+}
+
+
+ALLOWED_HOSTS = ["192.168.100.4", "localhost", "127.0.0.1"]
 
 
 # Application definition

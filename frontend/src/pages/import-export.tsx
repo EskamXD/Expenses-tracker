@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,17 +10,19 @@ import {
     fetchPostReceipt,
     fetchDatabaseScan,
 } from "@/api/apiService";
+import { toast } from "sonner";
 import { Receipt } from "@/types";
 
-interface toastInterface {
-    type: string;
-    header: string;
-    message: string;
-}
+// Funkcja dzieląca tablicę na mniejsze kawałki o zadanej wielkości
+const chunkArray = <T,>(array: T[], chunkSize: number): T[][] => {
+    const chunks: T[][] = [];
+    for (let i = 0; i < array.length; i += chunkSize) {
+        chunks.push(array.slice(i, i + chunkSize));
+    }
+    return chunks;
+};
 
 const ImportExport = () => {
-    const [toastArray, setToastArray] = useState<toastInterface[]>([]);
-
     const { data: receipts, isFetching } = useQuery({
         queryKey: ["receipts"],
         queryFn: () => fetchGetReceipts(),
@@ -42,24 +43,10 @@ const ImportExport = () => {
             downloadLink.click();
         },
         onSuccess: () => {
-            setToastArray([
-                ...toastArray,
-                {
-                    type: "success",
-                    header: "Sukces",
-                    message: "Dane zostały pomyślnie pobrane.",
-                },
-            ]);
+            toast(["Sukces", "Dane zostały pomyślnie pobrane."]);
         },
         onError: () => {
-            setToastArray([
-                ...toastArray,
-                {
-                    type: "danger",
-                    header: "Błąd",
-                    message: "Błąd podczas pobierania danych.",
-                },
-            ]);
+            toast(["Błąd", "Nie udało się pobrać danych."]);
         },
     });
 
@@ -83,26 +70,16 @@ const ImportExport = () => {
             });
         },
         onSuccess: async (data) => {
-            await fetchPostReceipt(data);
+            // Dzielimy dane na partie po 50 paragonów
+            const chunks = chunkArray<Receipt>(data, 50);
+            for (const chunk of chunks) {
+                await fetchPostReceipt(chunk);
+            }
             await fetchDatabaseScan();
-            setToastArray([
-                ...toastArray,
-                {
-                    type: "success",
-                    header: "Sukces",
-                    message: "Dane zostały pomyślnie zaimportowane.",
-                },
-            ]);
+            toast(["Sukces", "Dane zostały pomyślnie zaimportowane."]);
         },
         onError: () => {
-            setToastArray([
-                ...toastArray,
-                {
-                    type: "danger",
-                    header: "Błąd",
-                    message: "Błąd podczas importowania danych.",
-                },
-            ]);
+            toast(["Błąd", "Dane nie zostały zaimportowane."]);
         },
     });
 
@@ -156,4 +133,3 @@ const ImportExport = () => {
 };
 
 export default ImportExport;
-

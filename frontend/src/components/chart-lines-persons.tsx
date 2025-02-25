@@ -142,7 +142,7 @@ const ChartLinesPerson: React.FC = () => {
                         fill="url(#fillExpense)"
                         fillOpacity={0.4}
                         stroke="var(--color-expense)"
-                        stackId="a"
+                        stackId="b"
                     />
                 </AreaChart>
             </ChartContainer>
@@ -151,4 +151,3 @@ const ChartLinesPerson: React.FC = () => {
 };
 
 export default ChartLinesPerson;
-

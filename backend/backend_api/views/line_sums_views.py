@@ -1,15 +1,13 @@
-# myapp/views/line_sums_views.py
 from rest_framework.decorators import api_view
 from django.http import JsonResponse
 from drf_spectacular.utils import extend_schema, OpenApiParameter
 from backend_api.views.utils import (
     get_query_params,
     get_all_dates_in_month,
-    process_items,
-    convert_sum_to_linear,
     handle_error,
 )
 from backend_api.models import Receipt
+from datetime import date
 
 
 @extend_schema(
@@ -50,46 +48,68 @@ def fetch_line_sums(request):
         owner_param = request.GET.getlist("owners[]")
         if not owner_param:
             return handle_error("Nie podano ownersów", 400, "Brak parametru owners")
-        # Używamy tylko pierwszego elementu z listy owners
+
         selected_owner = int(owner_param[0])
     except ValueError as e:
         return handle_error(e, 400, "Niepoprawne parametry zapytania")
 
     try:
-        all_dates = get_all_dates_in_month(selected_year, selected_month)
+        # Konwertujemy daty od razu na string w formacie YYYY-MM-DD
+        all_dates = [
+            d.isoformat() if isinstance(d, date) else str(d)
+            for d in get_all_dates_in_month(selected_year, selected_month)
+        ]
 
-        qs_expense = Receipt.objects.filter(
-            transaction_type="expense",
+        # Inicjalizujemy słowniki z datami jako stringami
+        daily_expense = {date: 0 for date in all_dates}
+        daily_income = {date: 0 for date in all_dates}
+
+        # Pobieramy wszystkie paragony
+        receipts = Receipt.objects.filter(
             payment_date__month=selected_month,
             payment_date__year=selected_year,
             items__owners__id=selected_owner,
         ).distinct()
-        qs_income = Receipt.objects.filter(
-            transaction_type="income",
-            payment_date__month=selected_month,
-            payment_date__year=selected_year,
-            items__owners__id=selected_owner,
-        ).distinct()
 
-        daily_expense = process_items(qs_expense)
-        daily_income = process_items(qs_income)
+        # Przetwarzanie każdego paragonu
+        for receipt in receipts:
+            for item in receipt.items.all():
+                if selected_owner in [owner.id for owner in item.owners.all()]:
+                    # Dzielimy wartość przez ilość właścicieli
+                    num_owners = item.owners.count()
+                    value_per_owner = (
+                        float(item.value) / num_owners if num_owners else 0
+                    )
 
-        linear_expense = convert_sum_to_linear(daily_expense, all_dates)
-        linear_income = convert_sum_to_linear(daily_income, all_dates)
+                    # Sprawdzamy, czy data jest typu datetime.date
+                    if isinstance(receipt.payment_date, date):
+                        payment_date_str = receipt.payment_date.isoformat()
+                    else:
+                        payment_date_str = str(receipt.payment_date)
 
-        linear_expense = [round(val, 2) for val in linear_expense]
-        linear_income = [round(val, 2) for val in linear_income]
+                    # Dodajemy wartość do odpowiedniego dnia
+                    if receipt.transaction_type == "expense":
+                        daily_expense[payment_date_str] += value_per_owner
+                    elif receipt.transaction_type == "income":
+                        daily_income[payment_date_str] += value_per_owner
 
+        # Kumulacja wartości dzień po dniu
         results = []
-        for d, exp, inc in zip(all_dates, linear_expense, linear_income):
+        cumulative_expense = 0
+        cumulative_income = 0
+
+        for day_str in all_dates:
+            cumulative_expense += daily_expense[day_str]
+            cumulative_income += daily_income[day_str]
+
             results.append(
                 {
-                    "day": d.isoformat() if hasattr(d, "isoformat") else str(d),
-                    "expense": exp,
-                    "income": inc,
+                    "day": day_str,  # Data już jest stringiem w formacie YYYY-MM-DD
+                    "expense": round(cumulative_expense, 2),
+                    "income": round(cumulative_income, 2),
                 }
             )
 
         return JsonResponse(results, safe=False, status=200)
     except Exception as e:
-        return handle_error(e, 500, "Błąd podczas przetwarzania danych")
+        return handle_error(e, 500, f"Błąd podczas przetwarzania danych: {str(e)}")
