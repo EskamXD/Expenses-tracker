@@ -70,6 +70,6 @@ Includes components for:
 
 - Smooth modals & dropdowns for inputs
 
-📬 Let’s Connect
+## 📬 Let’s Connect
 
 - 💌 Email: [kamil.urbanowski.roczyny@gmail.com]
