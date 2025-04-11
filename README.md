@@ -28,10 +28,9 @@ As someone who cares about where my money goes (and why it disappears so fast), 
 
 | Area       | Tech                                                         |
 |------------|--------------------------------------------------------------|
-| Frontend   | React 19, Vite 6, TypeScript, TailwindCSS, Radix UI          |
-| Backend    | Django 5, Django REST Framework, DRF Spectacular             |
-| Features   | Zod validation, React Query, Form Hooks, Charting (Recharts) |
-| Dev Tools  | ESLint, pnpm, tsconfig paths, PostCSS                        |
+| Frontend   | React 19, Vite, TypeScript, TailwindCSS, shadcnUI            |
+| Backend    | Django 5, Django REST Framework, DRF Spectacular (Swagger)   |
+| Features   | React Query, Form Hooks, Charting (Recharts)                 | 
 
 ---
 
