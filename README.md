@@ -49,6 +49,8 @@ pip install -r requirements.txt
 python manage.py runserver
 ```
 
+#### Frontend (Vite + React + TS)
+
 ```bash
 cd frontend/
 pnpm install
