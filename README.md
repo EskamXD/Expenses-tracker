@@ -30,7 +30,7 @@ As someone who cares about where my money goes (and why it disappears so fast), 
 |------------|--------------------------------------------------------------|
 | Frontend   | React 19, Vite, TypeScript, TailwindCSS, shadcnUI            |
 | Backend    | Django 5, Django REST Framework, DRF Spectacular (Swagger)   |
-| Features   | React Query, Form Hooks, Charting (Recharts)                 | 
+| Features   | React Router, React Query, Form Hooks, Charting (Recharts)   | 
 
 ---
 
