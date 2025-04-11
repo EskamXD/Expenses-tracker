@@ -70,6 +70,28 @@ Includes components for:
 
 - Smooth modals & dropdowns for inputs
 
+## ⚠️ License & Usage
+
+Copyright © [2025] [Your Name]
+All rights reserved.
+
+You are allowed to download and share this code as-is, with the license intact.
+But:
+
+    ❌ No modifications or forks.
+
+    ❌ No commercial usage.
+
+    ❌ No reselling or redistribution without permission.
+
+    ✅ You can study it, test it, show it off — just don’t rip it.
+
+For permissions or collabs, contact me.
+
 ## 📬 Let’s Connect
 
 - 💌 Email: [kamil.urbanowski.roczyny@gmail.com]
+
+---
+
+Built with way too much coffee and love. ☕❤️
