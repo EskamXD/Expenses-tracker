@@ -19,6 +19,7 @@ import {
     CreditCard,
     ArrowDownUp,
     Settings,
+    FileText,
 } from "lucide-react";
 
 const menuItems = [
@@ -28,7 +29,7 @@ const menuItems = [
     { title: "Podsumowanie", path: "/summary", icon: BarChart },
     { title: "Wykresy", path: "/charts", icon: ChartArea },
     { title: "Rachunki", path: "/bills", icon: CreditCard },
-    // { title: "Bilans", path: "/balance", icon: FileText },
+    { title: "Bilans", path: "/balance", icon: FileText },
     { title: "Inwestycje", path: "/investments", icon: BadgeDollarSign },
     { title: "Import/Export", path: "/import-export", icon: ArrowDownUp },
     { title: "Ustawienia", path: "/settings", icon: Settings },
@@ -70,4 +71,3 @@ export default function AppSidebar() {
         </div>
     );
 }
-

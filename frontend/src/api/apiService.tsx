@@ -336,3 +336,55 @@ export const fetchDatabaseScan = async () => {
     }
 };
 
+export interface BalanceResponse {
+    computed_balance: number;
+    create: boolean;
+    year: number;
+    month: number;
+    // jeżeli usunięte saldo jest zwracane:
+    saved_balance?: number;
+    difference?: number;
+}
+
+export interface SpendingRatioResponse {
+    spending: number;
+    invest: number;
+    fun: number;
+    invest_ids: number[];
+    spending_ids: number[];
+    fun_ids: number[];
+}
+
+export const fetchBalance = async (filters: Params) => {
+    try {
+        const response = await apiClient.get("/balance/", { params: filters });
+        if (response.status === 200) {
+            return response.data as BalanceResponse;
+        } else {
+            printStatus(response.status);
+            throw new Error("Status not OK");
+        }
+    } catch (error) {
+        console.warn("fetchBalance filters:", JSON.stringify(filters));
+        console.error(error);
+        throw error;
+    }
+};
+
+export const fetchSpendingRatio = async (filters: Params) => {
+    try {
+        const response = await apiClient.get("/spending-ratio/", {
+            params: filters,
+        });
+        if (response.status === 200) {
+            return response.data as SpendingRatioResponse;
+        } else {
+            printStatus(response.status);
+            throw new Error("Status not OK");
+        }
+    } catch (error) {
+        console.warn("fetchSpendingRatio filters:", JSON.stringify(filters));
+        console.error(error);
+        throw error;
+    }
+};

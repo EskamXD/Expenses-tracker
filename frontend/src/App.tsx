@@ -15,6 +15,7 @@ const Summary = lazy(() => import("@/pages/summary"));
 const Charts = lazy(() => import("@/pages/charts"));
 const Bills = lazy(() => import("@/pages/billls"));
 const Investments = lazy(() => import("@/pages/investments"));
+const Balance = lazy(() => import("@/pages/balance"));
 const ImportExport = lazy(() => import("@/pages/import-export"));
 const Settings = lazy(() => import("@/pages/settings"));
 
@@ -84,6 +85,15 @@ function App() {
                                     }
                                 />
                                 <Route
+                                    path="/balance"
+                                    element={
+                                        <Suspense
+                                            fallback={<div>Ładowanie...</div>}>
+                                            <Balance />
+                                        </Suspense>
+                                    }
+                                />
+                                <Route
                                     path="/import-export"
                                     element={
                                         <Suspense
@@ -111,4 +121,3 @@ function App() {
 }
 
 export default App;
-

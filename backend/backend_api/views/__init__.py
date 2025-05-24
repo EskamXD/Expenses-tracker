@@ -12,3 +12,4 @@ from .investment_views import (
     WalletSnapshotViewSet,
 )
 from .debug_views import DuplicateReceiptDebugView
+from .balance_views import BalanceView, SpendingRatioView

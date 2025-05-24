@@ -16,7 +16,9 @@ from backend_api.views import (
     InstrumentViewSet,
     InvestViewSet,
     WalletSnapshotViewSet,
-    DuplicateReceiptDebugView
+    DuplicateReceiptDebugView,
+    BalanceView,
+    SpendingRatioView,
 )
 
 router = DefaultRouter()
@@ -50,5 +52,11 @@ urlpatterns = [
     path("fetch/bar-persons/", fetch_bar_persons, name="fetch-bar-persons"),
     path("fetch/bar-shops/", fetch_bar_shops, name="fetch-bar-shops"),
     path("fetch/pie-categories/", fetch_pie_categories, name="fetch-pie-categories"),
-    path('debug/receipts/duplicates/', DuplicateReceiptDebugView.as_view(), name='receipt-duplicates-debug'),
+    path(
+        "debug/receipts/duplicates/",
+        DuplicateReceiptDebugView.as_view(),
+        name="receipt-duplicates-debug",
+    ),
+    path("balance/", BalanceView.as_view(), name="balance"),
+    path("spending-ratio/", SpendingRatioView.as_view(), name="spending-ratio"),
 ]
