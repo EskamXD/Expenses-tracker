@@ -58,5 +58,6 @@ urlpatterns = [
         name="receipt-duplicates-debug",
     ),
     path("balance/", BalanceView.as_view(), name="balance"),
+    path("balance/<int:item_id>/", BalanceView.as_view(), name="balance-patch"),
     path("spending-ratio/", SpendingRatioView.as_view(), name="spending-ratio"),
 ]

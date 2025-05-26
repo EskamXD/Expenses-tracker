@@ -87,7 +87,9 @@ const ChartBarPersons = () => {
     return (
         <div className="flex flex-col items-center">
             {/* Wykres */}
-            <ChartContainer config={chartConfig} className="min-h-[300px]">
+            <ChartContainer
+                config={chartConfig}
+                className="min-h-[100px] w-full">
                 <BarChart data={debtData} width={600} height={300}>
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey="payer" />
@@ -127,4 +129,3 @@ const ChartBarPersons = () => {
 };
 
 export default ChartBarPersons;
-

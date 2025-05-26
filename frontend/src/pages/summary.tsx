@@ -1,20 +1,18 @@
-import { useState } from "react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import SummaryTab from "@/components/summary-tab";
-import SummaryFilters from "@/components/summary-filters";
+import { useGlobalContext } from "@/context/GlobalContext";
+import ResponsiveFilters from "@/components/responsive-filters";
 
 const Summary = () => {
-    const [tab, setTab] = useState<"expense" | "income">("expense");
+    const { summaryTab, setSummaryTab } = useGlobalContext();
 
     return (
         <div className="pt-1rem" style={{ margin: "0", width: "100%" }}>
-            <div className="mb-3">
-                <SummaryFilters transactionType={tab} />
-            </div>
+            <ResponsiveFilters transactionType={summaryTab} />
 
             <Tabs
-                value={tab}
-                onValueChange={(value) => setTab(value as "expense" | "income")}
+                value={summaryTab}
+                onValueChange={(v) => setSummaryTab(v as "expense" | "income")}
                 className="w-full">
                 <TabsList>
                     <TabsTrigger value="expense">Wydatki</TabsTrigger>
@@ -33,4 +31,3 @@ const Summary = () => {
 };
 
 export default Summary;
-

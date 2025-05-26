@@ -16,6 +16,16 @@ interface GlobalState {
     setSummaryFilters: (
         params: Params | ((prevFilters: Params) => Params)
     ) => void;
+
+    // last‐open tabs
+    balanceTab: string;
+    setBalanceTab: (tab: string) => void;
+
+    chartsTab: string;
+    setChartsTab: (tab: string) => void;
+
+    summaryTab: "expense" | "income";
+    setSummaryTab: (tab: "expense" | "income") => void;
 }
 
 // Domyślny stan
@@ -32,6 +42,12 @@ const defaultState: GlobalState = {
         category: [],
     },
     setSummaryFilters: () => {},
+    balanceTab: "bilans",
+    setBalanceTab: () => {},
+    chartsTab: "barPersons",
+    setChartsTab: () => {},
+    summaryTab: "expense",
+    setSummaryTab: () => {},
 };
 
 // Tworzenie kontekstu
@@ -50,6 +66,11 @@ export const GlobalProvider: React.FC<{ children: ReactNode }> = ({
         year: new Date().getFullYear(),
         category: [],
     });
+    const [balanceTab, setBalanceTab] = useState<string>("bilans");
+    const [chartsTab, setChartsTab] = useState<string>("barPersons");
+    const [summaryTab, setSummaryTab] = useState<"expense" | "income">(
+        "expense"
+    );
 
     const { data: persons = [] } = useQuery<Person[], Error>({
         queryKey: ["persons"],
@@ -68,6 +89,12 @@ export const GlobalProvider: React.FC<{ children: ReactNode }> = ({
                 setShops,
                 summaryFilters,
                 setSummaryFilters,
+                balanceTab,
+                setBalanceTab,
+                chartsTab,
+                setChartsTab,
+                summaryTab,
+                setSummaryTab,
             }}>
             {children}
         </GlobalContext.Provider>

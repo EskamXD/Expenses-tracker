@@ -228,7 +228,7 @@ const UnifiedForm = React.forwardRef<UnifiedFormRef, UnifiedFormProps>(
                             {fields.map((field, index) => (
                                 <div
                                     key={field.id}
-                                    className="grid grid-cols-10 items-end gap-8">
+                                    className="grid grid-cols-3 lg:grid-cols-10 items-end gap-8">
                                     <div className="flex flex-col gap-1 col-span-2">
                                         <Label
                                             htmlFor={`items.${index}.category`}>
@@ -281,7 +281,7 @@ const UnifiedForm = React.forwardRef<UnifiedFormRef, UnifiedFormProps>(
                                         />
                                     </div>
 
-                                    <div className="flex flex-col gap-1 col-span-3">
+                                    <div className="flex flex-col gap-1 col-span-2 lg:col-span-3">
                                         <Label
                                             htmlFor={`items.${index}.description`}>
                                             Opis/Nazwa
@@ -364,7 +364,7 @@ const UnifiedForm = React.forwardRef<UnifiedFormRef, UnifiedFormProps>(
                                     <Button
                                         type="button"
                                         variant="destructive"
-                                        className="aspect-square"
+                                        className="lg:aspect-square"
                                         onClick={() => remove(index)}>
                                         <X />
                                     </Button>
@@ -379,7 +379,7 @@ const UnifiedForm = React.forwardRef<UnifiedFormRef, UnifiedFormProps>(
                         <span>Suma: </span>
                         <strong>{totalSum.toFixed(2)}</strong>
                     </div>
-                    <div className="grid grid-cols-3 gap-4 w-full">
+                    <div className="grid lg:grid-cols-3 gap-4 w-full">
                         <Button
                             onClick={() => handleSubmit(onSubmit)()}
                             variant="default">

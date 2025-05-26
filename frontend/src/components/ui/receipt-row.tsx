@@ -126,14 +126,38 @@ export const ReceiptRow: React.FC<ReceiptRowProps> = ({
     );
 
     return (
-        <div className="grid grid-cols-7 gap-4 items-center py-2 border-b">
-            <div className="truncate font-bold col-span-2">{receipt.shop}</div>
-            <div className="truncate">{totalValue.toFixed(2)} PLN</div>
-            <div className="truncate">{receiptPayerName}</div>
-            <div className="truncate col-span-2">
-                {/* Usunięto ReceiptItemList */}
+        <div className="flex flex-col lg:grid lg:grid-cols-7 lg:items-center gap-4 py-2 border-b">
+            {/* 1) Shop — full width on mobile, spans 2 cols on lg */}
+            <div className="truncate font-bold lg:col-span-2">
+                {receipt.shop}
             </div>
-            <div className="flex justify-end">
+
+            {/* 2) Total & Button row on mobile; on lg each into its own col */}
+            <div className="flex justify-between items-center lg:block lg:col-span-1">
+                <span className="truncate">{totalValue.toFixed(2)} PLN</span>
+                <div className="flex-shrink-0 lg:hidden">
+                    {onEdit ? (
+                        <Button
+                            variant="outline"
+                            onClick={() => onEdit(receipt.id)}>
+                            <ArrowRight className="w-4 h-4" />
+                        </Button>
+                    ) : (
+                        <ReceiptPreviewDialog
+                            receipt={receipt}
+                            receiptPayerName={receiptPayerName}
+                            totalValue={totalValue.toFixed(2)}
+                            highlightOwners={highlightOwners}
+                        />
+                    )}
+                </div>
+            </div>
+
+            {/* 3) Payer — full width on mobile, spans 1 col on lg */}
+            <div className="truncate lg:col-span-1">{receiptPayerName}</div>
+
+            {/* 4) On lg, move the button into its own cell: */}
+            <div className="hidden lg:flex lg:justify-end lg:col-span-1">
                 {onEdit ? (
                     <Button
                         variant="outline"
@@ -152,4 +176,3 @@ export const ReceiptRow: React.FC<ReceiptRowProps> = ({
         </div>
     );
 };
-

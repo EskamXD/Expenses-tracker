@@ -187,6 +187,26 @@ export const fetchDeleteReceipt = async (receipt: Receipt) => {
     }
 };
 
+export const fetchGetItemsByID = async (params: { id: number | number[] }) => {
+    if (!Array.isArray(params.id)) params.id = Array(params.id);
+    if (!params.id || params.id.length === 0) return [];
+
+    try {
+        // Wykonujemy zapytanie dla każdego ID w pętli asynchronicznie
+        const responses = await Promise.all(
+            params.id.map(async (receiptId) => {
+                const response = await apiClient.get(`/items/${receiptId}/`);
+                return response.data;
+            })
+        );
+
+        return responses; // Zwracamy listę paragonów
+    } catch (error) {
+        console.error(error);
+        throw error;
+    }
+};
+
 export const fetchSearchRecentShops = async (query: string) => {
     try {
         // Jeśli query jest krótsze niż 3 litery, zwróć pustą tablicę
@@ -344,9 +364,11 @@ export interface BalanceResponse {
     // jeżeli usunięte saldo jest zwracane:
     saved_balance?: number;
     difference?: number;
+    saved_item_id?: number;
 }
 
 export interface SpendingRatioResponse {
+    avaible: boolean;
     spending: number;
     invest: number;
     fun: number;
@@ -355,7 +377,7 @@ export interface SpendingRatioResponse {
     fun_ids: number[];
 }
 
-export const fetchBalance = async (filters: Params) => {
+export const fetchGetBalance = async (filters: Params) => {
     try {
         const response = await apiClient.get("/balance/", { params: filters });
         if (response.status === 200) {
@@ -371,12 +393,31 @@ export const fetchBalance = async (filters: Params) => {
     }
 };
 
+export const fetchPatchBalance = async (itemId: number, value: number) => {
+    try {
+        const response = await apiClient.patch(`/balance/${itemId}/`, {
+            value: value,
+        });
+        if (response.status === 200) {
+            return response.data as BalanceResponse;
+        } else {
+            printStatus(response.status);
+            throw new Error("Status not OK");
+        }
+    } catch (error) {
+        console.warn("fetchPatchBalance itemId:", itemId, "value:", value);
+        console.error(error);
+        throw error;
+    }
+};
+
 export const fetchSpendingRatio = async (filters: Params) => {
     try {
         const response = await apiClient.get("/spending-ratio/", {
             params: filters,
         });
         if (response.status === 200) {
+            console.log(response.data);
             return response.data as SpendingRatioResponse;
         } else {
             printStatus(response.status);

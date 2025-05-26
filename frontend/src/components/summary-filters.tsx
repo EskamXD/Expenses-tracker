@@ -44,19 +44,3 @@ const SummaryFilters: React.FC<SummaryFiltersProps> = ({
 };
 
 export default SummaryFilters;
-
-{
-    /* <div className="p-2">
-    <Button
-        onClick={() =>
-            setSummaryFilters((prev) => ({
-                ...prev,
-                transaction_type: transactionType,
-            }))
-        }>
-        Filtruj
-    </Button>
-
-</div> */
-}
-

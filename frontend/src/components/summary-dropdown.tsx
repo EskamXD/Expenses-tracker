@@ -23,7 +23,7 @@ const SummaryDropdown = () => {
 
     return (
         <DropdownMenu>
-            <DropdownMenuTrigger asChild>
+            <DropdownMenuTrigger asChild className="w-full">
                 <Button variant="outline">
                     Wybierz osobę{" "}
                     {summaryFilters.owners.length > 0 &&
@@ -47,4 +47,3 @@ const SummaryDropdown = () => {
 };
 
 export default SummaryDropdown;
-

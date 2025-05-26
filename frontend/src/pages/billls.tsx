@@ -6,7 +6,6 @@ import {
     fetchPostReceipt,
     fetchPutReceipt,
 } from "@/api/apiService";
-import SummaryFilters from "@/components/summary-filters";
 import { Split } from "lucide-react";
 import { Receipt } from "@/types.tsx";
 import PayerDropdown from "@/components/payer-dropdown";
@@ -20,6 +19,7 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { DataTable } from "@/components/ui/data-table";
 import { ColumnDef } from "@tanstack/react-table";
+import ResponsiveFilters from "@/components/responsive-filters";
 
 const Bills = () => {
     const { summaryFilters, persons } = useGlobalContext();
@@ -177,12 +177,10 @@ const Bills = () => {
 
     return (
         <div>
-            <div className="mb-3">
-                <SummaryFilters
-                    showCategories={false}
-                    transactionType="expense"
-                />
-            </div>
+            <ResponsiveFilters
+                showCategories={false}
+                transactionType="expense"
+            />
 
             {receipts && receipts.length > 0 ? (
                 <DataTable columns={columns} data={receipts} />
@@ -197,7 +195,7 @@ const Bills = () => {
                         <DialogTitle>Podziel Rachunek</DialogTitle>
                     </DialogHeader>
                     {selectedSplitReceipt && (
-                        <div>
+                        <div className="flex flex-col gap-4">
                             <p>
                                 <strong>Oryginalna kwota:</strong>{" "}
                                 {selectedSplitReceipt.items[0].value} zł
@@ -236,4 +234,3 @@ const Bills = () => {
 };
 
 export default Bills;
-

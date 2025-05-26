@@ -123,7 +123,7 @@ export default function ChartPieCategoriesComponent() {
     const id = "pie-interactive";
 
     return (
-        <Card data-chart={id} className="flex flex-col">
+        <Card data-chart={id} className="flex flex-col h-full lg:h-auto">
             <ChartStyle id={id} config={chartConfig} />
             <CardHeader className="flex-row items-start space-y-0 pb-0">
                 {/* <div className="grid gap-1">
@@ -169,7 +169,7 @@ export default function ChartPieCategoriesComponent() {
                 <ChartContainer
                     id={id}
                     config={chartConfig}
-                    className="min-h-[450px]">
+                    className="min-h-[100px]">
                     <PieChart>
                         <ChartTooltip
                             cursor={false}
@@ -247,4 +247,3 @@ export default function ChartPieCategoriesComponent() {
         </Card>
     );
 }
-

@@ -61,7 +61,9 @@ const ChartLinesPerson: React.FC = () => {
 
     return (
         <div className="flex flex-col items-center w-full">
-            <ChartContainer config={chartConfig} className="min-h-[500px]">
+            <ChartContainer
+                config={chartConfig}
+                className="min-h-[100px] max-w-dvh w-full">
                 <AreaChart
                     accessibilityLayer
                     data={lineSumsData}

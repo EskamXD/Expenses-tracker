@@ -63,6 +63,25 @@ from backend_api.serializers import ReceiptSerializer, ItemSerializer
         500: OpenApiResponse(description="Internal server error"),
     },
 )
+@extend_schema(
+    methods=["PATCH"],
+    parameters=[
+        OpenApiParameter(
+            name="item_id",
+            description="ID pozycji last_month_balance do zaktualizowania",
+            required=True,
+            type=int,
+            location=OpenApiParameter.QUERY,
+        ),
+    ],
+    request=OpenApiResponse(description="Body: { value: Decimal }"),
+    responses={
+        200: ReceiptSerializer,
+        400: OpenApiResponse(description="Missing or invalid fields"),
+        404: OpenApiResponse(description="Item not found"),
+        500: OpenApiResponse(description="Internal server error"),
+    },
+)
 class BalanceView(APIView):
     def get(self, request):
         # parsowanie parametrów
@@ -113,11 +132,18 @@ class BalanceView(APIView):
 
         computed_balance = round(income_share - expense_share, 2)
 
-        # --- SPRAWDZENIE ZAPISANEGO SALDA ---
+        # wyliczamy next_year i next_month:
+        if month == 12:
+            next_year, next_month = year + 1, 1
+        else:
+            next_year, next_month = year, month + 1
+
+        next_month_date = date(next_year, next_month, 1)
+
         saved_qs = Receipt.objects.filter(
             transaction_type="income",
             items__category="last_month_balance",
-            payment_date=date(year, month, 1),
+            payment_date=next_month_date,
             items__owners__id__in=owners,
         ).distinct()
 
@@ -128,9 +154,12 @@ class BalanceView(APIView):
             return Response(
                 {
                     "computed_balance": computed_balance,
+                    "create": False,
+                    "year": year,
+                    "month": month,
                     "saved_balance": saved_share,
                     "difference": round(computed_balance - saved_share, 2),
-                    "create": False,
+                    "saved_item_id": saved_item.id,
                 },
                 status=status.HTTP_200_OK,
             )
@@ -187,6 +216,20 @@ class BalanceView(APIView):
         serializer = ReceiptSerializer(receipt)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
+    @db_transaction.atomic
+    def patch(self, request, item_id: int):
+        value = request.data.get("value")
+        if value is None:
+            return Response({"detail": "Podaj pole value."}, status=400)
+
+        item = get_object_or_404(Item, pk=item_id, category="last_month_balance")
+        item.value = value
+        item.save(update_fields=["value", "save_date"])
+
+        receipt = Receipt.objects.filter(items=item).first()
+        serializer = ReceiptSerializer(receipt)
+        return Response(serializer.data)
+
 
 @extend_schema(
     methods=["GET"],
@@ -225,7 +268,6 @@ class SpendingRatioView(APIView):
         "car_expenses",
         "food_drinks",
         "chemistry",
-        "tickets_entrance",
         "flat_bills",
     ]
     FUN_CATS = [
@@ -233,6 +275,7 @@ class SpendingRatioView(APIView):
         "alcohol",
         "clothes",
         "electronics_games",
+        "tickets_entrance",
         "delivery",
         "other_shopping",
         "monthly_subscriptions",
@@ -303,11 +346,12 @@ class SpendingRatioView(APIView):
         total = sums["invest"] + sums["spending"] + sums["fun"]
         if total == 0:
             return Response(
-                {"detail": "Brak wydatków w tym okresie."},
+                {"avaible": False, "detail": "Brak wydatków w tym okresie."},
                 status=status.HTTP_200_OK,
             )
 
         result = {
+            "avaible": True,
             "invest": round(sums["invest"] / total * 100, 2),
             "spending": round(sums["spending"] / total * 100, 2),
             "fun": round(sums["fun"] / total * 100, 2),
