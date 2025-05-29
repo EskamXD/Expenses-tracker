@@ -368,7 +368,7 @@ export interface BalanceResponse {
 }
 
 export interface SpendingRatioResponse {
-    avaible: boolean;
+    available: boolean;
     spending: number;
     invest: number;
     fun: number;

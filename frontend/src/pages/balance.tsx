@@ -1,5 +1,5 @@
 // src/components/Balance.tsx
-import React from "react";
+import React, { useEffect } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useGlobalContext } from "@/context/GlobalContext";
 import {
@@ -65,6 +65,10 @@ const Balance: React.FC = () => {
             } as Params),
         enabled: hasFilters,
     });
+
+    useEffect(() => {
+        console.log(ratioData);
+    }, [ratioData]);
 
     // after you have balanceTab and ratioData:
     const investItemsQuery = useQuery<Item[], Error>({
@@ -289,7 +293,7 @@ const Balance: React.FC = () => {
                     </TabsContent>
 
                     <TabsContent value="pozycje">
-                        {!isRatioLoading && ratioData && ratioData.avaible && (
+                        {!isRatioLoading && ratioData!.available && (
                             <Accordion type="single" collapsible>
                                 <AccordionItem value="invest">
                                     <AccordionTrigger>

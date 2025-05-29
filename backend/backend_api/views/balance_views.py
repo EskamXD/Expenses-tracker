@@ -3,7 +3,7 @@
 from datetime import date
 
 from django.db import transaction as db_transaction
-from django.db.models import Sum, F, Count, FloatField
+from django.db.models import Sum, F, Q, Count, FloatField
 from django.shortcuts import get_object_or_404
 
 from rest_framework.views import APIView
@@ -284,78 +284,67 @@ class SpendingRatioView(APIView):
     ]
 
     def get(self, request):
-        owner_ids = request.query_params.getlist("owners[]")
+        # --- parse & validate ---
+        owner_ids = request.query_params.getlist(
+            "owners[]"
+        ) or request.query_params.getlist("owners")
         try:
-            owners = [int(o) for o in owner_ids]
+            owner_id = int(owner_ids[0])
             year = int(request.query_params["year"])
             month = int(request.query_params["month"])
-        except (KeyError, ValueError):
+        except (IndexError, KeyError, ValueError):
             return Response(
-                {
-                    "detail": "Parametry owners[], year i month są wymagane i muszą być liczbami."
-                },
+                {"detail": "Podaj owner (jeden), year i month jako liczby."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        if not (year and month and owners):
-            return Response(
-                {"detail": "Podaj pola year, month i owner."},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+        owner = get_object_or_404(Person, pk=owner_id)
 
-        owner = get_object_or_404(Person, pk=owners[0])
-
-        # Pobieramy Itemy powiązane z Expense Receipt i z ownerem
+        # --- build base queryset for *this* owner ---
         items = Item.objects.filter(
             receipts__transaction_type="expense",
             receipts__payment_date__year=year,
             receipts__payment_date__month=month,
-            owners=owner,
+            owners=owner,  # only this owner’s items
         ).annotate(
-            owner_count=Count("owners"),
+            owner_count=Count("owners", distinct=True),
             share=F("value") / F("owner_count"),
         )
 
-        # Dla każdej grupy wyciągamy ID i sumę share
+        # --- split by category ---
         invest_qs = items.filter(category__in=self.INVEST_CATS)
         spending_qs = items.filter(category__in=self.SPENDING_CATS)
         fun_qs = items.filter(category__in=self.FUN_CATS)
 
-        sums = {
-            "invest": invest_qs.aggregate(
-                total=Sum("share", output_field=FloatField())
-            )["total"]
-            or 0,
-            "spending": spending_qs.aggregate(
-                total=Sum("share", output_field=FloatField())
-            )["total"]
-            or 0,
-            "fun": fun_qs.aggregate(total=Sum("share", output_field=FloatField()))[
-                "total"
-            ]
-            or 0,
-        }
+        # --- sum up shares ---
+        sums = {}
+        for key, qs in [
+            ("invest", invest_qs),
+            ("spending", spending_qs),
+            ("fun", fun_qs),
+        ]:
+            total = qs.aggregate(t=Sum("share", output_field=FloatField()))["t"] or 0
+            sums[key] = total
 
-        # Listy ID
-        ids = {
+        total_all = sums["invest"] + sums["spending"] + sums["fun"]
+        if total_all == 0:
+            return Response(
+                {
+                    "available": False,
+                    "detail": "Brak wydatków w tym okresie dla tego właściciela.",
+                },
+                status=status.HTTP_200_OK,
+            )
+
+        # --- build response ---
+        result = {
+            "available": True,
+            "invest": round(sums["invest"] / total_all * 100, 2),
+            "spending": round(sums["spending"] / total_all * 100, 2),
+            "fun": round(sums["fun"] / total_all * 100, 2),
+            # optional: item IDs if you still need them
             "invest_ids": list(invest_qs.values_list("id", flat=True)),
             "spending_ids": list(spending_qs.values_list("id", flat=True)),
             "fun_ids": list(fun_qs.values_list("id", flat=True)),
         }
-
-        total = sums["invest"] + sums["spending"] + sums["fun"]
-        if total == 0:
-            return Response(
-                {"avaible": False, "detail": "Brak wydatków w tym okresie."},
-                status=status.HTTP_200_OK,
-            )
-
-        result = {
-            "avaible": True,
-            "invest": round(sums["invest"] / total * 100, 2),
-            "spending": round(sums["spending"] / total * 100, 2),
-            "fun": round(sums["fun"] / total * 100, 2),
-            **ids,
-        }
-
         return Response(result, status=status.HTTP_200_OK)

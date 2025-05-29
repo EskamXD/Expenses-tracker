@@ -17,6 +17,7 @@ import { Item, Receipt } from "@/types";
 import { categoryOptions } from "@/lib/select-option";
 import AutoSuggestInput from "@/components/auto-suggest-input";
 import { fetchSearchRecentShops, fetchItemPredictions } from "@/api/apiService";
+import { calculate } from "@/lib/calculate";
 
 interface FormValues {
     paymentDate: string;
@@ -76,10 +77,8 @@ const UnifiedForm = React.forwardRef<UnifiedFormRef, UnifiedFormProps>(
                       ],
         };
 
-        const { register, control, handleSubmit, formState, reset } =
-            useForm<FormValues>({
-                defaultValues,
-            });
+        const { register, control, handleSubmit, formState, reset, setValue } =
+            useForm<FormValues>({ defaultValues });
 
         useEffect(() => {
             if (onDirtyChange) {
@@ -278,6 +277,21 @@ const UnifiedForm = React.forwardRef<UnifiedFormRef, UnifiedFormProps>(
                                                 `items.${index}.value` as const,
                                                 { required: true }
                                             )}
+                                            onBlur={(e) => {
+                                                const raw =
+                                                    e.currentTarget.value;
+                                                const transformed =
+                                                    calculate(raw);
+                                                // zaktualizuj wartość w formie
+                                                setValue(
+                                                    `items.${index}.value`,
+                                                    transformed,
+                                                    {
+                                                        shouldValidate: true,
+                                                        shouldDirty: true,
+                                                    }
+                                                );
+                                            }}
                                         />
                                     </div>
 
