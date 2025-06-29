@@ -20,12 +20,14 @@ import {
     ArrowDownUp,
     Settings,
     FileText,
+    PencilIcon,
 } from "lucide-react";
 
 const menuItems = [
     { title: "Dashboard", path: "/", icon: Home },
-    { title: "Wydatki", path: "/expenses", icon: TrendingDown },
-    { title: "Przychody", path: "/income", icon: TrendingUp },
+    // { title: "Wydatki", path: "/expenses", icon: TrendingDown },
+    // { title: "Przychody", path: "/income", icon: TrendingUp },
+    { title: "Zanotuj", path: "/note-expense-income", icon: PencilIcon },
     { title: "Podsumowanie", path: "/summary", icon: BarChart },
     { title: "Wykresy", path: "/charts", icon: ChartArea },
     { title: "Rachunki", path: "/bills", icon: CreditCard },
@@ -71,3 +73,4 @@ export default function AppSidebar() {
         </div>
     );
 }
+

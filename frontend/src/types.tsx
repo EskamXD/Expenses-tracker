@@ -37,3 +37,21 @@ export type Shops = {
     name: string;
 };
 
+export type Invest = {
+    wallet: number;
+    instrument: string;
+    value: number;
+    purchase_price: number;
+    units: number;
+    payment_date: string;
+    transaction_type?: "buy" | "sell" | "dividend";
+};
+export type Wallet = {
+    id: number;
+    name: string;
+    total_value: number;
+    total_invest_income: number;
+    last_update: string; // ISO date string z backendu
+    parent_wallet: number | null; // lub Wallet | null jeśli API zwraca obiekt
+};
+

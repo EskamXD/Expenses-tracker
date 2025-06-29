@@ -152,13 +152,12 @@ class Invest(models.Model):
     wallet = models.ForeignKey(
         Wallet, on_delete=models.CASCADE, related_name="investments"
     )
-    # Zakładamy, że istnieje model Instrument, który reprezentuje aktywo (np. akcje)
     instrument = models.ForeignKey(
         "Instrument", on_delete=models.CASCADE, related_name="investments"
     )
-    # Wartość operacji (może być wartością zakupu lub bieżącą wartością)
     value = models.DecimalField(max_digits=20, decimal_places=2)
-    # Przechowuje bieżącą wartość inwestycji, która może być aktualizowana przy każdej synchronizacji
+    purchase_price = models.DecimalField(max_digits=20, decimal_places=4)  # NOWE
+    units = models.DecimalField(max_digits=20, decimal_places=6)           # NOWE
     current_value = models.DecimalField(max_digits=20, decimal_places=2, default=0)
     payment_date = models.DateField()
     TRANSACTION_TYPES = (
@@ -168,6 +167,7 @@ class Invest(models.Model):
         # inne typy operacji
     )
     transaction_type = models.CharField(max_length=20, choices=TRANSACTION_TYPES)
+
 
     def __str__(self):
         return f"{self.instrument.name} - {self.get_transaction_type_display()}"
@@ -185,11 +185,12 @@ class Instrument(models.Model):
         ("bond", "Obligacje"),
         ("crypto", "Kryptowaluty"),
         ("commodity", "Surowce"),
+        ("fund", "Fundusze"),
         ("other", "Inne"),
     )
 
     name = models.CharField(max_length=100)
-    symbol = models.CharField(max_length=20, unique=True)
+    symbol = models.CharField(max_length=20, unique=True)  
     category = models.CharField(max_length=20, choices=CATEGORY_CHOICES)
     market = models.CharField(
         max_length=50,

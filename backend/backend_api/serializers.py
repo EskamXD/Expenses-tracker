@@ -208,9 +208,15 @@ class InstrumentSerializer(serializers.ModelSerializer):
 
 
 class InvestSerializer(serializers.ModelSerializer):
+    # Zwracanie pełnego obiektu instrumentu (GET)
     instrument = InstrumentSerializer(read_only=True)
-    instrument_id = serializers.PrimaryKeyRelatedField(
-        queryset=Instrument.objects.all(), source="instrument", write_only=True
+    # Przyjmowanie symbolu przy POST/PUT/PATCH (symbol zamiast ID!)
+    instrument_symbol = serializers.SlugRelatedField(
+        queryset=Instrument.objects.all(),
+        slug_field="symbol",
+        source="instrument",
+        write_only=True,
+        required=True,
     )
 
     class Meta:
@@ -219,7 +225,7 @@ class InvestSerializer(serializers.ModelSerializer):
             "id",
             "wallet",
             "instrument",
-            "instrument_id",
+            "instrument_symbol",  # <-- teraz tu przyjmujesz symbol zamiast instrument_id!
             "value",
             "current_value",
             "payment_date",
@@ -227,6 +233,10 @@ class InvestSerializer(serializers.ModelSerializer):
         ]
 
 
+class WalletSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Wallet
+        fields = "__all__"
 class WalletSnapshotSerializer(serializers.ModelSerializer):
     wallet = serializers.PrimaryKeyRelatedField(read_only=True)
 

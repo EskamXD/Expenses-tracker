@@ -1,7 +1,13 @@
-import React, { createContext, useContext, useState, ReactNode } from "react";
+import React, {
+    createContext,
+    useContext,
+    useState,
+    ReactNode,
+    useEffect,
+} from "react";
 import { useQuery } from "@tanstack/react-query";
-import { fetchGetPerson } from "@/api/apiService";
-import { Params, Person, Receipt, Shops } from "@/types";
+import { fetchGetPerson, fetchGetWallets } from "@/api/apiService";
+import { Params, Person, Receipt, Shops, Wallet } from "@/types";
 
 interface GlobalState {
     persons: Person[];
@@ -26,6 +32,12 @@ interface GlobalState {
 
     summaryTab: "expense" | "income";
     setSummaryTab: (tab: "expense" | "income") => void;
+
+    wallets: Wallet[];
+    // setWallets: (wallets: Wallet[]) => void;
+
+    selectedWalletId: number;
+    setSelectedWalletId: (id: number) => void;
 }
 
 // Domyślny stan
@@ -48,6 +60,10 @@ const defaultState: GlobalState = {
     setChartsTab: () => {},
     summaryTab: "expense",
     setSummaryTab: () => {},
+    wallets: [],
+    // setWallets: () => {},
+    selectedWalletId: 0,
+    setSelectedWalletId: () => {},
 };
 
 // Tworzenie kontekstu
@@ -72,12 +88,43 @@ export const GlobalProvider: React.FC<{ children: ReactNode }> = ({
         "expense"
     );
 
+    // const [wallets, setWallets] = useState<Wallet[]>([]);
+    const [selectedWalletId, setSelectedWalletId] = useState<number>(0);
+
     const { data: persons = [] } = useQuery<Person[], Error>({
         queryKey: ["persons"],
         queryFn: () => fetchGetPerson(),
         staleTime: 1000 * 60 * 5,
         // initialData: [],
     });
+
+    const { data: fetchedWallets = [] } = useQuery<Wallet[]>({
+        queryKey: ["wallets"],
+        queryFn: fetchGetWallets,
+        staleTime: 1000 * 60 * 5,
+        // onSuccess: (wallets) => {
+        //     setWallets(wallets);
+        //     // automatycznie ustaw pierwszy portfel jako domyślny, jeśli nie wybrano
+        //     if (!selectedWalletId && wallets.length > 0) {
+        //         setSelectedWalletId(wallets[0].id);
+        //     }
+        // },
+    });
+
+    // NIE używaj setWallets, po prostu zawsze korzystaj z fetchedWallets jako wallets
+    const wallets = fetchedWallets;
+
+    // A useEffect tylko do domyślnego portfela:
+    useEffect(() => {
+        if (
+            (selectedWalletId === 0 ||
+                !wallets.some((w) => w.id === selectedWalletId)) &&
+            wallets.length > 0
+        ) {
+            setSelectedWalletId(wallets[0].id);
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [wallets, selectedWalletId]);
 
     return (
         <GlobalContext.Provider
@@ -95,6 +142,10 @@ export const GlobalProvider: React.FC<{ children: ReactNode }> = ({
                 setChartsTab,
                 summaryTab,
                 setSummaryTab,
+                wallets,
+                // setWallets,
+                selectedWalletId,
+                setSelectedWalletId,
             }}>
             {children}
         </GlobalContext.Provider>
@@ -103,3 +154,4 @@ export const GlobalProvider: React.FC<{ children: ReactNode }> = ({
 
 // Hook do korzystania z GlobalContext
 export const useGlobalContext = () => useContext(GlobalContext);
+

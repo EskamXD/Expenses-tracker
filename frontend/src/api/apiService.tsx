@@ -1,6 +1,6 @@
 import qs from "qs";
 import apiClient from "./apiClient";
-import { Params, Person, Receipt } from "../types";
+import { Invest, Params, Person, Receipt } from "@/types";
 
 function printStatus(status: number) {
     switch (status) {
@@ -429,3 +429,38 @@ export const fetchSpendingRatio = async (filters: Params) => {
         throw error;
     }
 };
+
+export const fetchPostInvest = async (investData: Invest) => {
+    try {
+        const response = await apiClient.post(`/invest/`, investData);
+        if (response.status === 201) {
+            return response.data;
+        } else {
+            printStatus(response.status);
+        }
+    } catch (error) {
+        console.warn(JSON.stringify(investData));
+        throw error;
+    }
+};
+
+export const fetchSearchInstruments = async (query: string) => {
+    if (query.length < 2) return [];
+    const response = await apiClient.get(`/instruments/`, {
+        params: { q: query },
+    });
+    if (response.status === 200) {
+        return response.data.results; // albo po prostu response.data, jeśli nie masz paginacji
+    }
+    return [];
+};
+
+// apiService.tsx
+export const fetchGetWallets = async () => {
+    const response = await apiClient.get(`/wallets/`);
+    if (response.status === 200) {
+        return response.data; // albo response.data.results – zależnie od paginacji
+    }
+    return [];
+};
+

@@ -9,8 +9,8 @@ import Layout from "@/pages/layout";
 import Home from "@/pages/home";
 
 // Pozostałe strony ładujemy dynamicznie
-const Expenses = lazy(() => import("@/pages/expenses"));
-const Income = lazy(() => import("@/pages/income"));
+const NoteExpenseIncome = lazy(() => import("@/pages/note-expense-income"));
+// const Income = lazy(() => import("@/pages/income"));
 const Summary = lazy(() => import("@/pages/summary"));
 const Charts = lazy(() => import("@/pages/charts"));
 const Bills = lazy(() => import("@/pages/billls"));
@@ -31,15 +31,15 @@ function App() {
                             <Routes>
                                 <Route path="/" element={<Home />} />
                                 <Route
-                                    path="/expenses"
+                                    path="/note-expense-income"
                                     element={
                                         <Suspense
                                             fallback={<div>Ładowanie...</div>}>
-                                            <Expenses />
+                                            <NoteExpenseIncome />
                                         </Suspense>
                                     }
                                 />
-                                <Route
+                                {/* <Route
                                     path="/income"
                                     element={
                                         <Suspense
@@ -47,7 +47,7 @@ function App() {
                                             <Income />
                                         </Suspense>
                                     }
-                                />
+                                /> */}
                                 <Route
                                     path="/summary"
                                     element={
@@ -121,3 +121,4 @@ function App() {
 }
 
 export default App;
+
