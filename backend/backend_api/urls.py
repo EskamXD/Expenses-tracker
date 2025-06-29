@@ -27,6 +27,7 @@ router.register(r"person", PersonViewSet)
 router.register(r"items", ItemViewSet)
 router.register(r"instruments", InstrumentViewSet)
 router.register(r"invests", InvestViewSet)
+router.register(r"wallets", WalletsViewSet)
 router.register(r"wallet-snapshots", WalletSnapshotViewSet)
 # router.register(r"receipts", ReceiptViewSet)
 
