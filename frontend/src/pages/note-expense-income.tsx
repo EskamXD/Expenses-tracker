@@ -1,7 +1,7 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import UnifiedForm from "@/components/unified-form";
-import { fetchPostInvest, fetchPostReceipt } from "@/api/apiService";
-import { Invest, Receipt } from "@/types";
+import { fetchPostReceipt } from "@/api/apiService";
+import { Receipt } from "@/types";
 import { toast } from "sonner";
 import { useState } from "react";
 import FormOperation from "@/components/form-operation";
@@ -24,19 +24,8 @@ const Expenses = () => {
             queryClient.invalidateQueries({ queryKey: ["receipts"] });
             toast.success("Paragon zapisany pomyślnie");
         },
-        onError: () => {
-            toast.error("Błąd podczas zapisywania paragonu");
-        },
-    });
-
-    const postInvestMutation = useMutation({
-        mutationFn: fetchPostInvest,
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ["investments"] });
-            toast.success("Inwestycja zapisana");
-        },
-        onError: () => {
-            toast.error("Błąd podczas zapisywania inwestycji");
+        onError: (err) => {
+            toast.error(`Błąd podczas zapisywania paragonu ${err}`);
         },
     });
 
@@ -44,8 +33,10 @@ const Expenses = () => {
         postReceiptMutation.mutate(newReceipt);
     };
 
-    const handleSubmitInvest = (newInvestData: Invest) => {
-        postInvestMutation.mutate(newInvestData);
+    const handleInvestSuccess = () => {
+        queryClient.invalidateQueries({ queryKey: ["investments"] });
+        toast.success("Inwestycja zapisana");
+        setFormType(""); // np. powrót do wyboru typu po dodaniu
     };
 
     return (
@@ -81,10 +72,10 @@ const Expenses = () => {
             )}
             {formType === "investment" && (
                 <InvestForm
-                    onSubmitInvest={handleSubmitInvest}
                     wallets={wallets}
                     selectedWalletId={selectedWalletId}
                     setSelectedWalletId={setSelectedWalletId}
+                    onSuccess={handleInvestSuccess}
                 />
             )}
         </>

@@ -167,8 +167,6 @@ const Balance: React.FC = () => {
 
     return (
         <div className="space-y-6">
-            <h1>Balance Dashboard</h1>
-
             {/* filters always visible */}
             <ResponsiveFilters
                 showOwnersDropdown
@@ -414,3 +412,4 @@ const Balance: React.FC = () => {
 };
 
 export default Balance;
+

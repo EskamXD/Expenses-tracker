@@ -110,100 +110,95 @@ class ItemPrediction(models.Model):
 
 class Wallet(models.Model):
     name = models.CharField(max_length=100)
-    total_value = models.DecimalField(max_digits=20, decimal_places=2, default=0)
-    total_invest_income = models.DecimalField(
-        max_digits=20, decimal_places=2, default=0
-    )
-    last_update = models.DateTimeField(auto_now=True)
-    parent_wallet = models.ForeignKey(
-        "self",
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        related_name="sub_wallets",
-    )
+
+
+class InvestmentType(models.TextChoices):
+    DEPOSIT = "deposit", "Lokata"
+    FUND = "fund", "Fundusz"
+    STOCK = "stock", "Akcja"
+    ETF = "etf", "ETF"
+    BOND = "bond", "Obligacja"
+
+
+class Wallet(models.Model):
+    name = models.CharField(max_length=100)
+    description = models.TextField(blank=True)
+    created_at = models.DateField(auto_now_add=True)
 
     def __str__(self):
         return self.name
 
-    def update_totals(self):
-        # Sum wartości z wszystkich powiązanych inwestycji
-        total = self.investments.aggregate(total=Sum("current_value"))["total"] or 0
-        self.total_value = total
-        # Możesz dodać dodatkowe obliczenia, np. dla zysków
-        self.save()
 
-
-class WalletSnapshot(models.Model):
-    wallet = models.ForeignKey(
-        Wallet, on_delete=models.CASCADE, related_name="snapshots"
-    )
-    snapshot_date = models.DateTimeField(default=timezone.now)
-    total_value = models.DecimalField(max_digits=20, decimal_places=2)
-    total_invest_income = models.DecimalField(max_digits=20, decimal_places=2)
-
-    def __str__(self):
-        return (
-            f"Snapshot {self.wallet.name} z {self.snapshot_date.strftime('%Y-%m-%d')}"
-        )
-
-
-class Invest(models.Model):
+class Investment(models.Model):
     wallet = models.ForeignKey(
         Wallet, on_delete=models.CASCADE, related_name="investments"
     )
-    instrument = models.ForeignKey(
-        "Instrument", on_delete=models.CASCADE, related_name="investments"
-    )
-    value = models.DecimalField(max_digits=20, decimal_places=2)
-    purchase_price = models.DecimalField(max_digits=20, decimal_places=4)  # NOWE
-    units = models.DecimalField(max_digits=20, decimal_places=6)           # NOWE
-    current_value = models.DecimalField(max_digits=20, decimal_places=2, default=0)
-    payment_date = models.DateField()
-    TRANSACTION_TYPES = (
-        ("buy", "Kupno"),
-        ("sell", "Sprzedaż"),
-        ("dividend", "Dywidenda"),
-        # inne typy operacji
-    )
-    transaction_type = models.CharField(max_length=20, choices=TRANSACTION_TYPES)
-
-
-    def __str__(self):
-        return f"{self.instrument.name} - {self.get_transaction_type_display()}"
-
-    def update_current_value(self, new_price):
-        # Możesz obliczyć bieżącą wartość na podstawie aktualnego kursu
-        self.current_value = self.value * new_price  # lub inna logika
-        self.save()
-
-
-class Instrument(models.Model):
-    CATEGORY_CHOICES = (
-        ("stock", "Akcje"),
-        ("etf", "ETF"),
-        ("bond", "Obligacje"),
-        ("crypto", "Kryptowaluty"),
-        ("commodity", "Surowce"),
-        ("fund", "Fundusze"),
-        ("other", "Inne"),
-    )
-
     name = models.CharField(max_length=100)
-    symbol = models.CharField(max_length=20, unique=True)  
-    category = models.CharField(max_length=20, choices=CATEGORY_CHOICES)
-    market = models.CharField(
-        max_length=50,
-        blank=True,
-        null=True,
-        help_text="Nazwa giełdy lub rynku (np. GPW, NASDAQ)",
-    )
-    currency = models.CharField(max_length=10, default="PLN")
-    description = models.TextField(blank=True, null=True)
-    current_price = models.DecimalField(
-        max_digits=20, decimal_places=2, blank=True, null=True
-    )
-    last_updated = models.DateTimeField(auto_now=True)
+    type = models.CharField(max_length=20, choices=InvestmentType.choices)
+    symbol = models.CharField(max_length=20, blank=True)  # np. ticker akcji/ETF
+    created_at = models.DateField(auto_now_add=True)
+    interest_rate = models.DecimalField(
+        max_digits=5, decimal_places=2, null=True, blank=True
+    )  # tylko dla lokat
+    capitalization = models.CharField(
+        max_length=20, null=True, blank=True
+    )  # np. miesięczna
+    end_date = models.DateField(null=True, blank=True)  # tylko dla lokat
 
     def __str__(self):
-        return f"{self.name} ({self.symbol})"
+        return f"{self.name} ({self.get_type_display()})"
+
+    from django.db.models import Sum
+
+    @property
+    def capital(self):
+        deposits = (
+            self.transactions.filter(type="deposit").aggregate(Sum("value"))[
+                "value__sum"
+            ]
+            or 0
+        )
+        withdrawals = (
+            self.transactions.filter(type="withdrawal").aggregate(Sum("value"))[
+                "value__sum"
+            ]
+            or 0
+        )
+        return deposits + withdrawals  # wypłaty powinny być ujemne
+
+    @property
+    def current_value(self):
+        # Dla lokaty
+        if self.type == "deposit" and self.interest_rate:
+            from datetime import date
+
+            start = self.transactions.filter(type="deposit").order_by("date").first()
+            if not start:
+                return self.capital
+            start_date = start.date
+            today = date.today()
+            duration_years = (today - start_date).days / 365
+            return float(self.capital) * (
+                1 + float(self.interest_rate) / 100 * duration_years
+            )
+        # Dla akcji/funduszy itp. — pobierz kurs po symbolu (implementuj w swoim projekcie)
+        # Możesz zwrócić None lub kurs × ilość jednostek
+        return self.capital  # fallback
+
+
+class InvestmentTransaction(models.Model):
+    TRANSACTION_TYPE = [
+        ("deposit", "Wpłata"),
+        ("withdrawal", "Wypłata"),
+        ("profit", "Kapitalizacja/zysk"),
+    ]
+    investment = models.ForeignKey(
+        Investment, on_delete=models.CASCADE, related_name="transactions"
+    )
+    value = models.DecimalField(max_digits=12, decimal_places=2)
+    type = models.CharField(max_length=16, choices=TRANSACTION_TYPE)
+    date = models.DateField()
+    description = models.CharField(max_length=255, blank=True)
+
+    def __str__(self):
+        return f"{self.get_type_display()} {self.value} ({self.date})"

@@ -1,6 +1,13 @@
 import qs from "qs";
 import apiClient from "./apiClient";
-import { Invest, Params, Person, Receipt } from "@/types";
+import {
+    Investment,
+    InvestmentTransaction,
+    Params,
+    Person,
+    Receipt,
+    Wallet,
+} from "@/types";
 
 function printStatus(status: number) {
     switch (status) {
@@ -219,6 +226,7 @@ export const fetchSearchRecentShops = async (query: string) => {
 
         // Jeśli zapytanie było udane, zwróć dane
         if (response.status === 200) {
+            console.log(response.data);
             return response.data.results; // Zakładamy, że API zwraca pole `results`
         } else {
             printStatus(response.status);
@@ -430,37 +438,311 @@ export const fetchSpendingRatio = async (filters: Params) => {
     }
 };
 
-export const fetchPostInvest = async (investData: Invest) => {
+export const fetchSuggestInstruments = async (query: string) => {
+    const response = await apiClient.get("/instrument-suggest/", {
+        params: { q: query },
+    });
+    if (response.status === 200) {
+        console.log(response.data);
+        return response.data.results;
+    }
+    throw new Error("Status not OK");
+};
+
+// WALLET
+
+export const fetchGetWallets = async () => {
     try {
-        const response = await apiClient.post(`/invest/`, investData);
-        if (response.status === 201) {
+        const response = await apiClient.get("/wallets/");
+        if (response.status === 200) {
             return response.data;
         } else {
             printStatus(response.status);
+            throw new Error("Status not OK");
         }
     } catch (error) {
-        console.warn(JSON.stringify(investData));
+        console.warn("fetchGetWallets");
+        console.error(error);
         throw error;
     }
 };
 
-export const fetchSearchInstruments = async (query: string) => {
-    if (query.length < 2) return [];
-    const response = await apiClient.get(`/instruments/`, {
-        params: { q: query },
-    });
-    if (response.status === 200) {
-        return response.data.results; // albo po prostu response.data, jeśli nie masz paginacji
+export const fetchGetWalletById = async (id: number) => {
+    try {
+        const response = await apiClient.get(`/wallets/${id}/`);
+        if (response.status === 200) {
+            return response.data;
+        } else {
+            printStatus(response.status);
+            throw new Error("Status not OK");
+        }
+    } catch (error) {
+        console.warn("fetchGetWalletById id:", id);
+        console.error(error);
+        throw error;
     }
-    return [];
 };
 
-// apiService.tsx
-export const fetchGetWallets = async () => {
-    const response = await apiClient.get(`/wallets/`);
-    if (response.status === 200) {
-        return response.data; // albo response.data.results – zależnie od paginacji
+export const fetchPostWallets = async (newWallet: Omit<Wallet, "id">) => {
+    try {
+        const response = await apiClient.post("/wallets/", newWallet);
+        if (response.status === 201) {
+            return response.data;
+        } else {
+            printStatus(response.status);
+            throw new Error("Status not OK");
+        }
+    } catch (error) {
+        console.warn("fetchPostWallets wallet:", newWallet);
+        console.error(error);
+        throw error;
     }
-    return [];
+};
+
+export const fetchPutWallet = async (id: number, wallet: Partial<Wallet>) => {
+    try {
+        const response = await apiClient.put(`/wallets/${id}/`, wallet);
+        if (response.status === 200) {
+            return response.data;
+        } else {
+            printStatus(response.status);
+            throw new Error("Status not OK");
+        }
+    } catch (error) {
+        console.warn("fetchPutWallet id:", id, "wallet:", wallet);
+        console.error(error);
+        throw error;
+    }
+};
+
+export const fetchDeleteWallet = async (id: number) => {
+    try {
+        const response = await apiClient.delete(`/wallets/${id}/`);
+        if (response.status === 204) {
+            return true;
+        } else {
+            printStatus(response.status);
+            throw new Error("Status not OK");
+        }
+    } catch (error) {
+        console.warn("fetchDeleteWallet id:", id);
+        console.error(error);
+        throw error;
+    }
+};
+
+export const fetchGetInvestments = async () => {
+    try {
+        const response = await apiClient.get("/investment/");
+        if (response.status === 200) {
+            return response.data as Investment[];
+        } else {
+            printStatus(response.status);
+            throw new Error("Status not OK");
+        }
+    } catch (error) {
+        console.warn("fetchGetInvestments");
+        console.error(error);
+        throw error;
+    }
+};
+
+export const fetchGetInvestmentById = async (id: number) => {
+    try {
+        const response = await apiClient.get(`/investment/${id}/`);
+        if (response.status === 200) {
+            return response.data as Investment;
+        } else {
+            printStatus(response.status);
+            throw new Error("Status not OK");
+        }
+    } catch (error) {
+        console.warn("fetchGetInvestmentById id:", id);
+        console.error(error);
+        throw error;
+    }
+};
+
+export const fetchGetInvestmentByWalletId = async (id: number) => {
+    try {
+        const response = await apiClient.get(`/investment/?wallet=${id}`);
+        if (response.status === 200) {
+            return response.data as Investment[];
+        } else {
+            printStatus(response.status);
+            throw new Error("Status not OK");
+        }
+    } catch (error) {
+        console.warn("fetchGetInvestmentById id:", id);
+        console.error(error);
+        throw error;
+    }
+};
+
+export const fetchGetInvestmentCurrentValue = async (id: number) => {
+    try {
+        const response = await apiClient.get(
+            `/investment/${id}/current_value/`
+        );
+        if (response.status === 200) {
+            return response.data as {
+                capital: number;
+                current_value: number;
+            };
+        } else {
+            printStatus(response.status);
+            throw new Error("Status not OK");
+        }
+    } catch (error) {
+        console.warn("fetchGetInvestmentCurrentValue id:", id);
+        console.error(error);
+        throw error;
+    }
+};
+
+export const fetchPostInvestment = async (
+    newInvestment: Omit<
+        Investment,
+        "id" | "capital" | "current_value" | "transactions"
+    >
+) => {
+    try {
+        const response = await apiClient.post("/investment/", newInvestment);
+        if (response.status === 201) {
+            return response.data as Investment;
+        } else {
+            printStatus(response.status);
+            throw new Error("Status not OK");
+        }
+    } catch (error) {
+        console.warn("fetchPostInvestment investment:", newInvestment);
+        console.error(error);
+        throw error;
+    }
+};
+
+export const fetchPutInvestment = async (
+    id: number,
+    investment: Partial<Investment>
+) => {
+    try {
+        const response = await apiClient.put(`/investment/${id}/`, investment);
+        if (response.status === 200) {
+            return response.data as Investment;
+        } else {
+            printStatus(response.status);
+            throw new Error("Status not OK");
+        }
+    } catch (error) {
+        console.warn("fetchPutInvestment id:", id, "investment:", investment);
+        console.error(error);
+        throw error;
+    }
+};
+
+export const fetchDeleteInvestment = async (id: number) => {
+    try {
+        const response = await apiClient.delete(`/investment/${id}/`);
+        if (response.status === 204) {
+            return true;
+        } else {
+            printStatus(response.status);
+            throw new Error("Status not OK");
+        }
+    } catch (error) {
+        console.warn("fetchDeleteInvestment id:", id);
+        console.error(error);
+        throw error;
+    }
+};
+
+export const fetchGetInvestmentTransactions = async (investmentId: number) => {
+    try {
+        const response = await apiClient.get(
+            `/investment-transaction/?investment=${investmentId}`
+        );
+        if (response.status === 200) {
+            return response.data as InvestmentTransaction[];
+        } else {
+            printStatus(response.status);
+            throw new Error("Status not OK");
+        }
+    } catch (error) {
+        console.warn(
+            "fetchGetInvestmentTransactions investmentId:",
+            investmentId
+        );
+        console.error(error);
+        throw error;
+    }
+};
+
+export const fetchPostInvestmentTransaction = async (
+    newTransaction: Omit<InvestmentTransaction, "id">
+) => {
+    try {
+        const response = await apiClient.post(
+            "/investment-transaction/",
+            newTransaction
+        );
+        if (response.status === 201) {
+            return response.data as InvestmentTransaction;
+        } else {
+            printStatus(response.status);
+            throw new Error("Status not OK");
+        }
+    } catch (error) {
+        console.warn(
+            "fetchPostInvestmentTransaction transaction:",
+            newTransaction
+        );
+        console.error(error);
+        throw error;
+    }
+};
+
+export const fetchPutInvestmentTransaction = async (
+    id: number,
+    transaction: Partial<InvestmentTransaction>
+) => {
+    try {
+        const response = await apiClient.put(
+            `/investment-transaction/${id}/`,
+            transaction
+        );
+        if (response.status === 200) {
+            return response.data as InvestmentTransaction;
+        } else {
+            printStatus(response.status);
+            throw new Error("Status not OK");
+        }
+    } catch (error) {
+        console.warn(
+            "fetchPutInvestmentTransaction id:",
+            id,
+            "transaction:",
+            transaction
+        );
+        console.error(error);
+        throw error;
+    }
+};
+
+export const fetchDeleteInvestmentTransaction = async (id: number) => {
+    try {
+        const response = await apiClient.delete(
+            `/investment-transaction/${id}/`
+        );
+        if (response.status === 204) {
+            return true;
+        } else {
+            printStatus(response.status);
+            throw new Error("Status not OK");
+        }
+    } catch (error) {
+        console.warn("fetchDeleteInvestmentTransaction id:", id);
+        console.error(error);
+        throw error;
+    }
 };
 

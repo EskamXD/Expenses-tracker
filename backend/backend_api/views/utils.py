@@ -6,6 +6,10 @@ from decimal import Decimal
 from django.core.exceptions import ValidationError
 from django.utils.timezone import now
 
+from datetime import timedelta
+from django.utils import timezone
+import yfinance as yf
+
 
 def get_all_dates_in_month(selected_year, selected_month):
     _, last_day = calendar.monthrange(int(selected_year), int(selected_month))

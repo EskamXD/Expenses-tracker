@@ -37,21 +37,34 @@ export type Shops = {
     name: string;
 };
 
-export type Invest = {
-    wallet: number;
-    instrument: string;
-    value: number;
-    purchase_price: number;
-    units: number;
-    payment_date: string;
-    transaction_type?: "buy" | "sell" | "dividend";
-};
 export type Wallet = {
     id: number;
     name: string;
-    total_value: number;
-    total_invest_income: number;
-    last_update: string; // ISO date string z backendu
-    parent_wallet: number | null; // lub Wallet | null jeśli API zwraca obiekt
 };
+
+export type TransactionType = "deposit" | "withdrawal" | "profit";
+export interface InvestmentTransaction {
+    id: number;
+    investment: number; // ID inwestycji
+    value: number;
+    type: TransactionType;
+    date: string;
+    description?: string;
+}
+
+export type InvestmentType = "deposit" | "fund" | "stock" | "etf" | "bond";
+export interface Investment {
+    id: number;
+    wallet: number; // ID portfela
+    name: string;
+    type: InvestmentType;
+    symbol?: string;
+    created_at?: string;
+    interest_rate?: number | null;
+    capitalization?: string | null;
+    end_date?: string | null;
+    capital?: number; // property z backendu
+    current_value?: number; // property z backendu
+    transactions?: InvestmentTransaction[]; // opcjonalnie, jeśli serializer zwraca transakcje
+}
 

@@ -38,3 +38,10 @@ class ReceiptFilter(filters.FilterSet):
             "transaction_type",
             "category",
         ]
+
+
+class InvestmentFilter(filters.FilterSet):
+    id = filters.NumberFilter(field_name="id", lookup_expr="exact")
+    wallet = filters.NumberFilter(field_name="wallet__id", lookup_expr="exact")
+    name = filters.CharFilter(field_name="name", lookup_expr="icontains")
+    symbol = filters.CharFilter(field_name="symbol", lookup_expr="icontains")

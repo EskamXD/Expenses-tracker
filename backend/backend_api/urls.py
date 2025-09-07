@@ -13,22 +13,21 @@ from backend_api.views import (
     fetch_bar_persons,
     fetch_bar_shops,
     fetch_pie_categories,
-    InstrumentViewSet,
-    InvestViewSet,
-    WalletSnapshotViewSet,
+    WalletViewSet,
     DuplicateReceiptDebugView,
     BalanceView,
     SpendingRatioView,
+    InvestmentViewSet,
+    InvestmentTransactionViewSet,
 )
 
 router = DefaultRouter()
 
 router.register(r"person", PersonViewSet)
 router.register(r"items", ItemViewSet)
-router.register(r"instruments", InstrumentViewSet)
-router.register(r"invests", InvestViewSet)
-router.register(r"wallets", WalletsViewSet)
-router.register(r"wallet-snapshots", WalletSnapshotViewSet)
+router.register(r"investment", InvestmentViewSet)
+router.register(r"investment-transaction", InvestmentTransactionViewSet)
+router.register(r"wallets", WalletViewSet)
 # router.register(r"receipts", ReceiptViewSet)
 
 urlpatterns = [
