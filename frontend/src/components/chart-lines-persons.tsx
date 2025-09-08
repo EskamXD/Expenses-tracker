@@ -42,12 +42,14 @@ const ChartLinesPerson: React.FC = () => {
                 summaryFilters.month,
                 summaryFilters.year,
                 summaryFilters.owners,
+                summaryFilters.period,
             ],
             queryFn: async () =>
                 await fetchLineSums({
                     month: summaryFilters.month,
                     year: summaryFilters.year,
                     owners: summaryFilters.owners,
+                    period: summaryFilters.period,
                 }),
             enabled:
                 !!summaryFilters.owners && summaryFilters.owners.length > 0,

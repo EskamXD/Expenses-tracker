@@ -2,7 +2,7 @@
 from collections import defaultdict
 from decimal import Decimal
 from django.http import JsonResponse
-from django.db.models import Sum, FloatField
+from django.db.models import Sum, FloatField, Prefetch
 from rest_framework.decorators import api_view
 from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiResponse
 from backend_api.views.utils import (
@@ -18,13 +18,19 @@ from backend_api.serializers import PersonExpenseSerializer, ShopExpenseSerializ
     methods=["GET"],
     parameters=[
         OpenApiParameter(
-            name="month", description="Selected month", required=True, type=int
+            name="month", description="Selected month", required=False, type=int
         ),
         OpenApiParameter(
             name="year", description="Selected year", required=True, type=int
         ),
         OpenApiParameter(
             name="category", description="Selected category", required=False, type=list
+        ),
+        OpenApiParameter(
+            name="period",
+            description="Wybrany okres (np. period=month).",
+            required=True,
+            type=str,
         ),
     ],
     responses={
@@ -36,18 +42,63 @@ from backend_api.serializers import PersonExpenseSerializer, ShopExpenseSerializ
 @api_view(["GET"])
 def fetch_bar_persons(request):
     try:
-        selected_month = int(request.GET.get("month"))
         selected_year = int(request.GET.get("year"))
-        selected_categories = request.GET.getlist("category")
     except (ValueError, TypeError):
-        return JsonResponse({"error": "Invalid query parameters"}, status=400)
+        return JsonResponse(
+            {"error": "Invalid or missing 'year' parameter"}, status=400
+        )
+
+    period = request.GET.get("period", "monthly")
+    if period == "month":
+        period = "monthly"
+
+    # month tylko gdy monthly
+    selected_month = None
+    if period == "monthly":
+        try:
+            selected_month = int(request.GET.get("month"))
+        except (ValueError, TypeError):
+            return JsonResponse(
+                {"error": "Invalid or missing 'month' parameter"}, status=400
+            )
+
+    # categories: obsłuż obie formy: category i category[]
+    categories = request.GET.getlist("category[]")
+    if not categories:
+        categories = request.GET.getlist("category")  # kompatybilność wsteczna
+
+    # owners (opcjonalnie) – ograniczamy płatników do wybranych ID
+    owners_param = request.GET.getlist("owners[]")
+    selected_owner_ids = []
+    try:
+        selected_owner_ids = [int(o) for o in owners_param] if owners_param else []
+    except (ValueError, TypeError):
+        return JsonResponse({"error": "Invalid 'owners[]' parameter"}, status=400)
 
     try:
-        receipts = Receipt.objects.filter(
-            transaction_type="expense",
-            payment_date__year=selected_year,
-            payment_date__month=selected_month,
-        ).prefetch_related("items")
+        # Filtry czasu
+        time_filter = {
+            "payment_date__year": selected_year,
+        }
+        if selected_month is not None:
+            time_filter["payment_date__month"] = selected_month
+
+        # Bazowy queryset: tylko wydatki (ten endpoint nie rozróżnia typów)
+        receipts_qs = (
+            Receipt.objects.filter(
+                transaction_type="expense",
+                **time_filter,
+            )
+            .prefetch_related(
+                # właściciele itemów będą potrzebni w pętli
+                Prefetch("items", to_attr="prefetched_items")
+            )
+            .select_related("payer")
+        )
+
+        # Opcjonalne ograniczenie płatników (payers) do wybranych owners
+        if selected_owner_ids:
+            receipts_qs = receipts_qs.filter(payer__id__in=selected_owner_ids)
 
         shared_expense_sums = defaultdict(
             lambda: {"sum": Decimal(0), "receipt_ids": set(), "top_outliers": []}
@@ -56,18 +107,34 @@ def fetch_bar_persons(request):
             lambda: {"sum": Decimal(0), "receipt_ids": set(), "top_outliers": []}
         )
 
-        for receipt in receipts:
+        for receipt in receipts_qs:
             payer = receipt.payer
-            for item in receipt.items.all():
-                owners = list(item.owners.all())
-                if selected_categories and item.category not in selected_categories:
+            # jeżeli w projekcie payer może być null, zabezpiecz:
+            if payer is None:
+                continue
+
+            # iterujemy po wstępnie pobranych itemach
+            for item in getattr(receipt, "prefetched_items", []):
+                if getattr(item, "category", None) == "last_month_balance":
                     continue
-                if len(owners) > 1 and payer in owners:
+                # filtr kategorii
+                if categories and getattr(item, "category", None) not in categories:
+                    continue
+
+                owners = list(
+                    item.owners.all()
+                )  # m2m; jeżeli performance krytyczny, można prefetchować owners dla Item
+                owners_count = len(owners)
+
+                # shared: kilku ownerów i payer jest jednym z ownerów
+                if owners_count > 1 and payer in owners:
                     try:
                         shared_expense_sums[payer]["sum"] += Decimal(item.value)
                         shared_expense_sums[payer]["receipt_ids"].add(receipt.id)
                     except (ValueError, TypeError):
                         continue
+
+                # not_own: payer NIE jest wśród ownerów
                 if payer not in owners:
                     try:
                         not_own_expense_sums[payer]["sum"] += Decimal(item.value)
@@ -75,16 +142,13 @@ def fetch_bar_persons(request):
                     except (ValueError, TypeError):
                         continue
 
-        for payer, data in shared_expense_sums.items():
-            shared_expense_sums[payer]["top_outliers"] = get_top_outlier_receipts(
-                data["receipt_ids"]
-            )
+        # top outliers (np. najdroższe paragony dla tooltipów)
+        for data in shared_expense_sums.values():
+            data["top_outliers"] = get_top_outlier_receipts(data["receipt_ids"])
+        for data in not_own_expense_sums.values():
+            data["top_outliers"] = get_top_outlier_receipts(data["receipt_ids"])
 
-        for payer, data in not_own_expense_sums.items():
-            not_own_expense_sums[payer]["top_outliers"] = get_top_outlier_receipts(
-                data["receipt_ids"]
-            )
-
+        # sort desc po sumie
         sorted_shared_expenses = sorted(
             shared_expense_sums.items(), key=lambda x: x[1]["sum"], reverse=True
         )
@@ -113,9 +177,11 @@ def fetch_bar_persons(request):
             ],
         }
         return JsonResponse(response_data, safe=False, status=200)
+
     except Exception as e:
         return JsonResponse(
-            {"error": f"{str(e)} - Error while fetching bar persons"}, status=500
+            {"error": f"{str(e)} - Error while fetching bar persons"},
+            status=500,
         )
 
 
@@ -125,12 +191,12 @@ def fetch_bar_persons(request):
         OpenApiParameter(
             name="owners[]",
             description="Selected owner ID",
-            required=False,
+            required=True,
             type=int,
             many="true",
         ),
         OpenApiParameter(
-            name="month", description="Selected month", required=True, type=int
+            name="month", description="Selected month", required=False, type=int
         ),
         OpenApiParameter(
             name="year", description="Selected year", required=True, type=int
@@ -159,6 +225,18 @@ def fetch_bar_persons(request):
                 "other",
             ],
         ),
+        OpenApiParameter(
+            name="transactionType",
+            description="Selected transaction type",
+            required=True,
+            type=str,
+        ),
+        OpenApiParameter(
+            name="period",
+            description="Wybrany okres (np. period=month).",
+            required=True,
+            type=str,
+        ),
     ],
     responses={
         200: PersonExpenseSerializer(many=True),
@@ -168,59 +246,122 @@ def fetch_bar_persons(request):
 )
 @api_view(["GET"])
 def fetch_bar_shops(request):
+    # --- 1) Rok i okres ---
     try:
-        params = get_query_params(request, "month", "year")
-        selected_month = params["month"]
-        selected_year = params["year"]
-
-        owners_param = request.GET.getlist("owners[]")
-        selected_owner_ids = [int(o) for o in owners_param] if owners_param else []
-        if not selected_owner_ids:
-            return handle_error("Nie podano ownersów", 400, "Brak parametru owners")
-
-        category_param = request.GET.getlist("category[]")
-        category = (
-            category_param
-            if category_param
-            else [
-                "fuel",
-                "car_expenses",
-                "fastfood",
-                "alcohol",
-                "food_drinks",
-                "chemistry",
-                "clothes",
-                "electronics_games",
-                "tickets_entrance",
-                "other_shopping",
-            ]
+        selected_year = int(request.GET.get("year"))
+    except (TypeError, ValueError):
+        return handle_error(
+            "Brak lub niepoprawny 'year'", 400, "Niepoprawne parametry zapytania"
         )
 
-    except ValueError as e:
-        return handle_error(e, 400, "Niepoprawne parametry zapytania")
+    period = request.GET.get("period", "monthly")
+    if period == "month":  # zgodność wsteczna
+        period = "monthly"
+
+    selected_month = None
+    if period == "monthly":
+        try:
+            selected_month = int(request.GET.get("month"))
+        except (TypeError, ValueError):
+            return handle_error(
+                "Brak lub niepoprawny 'month' dla monthly",
+                400,
+                "Niepoprawne parametry zapytania",
+            )
+
+    # --- 2) Owners (wymagane co najmniej 1) ---
+    owners_param = request.GET.getlist("owners[]")
+    try:
+        selected_owner_ids = [int(o) for o in owners_param] if owners_param else []
+    except (ValueError, TypeError):
+        return handle_error(
+            "Niepoprawny owners[]", 400, "Niepoprawne parametry zapytania"
+        )
+
+    if not selected_owner_ids:
+        return handle_error("Nie podano ownersów", 400, "Brak parametru owners")
+
+    # --- 3) Typ transakcji ---
+    tx_type = request.GET.get("transactionType", "expense")  # domyślnie wydatki
+    tx_filter = {}
+    if tx_type in ("expense", "income"):
+        tx_filter["transaction_type"] = tx_type
+    # jeśli tx_type == "" → oba typy (bez filtra)
+
+    # --- 4) Kategorie (czytaj category[] i/lub category) ---
+    categories = request.GET.getlist("category[]") or request.GET.getlist("category")
+
+    # Domyślne zestawy kategorii (z Twojej listy)
+    expense_defaults = [
+        "fuel",
+        "car_expenses",
+        "fastfood",
+        "alcohol",
+        "food_drinks",
+        "chemistry",
+        "clothes",
+        "electronics_games",
+        "tickets_entrance",
+        "delivery",
+        "other_shopping",
+        "flat_bills",
+        "monthly_subscriptions",
+        "other_cyclical_expenses",
+        "investments_savings",
+        "other",
+    ]
+    income_defaults = [
+        "for_study",
+        "work_income",
+        "family_income",
+        "investments_income",
+        "money_back",
+        "other",
+    ]
+
+    if not categories:
+        if tx_type == "expense":
+            categories = expense_defaults
+        elif tx_type == "income":
+            categories = income_defaults
+        else:
+            # oba typy → domyślne obie listy
+            categories = expense_defaults + income_defaults
+
+    # --- 5) Budowa filtra czasu + reszta ---
+    time_filter = {"payment_date__year": selected_year}
+    if selected_month is not None:
+        time_filter["payment_date__month"] = selected_month
+
+    categories = [c for c in categories if c != "last_month_balance"]
 
     try:
+        base_filter = {
+            **tx_filter,
+            **time_filter,
+            "items__category__in": categories,
+            "items__owners__id__in": selected_owner_ids,
+        }
+
+        # Agregacja po stronie bazy — tu prefetch_related nie pomaga
         queryset = (
-            Receipt.objects.filter(
-                transaction_type="expense",
-                payment_date__year=selected_year,
-                payment_date__month=selected_month,
-                items__category__in=category,
-                items__owners__id__in=selected_owner_ids,
-            )
+            Receipt.objects.filter(**base_filter)
             .values("shop")
             .annotate(expense_sum=Sum("items__value", output_field=FloatField()))
+            .order_by("-expense_sum")
         )
-        sorted_expense_sums = queryset.order_by("-expense_sum")
-        sorted_list = list(sorted_expense_sums)
+
+        # Serializacja (zaokrąglamy do 2 miejsc)
         serialized_data = [
-            {"shop": entry["shop"], "expense_sum": round(entry["expense_sum"], 2)}
-            for entry in sorted_list
+            {"shop": row["shop"], "expense_sum": round(row["expense_sum"] or 0.0, 2)}
+            for row in queryset
         ]
+
         serializer = ShopExpenseSerializer(data=serialized_data, many=True)
         if serializer.is_valid():
             return JsonResponse(serializer.data, safe=False, status=200)
         else:
             return JsonResponse(serializer.errors, status=400)
+
     except Exception as e:
         return handle_error(e, 500, "Error while fetching bar shops")

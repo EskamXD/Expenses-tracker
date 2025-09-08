@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, ReactNode } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { fetchGetPerson } from "@/api/apiService";
-import { Params, Person, Receipt, Shops } from "@/types";
+import { Person, Receipt, Shops, SummaryParams } from "@/types";
 
 interface GlobalState {
     persons: Person[];
@@ -12,9 +12,9 @@ interface GlobalState {
     shops: Shops[];
     setShops: (shops: Shops[]) => void;
 
-    summaryFilters: Params;
+    summaryFilters: SummaryParams;
     setSummaryFilters: (
-        params: Params | ((prevFilters: Params) => Params)
+        params: SummaryParams | ((prevFilters: SummaryParams) => SummaryParams)
     ) => void;
 
     // last‐open tabs
@@ -40,6 +40,8 @@ const defaultState: GlobalState = {
         month: 0,
         year: 0,
         category: [],
+        transactionType: "expense",
+        period: "monthly",
     },
     setSummaryFilters: () => {},
     balanceTab: "bilans",
@@ -60,11 +62,13 @@ export const GlobalProvider: React.FC<{ children: ReactNode }> = ({
     // const [persons, setPersons] = useState<Person[]>([]);
     const [receipts, setReceipts] = useState<Receipt[]>([]);
     const [shops, setShops] = useState<Shops[]>([]);
-    const [summaryFilters, setSummaryFilters] = useState<Params>({
+    const [summaryFilters, setSummaryFilters] = useState<SummaryParams>({
         owners: [],
         month: new Date().getMonth() + 1,
         year: new Date().getFullYear(),
         category: [],
+        transactionType: "expense",
+        period: "monthly",
     });
     const [balanceTab, setBalanceTab] = useState<string>("bilans");
     const [chartsTab, setChartsTab] = useState<string>("barPersons");

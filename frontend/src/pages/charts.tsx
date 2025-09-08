@@ -26,7 +26,11 @@ const Charts = () => {
 
     return (
         <div className="space-y-6">
-            <ResponsiveFilters showCategories transactionType="expense" />
+            <ResponsiveFilters
+                showCategories
+                showYearMonth
+                transactionType=""
+            />
 
             <Tabs
                 value={chartsTab}

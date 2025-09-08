@@ -29,11 +29,16 @@ export type Params = {
     month?: number;
     year?: number;
     category?: string[];
-    transaction_type?: string;
+    transactionType?: "" | "expense" | "income";
+    period?: "monthly" | "yearly";
+};
+
+export type SummaryParams = Params & {
+    transactionType: "" | "expense" | "income";
+    period: "monthly" | "yearly";
 };
 
 export type Shops = {
     id?: number;
     name: string;
 };
-
