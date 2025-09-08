@@ -10,7 +10,8 @@ interface ResponsiveFiltersProps {
     showYear?: boolean;
     showMonth?: boolean;
     showCategories?: boolean;
-    transactionType: "income" | "expense";
+    showYearMonth?: boolean;
+    transactionType: "income" | "expense" | "";
 }
 
 const ResponsiveFilters: React.FC<ResponsiveFiltersProps> = (props) => {

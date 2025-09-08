@@ -37,6 +37,22 @@ function printStatus(status: number) {
     }
 }
 
+// helper: przerób klucze tablic na 'owners[]', 'category[]'
+function normalizeArrayParams(params: any) {
+    if (!params) return params;
+    const out: any = { ...params };
+
+    if (Array.isArray(out.owners)) {
+        out["owners[]"] = out.owners;
+        delete out.owners;
+    }
+    if (Array.isArray(out.category)) {
+        out["category[]"] = out.category;
+        delete out.category;
+    }
+    return out;
+}
+
 export const fetchGetPerson = async (id?: number) => {
     try {
         const response = await apiClient.get(`/person/${id ? id + "/" : ""}`);
@@ -252,12 +268,18 @@ export const fetchItemPredictions = async (shop: string, query: string) => {
 };
 
 export const fetchLineSums = async (params?: Params) => {
+    const normalized = normalizeArrayParams(params);
+    const queryStr = qs.stringify(normalized, { arrayFormat: "repeat" });
+    console.log("[LineSums] params:", normalized);
+    console.log("[LineSums] query:", `/fetch/line-sums/?${queryStr}`);
+
     try {
         const response = await apiClient.get(`/fetch/line-sums/`, {
-            params: params,
+            params: normalized,
+            paramsSerializer: (p) => qs.stringify(p, { arrayFormat: "repeat" }),
         });
-
         if (response.status === 200) {
+            console.log(response.data);
             return response.data;
         } else {
             printStatus(response.status);
@@ -269,17 +291,18 @@ export const fetchLineSums = async (params?: Params) => {
 };
 
 export const fetchBarPersons = async (params?: Params) => {
-    // console.log(params);
-    // console.log(qs.stringify(params, { arrayFormat: "repeat" }));
+    const normalized = normalizeArrayParams(params);
+    const queryStr = qs.stringify(normalized, { arrayFormat: "repeat" });
+    console.log("[BarPersons] params:", normalized);
+    console.log("[BarPersons] query:", `/fetch/bar-persons/?${queryStr}`);
+
     try {
         const response = await apiClient.get(`/fetch/bar-persons/`, {
-            params: params,
-            paramsSerializer: (params) => {
-                return qs.stringify(params, { arrayFormat: "repeat" });
-            },
+            params: normalized,
+            paramsSerializer: (p) => qs.stringify(p, { arrayFormat: "repeat" }),
         });
-
         if (response.status === 200) {
+            console.log(response.data);
             return response.data;
         } else {
             printStatus(response.status);
@@ -291,12 +314,18 @@ export const fetchBarPersons = async (params?: Params) => {
 };
 
 export const fetchBarShops = async (params?: Params) => {
+    const normalized = normalizeArrayParams(params);
+    const queryStr = qs.stringify(normalized, { arrayFormat: "repeat" });
+    console.log("[BarShops] params:", normalized);
+    console.log("[BarShops] query:", `/fetch/bar-shops/?${queryStr}`);
+
     try {
         const response = await apiClient.get(`/fetch/bar-shops/`, {
-            params: params,
+            params: normalized,
+            paramsSerializer: (p) => qs.stringify(p, { arrayFormat: "repeat" }),
         });
-
         if (response.status === 200) {
+            console.log(response.data);
             return response.data;
         } else {
             printStatus(response.status);
@@ -308,12 +337,18 @@ export const fetchBarShops = async (params?: Params) => {
 };
 
 export const fetchPieCategories = async (params?: Params) => {
+    const normalized = normalizeArrayParams(params);
+    const queryStr = qs.stringify(normalized, { arrayFormat: "repeat" });
+    console.log("[PieCategories] params:", normalized);
+    console.log("[PieCategories] query:", `/fetch/pie-categories/?${queryStr}`);
+
     try {
         const response = await apiClient.get(`/fetch/pie-categories/`, {
-            params: params,
+            params: normalized,
+            paramsSerializer: (p) => qs.stringify(p, { arrayFormat: "repeat" }),
         });
-
         if (response.status === 200) {
+            console.log(response.data);
             return response.data;
         } else {
             printStatus(response.status);

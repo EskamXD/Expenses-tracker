@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Label, Pie, PieChart, Sector } from "recharts";
 import { PieSectorDataItem } from "recharts/types/polar/Pie";
 import {
@@ -69,31 +69,67 @@ const chartConfig = {
         color: "var(--chart-mono-15)",
     },
     other: { label: "Inne", color: "var(--chart-mono-16)" },
-    money_back: { label: "Zwrot", color: "var(--chart-mono-1)" },
+    for_study: { label: "Na studia", color: "var(--chart-mono-1)" },
+    work_income: { label: "Przychód praca", color: "var(--chart-mono-2)" },
+    family_income: { label: "Przychód rodzina", color: "var(--chart-mono-3)" },
+    investments_income: {
+        label: "Inwestycje, lokaty & oszczędności",
+        color: "var(--chart-mono-4)",
+    },
+    money_back: { label: "Zwrot", color: "var(--chart-mono-5)" },
+    last_month_balance: {
+        label: "Z poprzedniego miesiąca",
+        color: "var(--chart-mono-6)",
+    },
 } satisfies ChartConfig;
 
 export default function ChartPieCategoriesComponent() {
     const { summaryFilters } = useGlobalContext();
-    const { data: pieCategoryData, isLoading } = useQuery<
-        PieCategoryResponse[]
-    >({
+    const {
+        data: pieCategoryData,
+        isLoading,
+        isError,
+    } = useQuery<PieCategoryResponse[]>({
         queryKey: [
             "pieCategoryData",
             summaryFilters.month,
             summaryFilters.year,
             summaryFilters.owners,
+            summaryFilters.transactionType,
+            summaryFilters.period,
         ],
         queryFn: async () =>
             await fetchPieCategories({
                 month: summaryFilters.month,
                 year: summaryFilters.year,
                 owners: summaryFilters.owners,
+                transactionType: summaryFilters.transactionType,
+                period: summaryFilters.period,
             }),
         enabled: !!summaryFilters.owners && summaryFilters.owners.length > 0,
     });
 
     // Wywołujemy hooki zawsze, niezależnie od stanu danych
     const [activeCategory, setActiveCategory] = useState<string>("");
+
+    useEffect(() => {
+        if (!pieCategoryData || pieCategoryData.length === 0) {
+            setActiveCategory("");
+            return;
+        }
+        // jeśli obecna nie istnieje w nowych danych → ustaw pierwszą
+        if (!pieCategoryData.some((d) => d.category === activeCategory)) {
+            setActiveCategory(pieCategoryData[0].category);
+        }
+    }, [
+        pieCategoryData,
+        summaryFilters.transactionType,
+        summaryFilters.period,
+        summaryFilters.month,
+        summaryFilters.year,
+        summaryFilters.owners,
+    ]);
+
     const activeIndex = useMemo(() => {
         return pieCategoryData
             ? pieCategoryData.findIndex(
@@ -111,19 +147,19 @@ export default function ChartPieCategoriesComponent() {
     if (!summaryFilters.owners || summaryFilters.owners.length === 0)
         return <div className="w-full text-center">Brak wybranych osób.</div>;
     if (isLoading) return <Skeleton className="h-full w-full" />;
+    if (isError)
+        return (
+            <div className="w-full text-center text-red-500">
+                Błąd pobierania danych.
+            </div>
+        );
     if (!pieCategoryData)
         return <div className="w-full text-center">Brak danych</div>;
-
-    // Ustawienie domyślnej wartości activeCategory, jeśli jeszcze nie jest ustawiona
-    if (!activeCategory) {
-        setActiveCategory(pieCategoryData[0].category);
-        return null; // lub jakiś placeholder, aż state się zaktualizuje
-    }
 
     const id = "pie-interactive";
 
     return (
-        <Card data-chart={id} className="flex flex-col h-full lg:h-auto">
+        <Card data-chart={id} className="flex flex-col h-full lg:h-220">
             <ChartStyle id={id} config={chartConfig} />
             <CardHeader className="flex-row items-start space-y-0 pb-0">
                 {/* <div className="grid gap-1">
@@ -169,7 +205,7 @@ export default function ChartPieCategoriesComponent() {
                 <ChartContainer
                     id={id}
                     config={chartConfig}
-                    className="min-h-[100px]">
+                    className="min-h-[100px] max-w-dvh w-full">
                     <PieChart>
                         <ChartTooltip
                             cursor={false}
