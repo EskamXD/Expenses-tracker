@@ -52,7 +52,6 @@ def fetch_bar_persons(request):
     if period == "month":
         period = "monthly"
 
-    # month tylko gdy monthly
     selected_month = None
     if period == "monthly":
         try:
@@ -62,41 +61,30 @@ def fetch_bar_persons(request):
                 {"error": "Invalid or missing 'month' parameter"}, status=400
             )
 
-    # categories: obsłuż obie formy: category i category[]
     categories = request.GET.getlist("category[]")
     if not categories:
-        categories = request.GET.getlist("category")  # kompatybilność wsteczna
+        categories = request.GET.getlist("category")
 
-    # owners (opcjonalnie) – ograniczamy płatników do wybranych ID
     owners_param = request.GET.getlist("owners[]")
-    selected_owner_ids = []
     try:
         selected_owner_ids = [int(o) for o in owners_param] if owners_param else []
     except (ValueError, TypeError):
         return JsonResponse({"error": "Invalid 'owners[]' parameter"}, status=400)
 
     try:
-        # Filtry czasu
-        time_filter = {
-            "payment_date__year": selected_year,
-        }
+        time_filter = {"payment_date__year": selected_year}
         if selected_month is not None:
             time_filter["payment_date__month"] = selected_month
 
-        # Bazowy queryset: tylko wydatki (ten endpoint nie rozróżnia typów)
         receipts_qs = (
             Receipt.objects.filter(
                 transaction_type="expense",
                 **time_filter,
             )
-            .prefetch_related(
-                # właściciele itemów będą potrzebni w pętli
-                Prefetch("items", to_attr="prefetched_items")
-            )
+            .prefetch_related(Prefetch("items", to_attr="prefetched_items"))
             .select_related("payer")
         )
 
-        # Opcjonalne ograniczenie płatników (payers) do wybranych owners
         if selected_owner_ids:
             receipts_qs = receipts_qs.filter(payer__id__in=selected_owner_ids)
 
@@ -107,26 +95,23 @@ def fetch_bar_persons(request):
             lambda: {"sum": Decimal(0), "receipt_ids": set(), "top_outliers": []}
         )
 
+        all_payers = set()
+
         for receipt in receipts_qs:
             payer = receipt.payer
-            # jeżeli w projekcie payer może być null, zabezpiecz:
             if payer is None:
                 continue
+            all_payers.add(payer)
 
-            # iterujemy po wstępnie pobranych itemach
             for item in getattr(receipt, "prefetched_items", []):
                 if getattr(item, "category", None) == "last_month_balance":
                     continue
-                # filtr kategorii
                 if categories and getattr(item, "category", None) not in categories:
                     continue
 
-                owners = list(
-                    item.owners.all()
-                )  # m2m; jeżeli performance krytyczny, można prefetchować owners dla Item
+                owners = list(item.owners.all())
                 owners_count = len(owners)
 
-                # shared: kilku ownerów i payer jest jednym z ownerów
                 if owners_count > 1 and payer in owners:
                     try:
                         shared_expense_sums[payer]["sum"] += Decimal(item.value)
@@ -134,7 +119,6 @@ def fetch_bar_persons(request):
                     except (ValueError, TypeError):
                         continue
 
-                # not_own: payer NIE jest wśród ownerów
                 if payer not in owners:
                     try:
                         not_own_expense_sums[payer]["sum"] += Decimal(item.value)
@@ -142,13 +126,27 @@ def fetch_bar_persons(request):
                     except (ValueError, TypeError):
                         continue
 
-        # top outliers (np. najdroższe paragony dla tooltipów)
+        # outliers
         for data in shared_expense_sums.values():
             data["top_outliers"] = get_top_outlier_receipts(data["receipt_ids"])
         for data in not_own_expense_sums.values():
             data["top_outliers"] = get_top_outlier_receipts(data["receipt_ids"])
 
-        # sort desc po sumie
+        # dodaj brakujących payerów z zerami
+        for payer in all_payers:
+            if payer not in shared_expense_sums:
+                shared_expense_sums[payer] = {
+                    "sum": Decimal(0),
+                    "receipt_ids": set(),
+                    "top_outliers": [],
+                }
+            if payer not in not_own_expense_sums:
+                not_own_expense_sums[payer] = {
+                    "sum": Decimal(0),
+                    "receipt_ids": set(),
+                    "top_outliers": [],
+                }
+
         sorted_shared_expenses = sorted(
             shared_expense_sums.items(), key=lambda x: x[1]["sum"], reverse=True
         )
