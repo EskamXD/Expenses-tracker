@@ -67,7 +67,9 @@ const Summary = () => {
                     </TabsContent>
                 </Tabs>
             ) : (
-                <Tabs value={summaryTab} className="w-full">
+                <Tabs
+                    value={summaryTab}
+                    className="w-full min-w-0 max-w-[calc(100dvw-288px)]">
                     <TabsContent value="expense">
                         <ReceiptsPivotTable transactionType="expense" />
                     </TabsContent>
@@ -81,3 +83,4 @@ const Summary = () => {
 };
 
 export default Summary;
+

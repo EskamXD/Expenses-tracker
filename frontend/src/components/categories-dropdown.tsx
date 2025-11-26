@@ -42,7 +42,6 @@ const CategoriesDropdown: React.FC<{
     };
 
     useEffect(() => {
-        console.log(transactionType);
         if (transactionType === "") {
             // brak kategorii – czyść
             if (selectedCategories.length > 0) {
@@ -122,3 +121,4 @@ const CategoriesDropdown: React.FC<{
 };
 
 export default CategoriesDropdown;
+

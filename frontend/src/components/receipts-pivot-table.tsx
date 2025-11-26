@@ -1,9 +1,12 @@
 "use client";
 
 import * as React from "react";
+import { useQuery } from "@tanstack/react-query";
+
 import { Receipt, Item, Params } from "@/types";
-import { fetchGetReceipts } from "@/services/apiService";
 import { useGlobalContext } from "@/context/GlobalContext";
+// UPEWNIJ SIĘ, ŻE ŚCIEŻKA JEST TAKA SAMA JAK W SummaryTab:
+import { fetchGetReceipts } from "@/api/apiService"; // lub "../api/apiService"
 
 import {
     Table,
@@ -73,14 +76,6 @@ type CellMeta = {
     shops: Array<{ shop: string; sum: number }>;
 };
 
-// type SummaryFiltersSubset = {
-//     owners?: number[];
-//     month?: number;
-//     year?: number;
-//     category?: string[];
-//     period?: "monthly" | "yearly";
-// };
-
 /* ========================
  * Formatery i utilsy
  * ====================== */
@@ -121,7 +116,6 @@ function flattenReceipts(receipts: readonly Receipt[]): Flat[] {
             "pl-PL"
         );
         for (const it of r.items as Item[]) {
-            // ILOŚĆ jest poglądowa – NIE mnożymy
             const amount = parseNumberLoose(it.value);
             out.push({
                 receiptId: r.id,
@@ -224,15 +218,6 @@ function makeLabelFor(typeMap: LabelMap, fallbackMap: LabelMap) {
         typeMap[key] ?? fallbackMap[key] ?? prettyFromKey(key);
 }
 
-// function sortCategoriesByLabel(
-//     categories: readonly CategoryKey[],
-//     labelFor: (k: CategoryKey) => string
-// ): CategoryKey[] {
-//     return [...categories].sort((a, b) =>
-//         labelFor(a).localeCompare(labelFor(b), "pl")
-//     );
-// }
-
 function sortCategoriesByPreferredOrder(
     categories: readonly CategoryKey[],
     transactionType: TxType,
@@ -250,10 +235,9 @@ function sortCategoriesByPreferredOrder(
         const aIn = ia !== undefined;
         const bIn = ib !== undefined;
 
-        if (aIn && bIn) return ia - ib; // obie w predefiniowanej liście
-        if (aIn && !bIn) return -1; // a ma priorytet
-        if (!aIn && bIn) return 1; // b ma priorytet
-        // żadna nie jest w liście – sort po etykiecie, żeby było stabilnie
+        if (aIn && bIn) return ia - ib;
+        if (aIn && !bIn) return -1;
+        if (!aIn && bIn) return 1;
         return labelFor(a).localeCompare(labelFor(b), "pl");
     });
 }
@@ -299,68 +283,33 @@ function getColumnTotals(
 }
 
 /* ========================
- * Hook do danych
+ * Hook do danych – wersja na TanStack Query
  * ====================== */
 
 function useReceiptsFlats(transactionType: TxType) {
     const { summaryFilters } = useGlobalContext();
-    const [state, setState] = React.useState<{
-        loading: boolean;
-        error: string | null;
-        flats: Flat[];
-    }>({
-        loading: false,
-        error: null,
-        flats: [],
+
+    // dokładnie tak jak w SummaryTab: queryKey zależny od filtrów + typu
+    const {
+        data: receipts = [],
+        isLoading,
+        error,
+    } = useQuery<Receipt[]>({
+        queryKey: ["receipts", summaryFilters, transactionType],
+        queryFn: () =>
+            // tak jak w SummaryTab – backend już zna transactionType z filtrów
+            fetchGetReceipts(summaryFilters as Params),
+        staleTime: 1000 * 60 * 5,
+        placeholderData: (prev) => prev,
     });
 
-    React.useEffect(() => {
-        let cancelled = false;
+    const flats = React.useMemo(() => flattenReceipts(receipts), [receipts]);
 
-        (async () => {
-            try {
-                setState((s) => ({ ...s, loading: true, error: null }));
-                const params: Partial<Params> & {
-                    owners: number[];
-                    transactionType: TxType;
-                } = {
-                    owners: summaryFilters.owners ?? [],
-                    month: summaryFilters.month,
-                    year: summaryFilters.year,
-                    category: summaryFilters.category,
-                    period: summaryFilters.period,
-                    transactionType,
-                };
-                const data = await fetchGetReceipts(params as Params);
-                if (cancelled) return;
-                setState({
-                    loading: false,
-                    error: null,
-                    flats: flattenReceipts((data || []) as Receipt[]),
-                });
-            } catch (e: any) {
-                if (!cancelled)
-                    setState({
-                        loading: false,
-                        error: e?.message ?? "Błąd pobierania danych",
-                        flats: [],
-                    });
-            }
-        })();
-
-        return () => {
-            cancelled = true;
-        };
-    }, [
-        transactionType,
-        summaryFilters.owners,
-        summaryFilters.month,
-        summaryFilters.year,
-        summaryFilters.category,
-        summaryFilters.period,
-    ]);
-
-    return state;
+    return {
+        flats,
+        loading: isLoading,
+        error: error ? error.message : null,
+    };
 }
 
 /* ========================
@@ -429,172 +378,180 @@ const PivotMatrix: React.FC<PivotMatrixProps> = ({
     );
 
     return (
-        <div className="overflow-auto border rounded">
-            <TooltipProvider delayDuration={200}>
-                <Table className="w-full text-sm">
-                    <TableHeader className="sticky top-0 bg-background z-10">
-                        <TableRow>
-                            <TableHead className="min-w-[140px] sticky left-0 bg-background z-10">
-                                Data
-                            </TableHead>
-                            {categories.map((cat) => (
-                                <TableHead
-                                    key={cat}
-                                    className="text-right px-3 py-2">
-                                    {labelFor(cat)}
+        <div className="w-full min-w-0">
+            {/* tu pojawi się poziomy scroll */}
+            <div className="relative max-w-full overflow-x-auto border rounded">
+                <TooltipProvider delayDuration={200}>
+                    <Table className="w-full text-sm">
+                        <TableHeader className="sticky top-0 bg-background z-10">
+                            <TableRow>
+                                <TableHead className="min-w-[140px] sticky left-0 bg-background z-10">
+                                    Data
                                 </TableHead>
-                            ))}
-                        </TableRow>
-                    </TableHeader>
-
-                    <TableBody>
-                        {loading && (
-                            <TableRow>
-                                <TableCell
-                                    colSpan={categories.length + 1}
-                                    className="px-3 py-6 text-center">
-                                    Ładowanie…
-                                </TableCell>
-                            </TableRow>
-                        )}
-
-                        {!loading && error && (
-                            <TableRow>
-                                <TableCell
-                                    colSpan={categories.length + 1}
-                                    className="px-3 py-6 text-center text-red-600">
-                                    {error}
-                                </TableCell>
-                            </TableRow>
-                        )}
-
-                        {!loading &&
-                            !error &&
-                            pivot.days.map((dayKey) => (
-                                <TableRow
-                                    key={dayKey}
-                                    className="hover:bg-muted/40">
-                                    <TableCell className="sticky left-0 bg-background z-10 font-medium">
-                                        {pivot.dayLabel[dayKey]}
-                                    </TableCell>
-
-                                    {categories.map((cat) => {
-                                        const { value, ids, shops } =
-                                            getCellMeta(pivot, dayKey, cat);
-                                        const clickable = ids.length > 0;
-
-                                        return (
-                                            <TableCell
-                                                key={`${dayKey}-${cat}`}
-                                                className="px-2 py-1">
-                                                <Tooltip>
-                                                    <TooltipTrigger asChild>
-                                                        <Button
-                                                            variant="ghost"
-                                                            size="sm"
-                                                            className="w-full justify-end"
-                                                            disabled={
-                                                                !clickable
-                                                            }
-                                                            onClick={() =>
-                                                                onCellClick(
-                                                                    dayKey,
-                                                                    cat
-                                                                )
-                                                            }>
-                                                            {value
-                                                                ? nfPLN.format(
-                                                                      value
-                                                                  )
-                                                                : "—"}
-                                                        </Button>
-                                                    </TooltipTrigger>
-                                                    <TooltipContent className="max-w-[320px]">
-                                                        <div className="text-xs font-medium mb-1">
-                                                            {
-                                                                pivot.dayLabel[
-                                                                    dayKey
-                                                                ]
-                                                            }{" "}
-                                                            • {labelFor(cat)}
-                                                        </div>
-                                                        {shops.length === 0 ? (
-                                                            <div className="text-xs text-muted-foreground">
-                                                                Brak pozycji
-                                                            </div>
-                                                        ) : (
-                                                            <ul className="text-xs space-y-1">
-                                                                {shops.map(
-                                                                    ({
-                                                                        shop,
-                                                                        sum,
-                                                                    }) => (
-                                                                        <li
-                                                                            key={
-                                                                                shop
-                                                                            }
-                                                                            className="flex justify-between gap-3">
-                                                                            <span className="truncate">
-                                                                                {
-                                                                                    shop
-                                                                                }
-                                                                            </span>
-                                                                            <span className="tabular-nums">
-                                                                                {nfPLN.format(
-                                                                                    sum
-                                                                                )}
-                                                                            </span>
-                                                                        </li>
-                                                                    )
-                                                                )}
-                                                            </ul>
-                                                        )}
-                                                        {ids.length > 1 && (
-                                                            <div className="mt-2 text-[10px] text-muted-foreground">
-                                                                Kliknij, aby
-                                                                wybrać paragon
-                                                                (x{ids.length})
-                                                            </div>
-                                                        )}
-                                                    </TooltipContent>
-                                                </Tooltip>
-                                            </TableCell>
-                                        );
-                                    })}
-                                </TableRow>
-                            ))}
-
-                        {!loading && !error && pivot.days.length === 0 && (
-                            <TableRow>
-                                <TableCell
-                                    colSpan={categories.length + 1}
-                                    className="px-3 py-8 text-center text-muted-foreground">
-                                    Brak danych do wyświetlenia.
-                                </TableCell>
-                            </TableRow>
-                        )}
-                    </TableBody>
-
-                    {showFooterTotals && (
-                        <TableFooter>
-                            <TableRow>
-                                <TableCell className="sticky left-0 bg-background z-10 font-medium">
-                                    Suma
-                                </TableCell>
-                                {categories.map((cat, i) => (
-                                    <TableCell
+                                {categories.map((cat) => (
+                                    <TableHead
                                         key={cat}
-                                        className="text-right font-medium">
-                                        {totals[i]
-                                            ? nfPLN.format(totals[i])
-                                            : "—"}
-                                    </TableCell>
+                                        className="text-right px-3 py-2">
+                                        {labelFor(cat)}
+                                    </TableHead>
                                 ))}
                             </TableRow>
-                        </TableFooter>
-                    )}
-                </Table>
-            </TooltipProvider>
+                        </TableHeader>
+
+                        <TableBody>
+                            {loading && (
+                                <TableRow>
+                                    <TableCell
+                                        colSpan={categories.length + 1}
+                                        className="px-3 py-6 text-center">
+                                        Ładowanie…
+                                    </TableCell>
+                                </TableRow>
+                            )}
+
+                            {!loading && error && (
+                                <TableRow>
+                                    <TableCell
+                                        colSpan={categories.length + 1}
+                                        className="px-3 py-6 text-center text-red-600">
+                                        {error}
+                                    </TableCell>
+                                </TableRow>
+                            )}
+
+                            {!loading &&
+                                !error &&
+                                pivot.days.map((dayKey) => (
+                                    <TableRow
+                                        key={dayKey}
+                                        className="hover:bg-muted/40">
+                                        <TableCell className="sticky left-0 bg-background z-10 font-medium">
+                                            {pivot.dayLabel[dayKey]}
+                                        </TableCell>
+
+                                        {categories.map((cat) => {
+                                            const { value, ids, shops } =
+                                                getCellMeta(pivot, dayKey, cat);
+                                            const clickable = ids.length > 0;
+
+                                            return (
+                                                <TableCell
+                                                    key={`${dayKey}-${cat}`}
+                                                    className="px-2 py-1">
+                                                    <Tooltip>
+                                                        <TooltipTrigger asChild>
+                                                            <Button
+                                                                variant="ghost"
+                                                                size="sm"
+                                                                className="w-full justify-end"
+                                                                disabled={
+                                                                    !clickable
+                                                                }
+                                                                onClick={() =>
+                                                                    onCellClick(
+                                                                        dayKey,
+                                                                        cat
+                                                                    )
+                                                                }>
+                                                                {value
+                                                                    ? nfPLN.format(
+                                                                          value
+                                                                      )
+                                                                    : "—"}
+                                                            </Button>
+                                                        </TooltipTrigger>
+                                                        <TooltipContent className="max-w-[320px]">
+                                                            <div className="text-xs font-medium mb-1">
+                                                                {
+                                                                    pivot
+                                                                        .dayLabel[
+                                                                        dayKey
+                                                                    ]
+                                                                }{" "}
+                                                                •{" "}
+                                                                {labelFor(cat)}
+                                                            </div>
+                                                            {shops.length ===
+                                                            0 ? (
+                                                                <div className="text-xs text-muted-foreground">
+                                                                    Brak pozycji
+                                                                </div>
+                                                            ) : (
+                                                                <ul className="text-xs space-y-1">
+                                                                    {shops.map(
+                                                                        ({
+                                                                            shop,
+                                                                            sum,
+                                                                        }) => (
+                                                                            <li
+                                                                                key={
+                                                                                    shop
+                                                                                }
+                                                                                className="flex justify-between gap-3">
+                                                                                <span className="truncate">
+                                                                                    {
+                                                                                        shop
+                                                                                    }
+                                                                                </span>
+                                                                                <span className="tabular-nums">
+                                                                                    {nfPLN.format(
+                                                                                        sum
+                                                                                    )}
+                                                                                </span>
+                                                                            </li>
+                                                                        )
+                                                                    )}
+                                                                </ul>
+                                                            )}
+                                                            {ids.length > 1 && (
+                                                                <div className="mt-2 text-[10px] text-muted-foreground">
+                                                                    Kliknij, aby
+                                                                    wybrać
+                                                                    paragon (x
+                                                                    {ids.length}
+                                                                    )
+                                                                </div>
+                                                            )}
+                                                        </TooltipContent>
+                                                    </Tooltip>
+                                                </TableCell>
+                                            );
+                                        })}
+                                    </TableRow>
+                                ))}
+
+                            {!loading && !error && pivot.days.length === 0 && (
+                                <TableRow>
+                                    <TableCell
+                                        colSpan={categories.length + 1}
+                                        className="px-3 py-8 text-center text-muted-foreground">
+                                        Brak danych do wyświetlenia.
+                                    </TableCell>
+                                </TableRow>
+                            )}
+                        </TableBody>
+
+                        {showFooterTotals && (
+                            <TableFooter>
+                                <TableRow>
+                                    <TableCell className="sticky left-0 bg-background z-10 font-medium">
+                                        Suma
+                                    </TableCell>
+                                    {categories.map((cat, i) => (
+                                        <TableCell
+                                            key={cat}
+                                            className="text-right font-medium">
+                                            {totals[i]
+                                                ? nfPLN.format(totals[i])
+                                                : "—"}
+                                        </TableCell>
+                                    ))}
+                                </TableRow>
+                            </TableFooter>
+                        )}
+                    </Table>
+                </TooltipProvider>
+            </div>
         </div>
     );
 };
@@ -739,7 +696,7 @@ export default function ReceiptsPivotTable({
     };
 
     return (
-        <div className="flex flex-col gap-3">
+        <div className="flex flex-col gap-3 w-full min-w-0">
             <PivotToolbar
                 transactionType={transactionType}
                 dayCount={pivot.days.length}
@@ -758,7 +715,6 @@ export default function ReceiptsPivotTable({
                 showFooterTotals
             />
 
-            {/* Dialog wyboru, gdy w komórce jest >1 paragon */}
             <ReceiptsChooserDialog
                 open={chooser.open}
                 onOpenChange={(open) => setChooser((s) => ({ ...s, open }))}
@@ -769,7 +725,6 @@ export default function ReceiptsPivotTable({
                 onOpenReceipt={(id) => setOpenReceiptId(id)}
             />
 
-            {/* Modal pojedynczego paragonu */}
             {openReceiptId !== null && (
                 <EditReceiptModal
                     transactionType={transactionType}
@@ -780,3 +735,4 @@ export default function ReceiptsPivotTable({
         </div>
     );
 }
+

@@ -39,8 +39,6 @@ export const EditReceiptModal: React.FC<EditReceiptModalProps> = ({
     receiptId,
     onClose,
 }) => {
-    console.log(transactionType, receiptId);
-
     const queryClient = useQueryClient();
     const formRef = useRef<UnifiedFormRef>(null);
 
@@ -170,3 +168,4 @@ export const EditReceiptModal: React.FC<EditReceiptModalProps> = ({
         </Dialog>
     );
 };
+

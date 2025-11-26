@@ -162,3 +162,4 @@ cython_debug/
 temp
 .DS_Store
 /frontend/.vite
+backend/.python-version

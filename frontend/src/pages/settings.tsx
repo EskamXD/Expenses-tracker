@@ -104,7 +104,7 @@ const Settings = () => {
             </p>
 
             <div className="space-y-3">
-                {persons.map((person) => (
+                {persons.map((person: Person) => (
                     <Card key={person.id}>
                         <CardHeader className="flex flex-row items-center justify-between">
                             <CardTitle className="text-lg">
@@ -204,3 +204,4 @@ function PersonDialog({
         </Dialog>
     );
 }
+

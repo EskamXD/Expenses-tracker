@@ -85,7 +85,6 @@ const Bills = () => {
     };
 
     const handleSplitReceipt = async () => {
-        console.log("halo", selectedSplitReceipt, splitPayer);
         if (!selectedSplitReceipt || splitPayer === 0) return;
 
         const halfValue = Number(selectedSplitReceipt.items[0].value) / 2;
@@ -123,7 +122,6 @@ const Bills = () => {
 
             await postReceiptMutation.mutateAsync([newReceipt]);
 
-            console.log("Podział zakończony:", updatedReceipt, newReceipt);
             handleCloseSplitModal();
         } catch (error) {
             console.error("Błąd podczas podziału rachunku:", error);
@@ -234,3 +232,4 @@ const Bills = () => {
 };
 
 export default Bills;
+
