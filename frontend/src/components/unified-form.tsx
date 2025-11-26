@@ -115,7 +115,6 @@ const UnifiedForm = React.forwardRef<UnifiedFormRef, UnifiedFormProps>(
         };
 
         const onSubmit = (data: FormValues) => {
-            console.log(data.items[0].owners);
             const finalReceipt: Receipt = {
                 id: receipt ? receipt.id : 0,
                 payment_date: data.paymentDate,
@@ -408,3 +407,4 @@ const UnifiedForm = React.forwardRef<UnifiedFormRef, UnifiedFormProps>(
 );
 
 export default UnifiedForm;
+

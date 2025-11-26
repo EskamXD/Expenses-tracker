@@ -62,3 +62,4 @@ export default defineConfig({
     // wywal console/debugger w prod
     esbuild: { drop: ["console", "debugger"] },
 });
+

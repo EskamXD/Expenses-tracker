@@ -153,8 +153,6 @@ export const fetchGetReceiptsByID = async (params: {
 };
 
 export const fetchPostReceipt = async (receipt: Receipt[]) => {
-    // console.log(receipt);
-    // console.log(JSON.stringify(receipt));
     try {
         const response = await apiClient.post(`/receipts/`, receipt);
         if (response.status === 201) {
@@ -170,8 +168,6 @@ export const fetchPostReceipt = async (receipt: Receipt[]) => {
 };
 
 export const fetchPutReceipt = async (receiptId: number, receipt: Receipt) => {
-    // console.log(receipt);
-    // console.log(JSON.stringify(receipt));
     try {
         const response = await apiClient.put(
             `/receipts/${receiptId}/`,
@@ -269,9 +265,6 @@ export const fetchItemPredictions = async (shop: string, query: string) => {
 
 export const fetchLineSums = async (params?: Params) => {
     const normalized = normalizeArrayParams(params);
-    const queryStr = qs.stringify(normalized, { arrayFormat: "repeat" });
-    console.log("[LineSums] params:", normalized);
-    console.log("[LineSums] query:", `/fetch/line-sums/?${queryStr}`);
 
     try {
         const response = await apiClient.get(`/fetch/line-sums/`, {
@@ -279,7 +272,6 @@ export const fetchLineSums = async (params?: Params) => {
             paramsSerializer: (p) => qs.stringify(p, { arrayFormat: "repeat" }),
         });
         if (response.status === 200) {
-            console.log(response.data);
             return response.data;
         } else {
             printStatus(response.status);
@@ -292,9 +284,6 @@ export const fetchLineSums = async (params?: Params) => {
 
 export const fetchBarPersons = async (params?: Params) => {
     const normalized = normalizeArrayParams(params);
-    const queryStr = qs.stringify(normalized, { arrayFormat: "repeat" });
-    console.log("[BarPersons] params:", normalized);
-    console.log("[BarPersons] query:", `/fetch/bar-persons/?${queryStr}`);
 
     try {
         const response = await apiClient.get(`/fetch/bar-persons/`, {
@@ -302,7 +291,6 @@ export const fetchBarPersons = async (params?: Params) => {
             paramsSerializer: (p) => qs.stringify(p, { arrayFormat: "repeat" }),
         });
         if (response.status === 200) {
-            console.log(response.data);
             return response.data;
         } else {
             printStatus(response.status);
@@ -315,9 +303,6 @@ export const fetchBarPersons = async (params?: Params) => {
 
 export const fetchBarShops = async (params?: Params) => {
     const normalized = normalizeArrayParams(params);
-    const queryStr = qs.stringify(normalized, { arrayFormat: "repeat" });
-    console.log("[BarShops] params:", normalized);
-    console.log("[BarShops] query:", `/fetch/bar-shops/?${queryStr}`);
 
     try {
         const response = await apiClient.get(`/fetch/bar-shops/`, {
@@ -325,7 +310,6 @@ export const fetchBarShops = async (params?: Params) => {
             paramsSerializer: (p) => qs.stringify(p, { arrayFormat: "repeat" }),
         });
         if (response.status === 200) {
-            console.log(response.data);
             return response.data;
         } else {
             printStatus(response.status);
@@ -338,9 +322,6 @@ export const fetchBarShops = async (params?: Params) => {
 
 export const fetchPieCategories = async (params?: Params) => {
     const normalized = normalizeArrayParams(params);
-    const queryStr = qs.stringify(normalized, { arrayFormat: "repeat" });
-    console.log("[PieCategories] params:", normalized);
-    console.log("[PieCategories] query:", `/fetch/pie-categories/?${queryStr}`);
 
     try {
         const response = await apiClient.get(`/fetch/pie-categories/`, {
@@ -348,7 +329,6 @@ export const fetchPieCategories = async (params?: Params) => {
             paramsSerializer: (p) => qs.stringify(p, { arrayFormat: "repeat" }),
         });
         if (response.status === 200) {
-            console.log(response.data);
             return response.data;
         } else {
             printStatus(response.status);
@@ -383,8 +363,8 @@ export const fetchDatabaseScan = async () => {
     try {
         await apiClient.delete("/recent-shops/");
         await apiClient.post("/recent-shops/");
-        await apiClient.delete("/item-prediction/");
-        await apiClient.post("/item-prediction/");
+        await apiClient.delete("/item-predictions/");
+        await apiClient.post("/item-predictions/");
     } catch (error) {
         console.error(error);
         throw error;
@@ -452,7 +432,6 @@ export const fetchSpendingRatio = async (filters: Params) => {
             params: filters,
         });
         if (response.status === 200) {
-            console.log(response.data);
             return response.data as SpendingRatioResponse;
         } else {
             printStatus(response.status);
@@ -464,3 +443,4 @@ export const fetchSpendingRatio = async (filters: Params) => {
         throw error;
     }
 };
+
