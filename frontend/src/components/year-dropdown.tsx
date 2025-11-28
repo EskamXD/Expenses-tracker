@@ -1,5 +1,5 @@
-import { useGlobalContext } from "../context/GlobalContext";
-import { Params } from "../types";
+import { useGlobalContext } from "@/context/GlobalContext";
+import { SummaryParams } from "@/types";
 import {
     Select,
     SelectContent,
@@ -12,9 +12,8 @@ const YearDropdown = () => {
     const { summaryFilters, setSummaryFilters } = useGlobalContext();
 
     const handleSelect = (value: string) => {
-        console.log(value, summaryFilters);
         const newYear = parseInt(value, 10);
-        setSummaryFilters((prevFilters: Params) => ({
+        setSummaryFilters((prevFilters: SummaryParams) => ({
             ...prevFilters,
             year: newYear,
         }));
@@ -44,3 +43,4 @@ const YearDropdown = () => {
 };
 
 export default YearDropdown;
+

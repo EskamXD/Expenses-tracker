@@ -44,6 +44,22 @@ function printStatus(status: number) {
     }
 }
 
+// helper: przerób klucze tablic na 'owners[]', 'category[]'
+function normalizeArrayParams(params: any) {
+    if (!params) return params;
+    const out: any = { ...params };
+
+    if (Array.isArray(out.owners)) {
+        out["owners[]"] = out.owners;
+        delete out.owners;
+    }
+    if (Array.isArray(out.category)) {
+        out["category[]"] = out.category;
+        delete out.category;
+    }
+    return out;
+}
+
 export const fetchGetPerson = async (id?: number) => {
     try {
         const response = await apiClient.get(`/person/${id ? id + "/" : ""}`);
@@ -144,8 +160,6 @@ export const fetchGetReceiptsByID = async (params: {
 };
 
 export const fetchPostReceipt = async (receipt: Receipt[]) => {
-    // console.log(receipt);
-    // console.log(JSON.stringify(receipt));
     try {
         const response = await apiClient.post(`/receipts/`, receipt);
         if (response.status === 201) {
@@ -161,8 +175,6 @@ export const fetchPostReceipt = async (receipt: Receipt[]) => {
 };
 
 export const fetchPutReceipt = async (receiptId: number, receipt: Receipt) => {
-    // console.log(receipt);
-    // console.log(JSON.stringify(receipt));
     try {
         const response = await apiClient.put(
             `/receipts/${receiptId}/`,
@@ -260,11 +272,13 @@ export const fetchItemPredictions = async (shop: string, query: string) => {
 };
 
 export const fetchLineSums = async (params?: Params) => {
+    const normalized = normalizeArrayParams(params);
+
     try {
         const response = await apiClient.get(`/fetch/line-sums/`, {
-            params: params,
+            params: normalized,
+            paramsSerializer: (p) => qs.stringify(p, { arrayFormat: "repeat" }),
         });
-
         if (response.status === 200) {
             return response.data;
         } else {
@@ -277,16 +291,13 @@ export const fetchLineSums = async (params?: Params) => {
 };
 
 export const fetchBarPersons = async (params?: Params) => {
-    // console.log(params);
-    // console.log(qs.stringify(params, { arrayFormat: "repeat" }));
+    const normalized = normalizeArrayParams(params);
+
     try {
         const response = await apiClient.get(`/fetch/bar-persons/`, {
-            params: params,
-            paramsSerializer: (params) => {
-                return qs.stringify(params, { arrayFormat: "repeat" });
-            },
+            params: normalized,
+            paramsSerializer: (p) => qs.stringify(p, { arrayFormat: "repeat" }),
         });
-
         if (response.status === 200) {
             return response.data;
         } else {
@@ -299,11 +310,13 @@ export const fetchBarPersons = async (params?: Params) => {
 };
 
 export const fetchBarShops = async (params?: Params) => {
+    const normalized = normalizeArrayParams(params);
+
     try {
         const response = await apiClient.get(`/fetch/bar-shops/`, {
-            params: params,
+            params: normalized,
+            paramsSerializer: (p) => qs.stringify(p, { arrayFormat: "repeat" }),
         });
-
         if (response.status === 200) {
             return response.data;
         } else {
@@ -316,11 +329,13 @@ export const fetchBarShops = async (params?: Params) => {
 };
 
 export const fetchPieCategories = async (params?: Params) => {
+    const normalized = normalizeArrayParams(params);
+
     try {
         const response = await apiClient.get(`/fetch/pie-categories/`, {
-            params: params,
+            params: normalized,
+            paramsSerializer: (p) => qs.stringify(p, { arrayFormat: "repeat" }),
         });
-
         if (response.status === 200) {
             return response.data;
         } else {
@@ -356,8 +371,8 @@ export const fetchDatabaseScan = async () => {
     try {
         await apiClient.delete("/recent-shops/");
         await apiClient.post("/recent-shops/");
-        await apiClient.delete("/item-prediction/");
-        await apiClient.post("/item-prediction/");
+        await apiClient.delete("/item-predictions/");
+        await apiClient.post("/item-predictions/");
     } catch (error) {
         console.error(error);
         throw error;
@@ -425,7 +440,6 @@ export const fetchSpendingRatio = async (filters: Params) => {
             params: filters,
         });
         if (response.status === 200) {
-            console.log(response.data);
             return response.data as SpendingRatioResponse;
         } else {
             printStatus(response.status);
@@ -745,4 +759,3 @@ export const fetchDeleteInvestmentTransaction = async (id: number) => {
         throw error;
     }
 };
-

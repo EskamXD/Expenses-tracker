@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React from "react";
 import {
     DropdownMenu,
     DropdownMenuCheckboxItem,
@@ -32,10 +32,6 @@ const OwnersDropdown: React.FC<OwnersDropdownProps> = ({
         setOwners(newOwners);
     };
 
-    useEffect(() => {
-        console.log(owners);
-    }, [owners]);
-
     return (
         <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -59,3 +55,4 @@ const OwnersDropdown: React.FC<OwnersDropdownProps> = ({
 };
 
 export default OwnersDropdown;
+

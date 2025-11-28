@@ -29,7 +29,13 @@ export type Params = {
     month?: number;
     year?: number;
     category?: string[];
-    transaction_type?: string;
+    transactionType?: "" | "expense" | "income";
+    period?: "monthly" | "yearly";
+};
+
+export type SummaryParams = Params & {
+    transactionType: "" | "expense" | "income";
+    period: "monthly" | "yearly";
 };
 
 export type Shops = {
@@ -67,4 +73,3 @@ export interface Investment {
     current_value?: number; // property z backendu
     transactions?: InvestmentTransaction[]; // opcjonalnie, jeśli serializer zwraca transakcje
 }
-

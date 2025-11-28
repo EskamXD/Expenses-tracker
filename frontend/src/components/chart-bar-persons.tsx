@@ -43,12 +43,19 @@ const ChartBarPersons = () => {
     const { persons, summaryFilters } = useGlobalContext();
 
     const { data: barPersonsData, isLoading } = useQuery<TBarPersons>({
-        queryKey: ["barPersonsData", summaryFilters.month, summaryFilters.year],
+        queryKey: [
+            "barPersonsData",
+            summaryFilters.month,
+            summaryFilters.year,
+            summaryFilters.owners,
+            summaryFilters.period,
+        ],
         queryFn: async () => {
             return await fetchBarPersons({
                 month: summaryFilters.month,
                 year: summaryFilters.year,
                 owners: summaryFilters.owners,
+                period: summaryFilters.period,
             });
         },
         enabled: !!summaryFilters.owners && summaryFilters.owners.length > 0,
@@ -89,7 +96,7 @@ const ChartBarPersons = () => {
             {/* Wykres */}
             <ChartContainer
                 config={chartConfig}
-                className="min-h-[100px] w-full">
+                className="min-h-[100px] max-w-dvh w-full">
                 <BarChart data={debtData} width={600} height={300}>
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey="payer" />

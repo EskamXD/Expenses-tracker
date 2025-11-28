@@ -34,6 +34,8 @@ const ChartBarShops: React.FC = () => {
             summaryFilters.year,
             summaryFilters.owners,
             summaryFilters.category,
+            summaryFilters.transactionType,
+            summaryFilters.period,
         ],
         queryFn: async () =>
             await fetchBarShops({
@@ -41,6 +43,8 @@ const ChartBarShops: React.FC = () => {
                 year: summaryFilters.year,
                 owners: summaryFilters.owners,
                 category: summaryFilters.category,
+                transactionType: summaryFilters.transactionType,
+                period: summaryFilters.period,
             }),
         enabled: !!summaryFilters.owners && summaryFilters.owners.length > 0,
     });
@@ -68,7 +72,7 @@ const ChartBarShops: React.FC = () => {
         <div className="flex flex-col items-center">
             <ChartContainer
                 config={chartConfig}
-                className="min-h-[100px] w-full">
+                className="min-h-[100px] max-w-dvh w-full">
                 <BarChart data={chartData} height={300}>
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis
