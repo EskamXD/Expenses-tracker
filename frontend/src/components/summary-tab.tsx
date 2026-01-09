@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
-import { useGlobalContext } from "../context/GlobalContext";
-import { fetchGetReceipts } from "../api/apiService";
-import SummaryTable from "./summary-table";
+import { useGlobalContext } from "@/context/GlobalContext";
+import { fetchGetReceipts } from "@/api/apiService";
+import SummaryTable from "@/components/summary-table";
 import { Skeleton } from "@/components/ui/skeleton"; // Shadcn Skeleton
 
 interface SummaryTabProps {

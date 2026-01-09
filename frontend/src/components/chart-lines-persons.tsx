@@ -33,7 +33,6 @@ const chartConfig = {
 
 const ChartLinesPerson: React.FC = () => {
     const { summaryFilters } = useGlobalContext();
-    console.log(summaryFilters, !!summaryFilters.owners);
 
     const { data: lineSumsData, isLoading: isLoadingLineSums } =
         useQuery<PersonLinesResponse>({
@@ -155,3 +154,4 @@ const ChartLinesPerson: React.FC = () => {
 };
 
 export default ChartLinesPerson;
+
