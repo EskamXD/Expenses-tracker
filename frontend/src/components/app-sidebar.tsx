@@ -27,6 +27,7 @@ const menuItems = [
     { title: "Wydatki", path: "/expenses", icon: TrendingDown },
     { title: "Przychody", path: "/income", icon: TrendingUp },
     { title: "Podsumowanie", path: "/summary", icon: BarChart },
+    { title: "Podsumowanie Pivot", path: "/pivot", icon: BarChart },
     { title: "Wykresy", path: "/charts", icon: ChartArea },
     { title: "Rachunki", path: "/bills", icon: CreditCard },
     { title: "Bilans", path: "/balance", icon: FileText },
