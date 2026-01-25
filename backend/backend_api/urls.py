@@ -1,4 +1,5 @@
 from django.urls import path, include
+
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 from rest_framework.routers import DefaultRouter
 
@@ -19,6 +20,8 @@ from backend_api.views import (
     DuplicateReceiptDebugView,
     BalanceView,
     SpendingRatioView,
+    export_receipts_zip,
+    import_receipts,
 )
 
 router = DefaultRouter()
@@ -36,6 +39,8 @@ urlpatterns = [
     path(
         "receipts/<int:pk>/", ReceiptUpdateDestroyView.as_view(), name="receipt-update"
     ),
+    path("receipts/export.zip", export_receipts_zip, name="export_receipts_zip"),
+    path("receipts/import", import_receipts, name="import_receipts"),
     path("recent-shops/", RecentShopSearchView.as_view(), name="recent-shop-search"),
     path(
         "item-predictions/",

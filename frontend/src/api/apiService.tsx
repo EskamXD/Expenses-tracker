@@ -1,6 +1,6 @@
 import qs from "qs";
 import apiClient from "./apiClient";
-import { Params, Person, Receipt } from "../types";
+import { Params, Person, Receipt, ImportReceiptsResponse } from "../types";
 
 function printStatus(status: number) {
     switch (status) {
@@ -142,7 +142,7 @@ export const fetchGetReceiptsByID = async (params: {
             params.id.map(async (receiptId) => {
                 const response = await apiClient.get(`/receipts/${receiptId}/`);
                 return response.data;
-            })
+            }),
         );
 
         return responses; // Zwracamy listę paragonów
@@ -171,7 +171,7 @@ export const fetchPutReceipt = async (receiptId: number, receipt: Receipt) => {
     try {
         const response = await apiClient.put(
             `/receipts/${receiptId}/`,
-            receipt
+            receipt,
         );
         if (response.status === 200) {
             return response.data;
@@ -199,6 +199,48 @@ export const fetchDeleteReceipt = async (receipt: Receipt) => {
     }
 };
 
+export const fetchExportReceiptsZip = async () => {
+    try {
+        const response = await apiClient.get(`/receipts/export.zip`, {
+            responseType: "blob", // <- ważne
+        });
+
+        if (response.status === 200) {
+            return response.data as Blob;
+        } else {
+            printStatus(response.status);
+            throw new Error(`Export failed with status ${response.status}`);
+        }
+    } catch (error) {
+        console.error(error);
+        throw error;
+    }
+};
+
+export const fetchImportReceiptsFile = async (file: File) => {
+    try {
+        const formData = new FormData();
+        formData.append("file", file);
+
+        const response = await apiClient.post(`/receipts/import`, formData, {
+            headers: {
+                "Content-Type": "multipart/form-data",
+            },
+        });
+
+        if (response.status === 200) {
+            return response.data as ImportReceiptsResponse;
+        } else {
+            printStatus(response.status);
+            throw new Error(`Import failed with status ${response.status}`);
+        }
+    } catch (error) {
+        console.warn(`Import file: ${file?.name}`);
+        console.error(error);
+        throw error;
+    }
+};
+
 export const fetchGetItemsByID = async (params: { id: number | number[] }) => {
     if (!Array.isArray(params.id)) params.id = Array(params.id);
     if (!params.id || params.id.length === 0) return [];
@@ -209,7 +251,7 @@ export const fetchGetItemsByID = async (params: { id: number | number[] }) => {
             params.id.map(async (receiptId) => {
                 const response = await apiClient.get(`/items/${receiptId}/`);
                 return response.data;
-            })
+            }),
         );
 
         return responses; // Zwracamy listę paragonów
@@ -345,7 +387,7 @@ export const fetchGetMonthlyBalance = async (params?: Params) => {
             `/fetch/is-monthly-balance-saved/`,
             {
                 params: params,
-            }
+            },
         );
 
         if (response.status === 200) {
@@ -443,4 +485,3 @@ export const fetchSpendingRatio = async (filters: Params) => {
         throw error;
     }
 };
-
