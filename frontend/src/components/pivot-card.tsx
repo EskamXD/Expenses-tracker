@@ -7,6 +7,9 @@ import {
     distinctFromReceipts,
 } from "@/lib/pivot-utils";
 
+// dostosuj ścieżkę importu do miejsca, gdzie trzymasz ten plik
+import { selectTranslationList } from "@/lib/select-option";
+
 import { PivotPreviewTable } from "@/components/pivot-preview-table";
 import { MultiSelect } from "@/components/multi-select";
 
@@ -34,6 +37,48 @@ const defaultSpec: PivotSpec = {
     limit: 20,
 };
 
+const GROUP_BY_LABELS: Record<string, string> = {
+    category: "Kategoria",
+    shop: "Sklep",
+    payer: "Płatnik",
+    owner: "Właściciel",
+};
+
+const SORT_BY_LABELS: Record<string, string> = {
+    value: "Wartość",
+    count: "Liczba pozycji",
+};
+
+const SORT_DIR_LABELS: Record<string, string> = {
+    asc: "Rosnąco",
+    desc: "Malejąco",
+};
+
+const TIME_GRAIN_LABELS: Record<string, string> = {
+    none: "Brak",
+    day: "Dzień",
+    week: "Tydzień",
+    month: "Miesiąc",
+    year: "Rok",
+};
+
+const TRANSACTION_TYPE_LABELS: Record<string, string> = {
+    all: "Wszystkie",
+    expense: "Wydatki",
+    income: "Przychody",
+};
+
+const OWNER_ALLOCATION_LABELS: Record<string, string> = {
+    split_even: "Podział równy",
+    full_value: "Pełna kwota dla każdego ownera",
+};
+
+const MEASURE_LABELS: Record<string, string> = {
+    sum: "Suma wartości",
+    count: "Liczba pozycji",
+    avg: "Średnia wartości",
+};
+
 export const PivotCard: React.FC<PivotCardProps> = ({
     receipts,
     people,
@@ -43,19 +88,31 @@ export const PivotCard: React.FC<PivotCardProps> = ({
 
     const peopleIndex = useMemo(
         () => (people?.length ? buildPeopleIndex(people) : undefined),
-        [people]
+        [people],
     );
 
     const options = useMemo(() => distinctFromReceipts(receipts), [receipts]);
 
     const result = useMemo(
         () => computePivot(receipts, spec, peopleIndex),
-        [receipts, spec, peopleIndex]
+        [receipts, spec, peopleIndex],
     );
+
+    const translationMap = useMemo(
+        () =>
+            Object.fromEntries(
+                selectTranslationList.map((item) => [item.value, item.label]),
+            ),
+        [],
+    );
+
+    const translateOptionLabel = (value: string) => {
+        return translationMap[value] ?? value;
+    };
 
     const setField = <K extends keyof PivotSpec>(
         key: K,
-        value: PivotSpec[K]
+        value: PivotSpec[K],
     ) => {
         setSpec((s) => ({ ...s, [key]: value }));
     };
@@ -70,9 +127,13 @@ export const PivotCard: React.FC<PivotCardProps> = ({
 
     const categoryOptions = options.categories.map((c) => ({
         value: c,
-        label: c,
+        label: translateOptionLabel(c),
     }));
-    const shopOptions = options.shops.map((s) => ({ value: s, label: s }));
+
+    const shopOptions = options.shops.map((s) => ({
+        value: s,
+        label: s,
+    }));
 
     const payerOptions = payerIds.map((id) => ({
         value: String(id),
@@ -86,14 +147,12 @@ export const PivotCard: React.FC<PivotCardProps> = ({
 
     return (
         <div className="grid grid-cols-1 lg:grid-cols-[360px_1fr] gap-4">
-            {/* Builder */}
             <Card>
                 <CardHeader>
                     <CardTitle>Pivot</CardTitle>
                 </CardHeader>
 
                 <CardContent className="space-y-4">
-                    {/* Okres */}
                     <div className="space-y-2">
                         <Label>Okres</Label>
                         <div className="grid grid-cols-2 gap-2">
@@ -103,7 +162,7 @@ export const PivotCard: React.FC<PivotCardProps> = ({
                                 onChange={(e) =>
                                     setField(
                                         "dateFrom",
-                                        e.target.value || undefined
+                                        e.target.value || undefined,
                                     )
                                 }
                             />
@@ -113,14 +172,13 @@ export const PivotCard: React.FC<PivotCardProps> = ({
                                 onChange={(e) =>
                                     setField(
                                         "dateTo",
-                                        e.target.value || undefined
+                                        e.target.value || undefined,
                                     )
                                 }
                             />
                         </div>
                     </div>
 
-                    {/* Typ */}
                     <div className="space-y-2">
                         <Label>Typ</Label>
                         <Select
@@ -130,17 +188,21 @@ export const PivotCard: React.FC<PivotCardProps> = ({
                                     "transactionType",
                                     v === "all"
                                         ? undefined
-                                        : (v as "expense" | "income")
+                                        : (v as "expense" | "income"),
                                 )
                             }>
                             <SelectTrigger>
                                 <SelectValue placeholder="Wszystkie" />
                             </SelectTrigger>
                             <SelectContent>
-                                <SelectItem value="all">Wszystkie</SelectItem>
-                                <SelectItem value="expense">Wydatki</SelectItem>
+                                <SelectItem value="all">
+                                    {TRANSACTION_TYPE_LABELS.all}
+                                </SelectItem>
+                                <SelectItem value="expense">
+                                    {TRANSACTION_TYPE_LABELS.expense}
+                                </SelectItem>
                                 <SelectItem value="income">
-                                    Przychody
+                                    {TRANSACTION_TYPE_LABELS.income}
                                 </SelectItem>
                             </SelectContent>
                         </Select>
@@ -148,7 +210,6 @@ export const PivotCard: React.FC<PivotCardProps> = ({
 
                     <Separator />
 
-                    {/* Filtry */}
                     <div className="space-y-3">
                         <div className="text-sm font-medium">Filtry</div>
 
@@ -175,7 +236,7 @@ export const PivotCard: React.FC<PivotCardProps> = ({
                         </div>
 
                         <div className="space-y-2">
-                            <Label>Payer</Label>
+                            <Label>Płatnik</Label>
                             <MultiSelect
                                 options={payerOptions}
                                 value={(spec.payers ?? []).map(String)}
@@ -187,7 +248,7 @@ export const PivotCard: React.FC<PivotCardProps> = ({
                         </div>
 
                         <div className="space-y-2">
-                            <Label>Owner</Label>
+                            <Label>Właściciel</Label>
                             <MultiSelect
                                 options={ownerOptions}
                                 value={(spec.owners ?? []).map(String)}
@@ -201,7 +262,6 @@ export const PivotCard: React.FC<PivotCardProps> = ({
 
                     <Separator />
 
-                    {/* Grupuj po */}
                     <div className="space-y-2">
                         <Label>Grupuj po</Label>
                         <ToggleGroup
@@ -212,19 +272,20 @@ export const PivotCard: React.FC<PivotCardProps> = ({
                             }
                             className="justify-start flex-wrap">
                             <ToggleGroupItem value="category">
-                                category
+                                {GROUP_BY_LABELS.category}
                             </ToggleGroupItem>
-                            <ToggleGroupItem value="shop">shop</ToggleGroupItem>
+                            <ToggleGroupItem value="shop">
+                                {GROUP_BY_LABELS.shop}
+                            </ToggleGroupItem>
                             <ToggleGroupItem value="payer">
-                                payer
+                                {GROUP_BY_LABELS.payer}
                             </ToggleGroupItem>
                             <ToggleGroupItem value="owner">
-                                owner
+                                {GROUP_BY_LABELS.owner}
                             </ToggleGroupItem>
                         </ToggleGroup>
                     </div>
 
-                    {/* Bucket czasu */}
                     <div className="space-y-2">
                         <Label>Bucket czasu</Label>
                         <Select
@@ -236,16 +297,25 @@ export const PivotCard: React.FC<PivotCardProps> = ({
                                 <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
-                                <SelectItem value="none">Brak</SelectItem>
-                                <SelectItem value="day">Dzień</SelectItem>
-                                <SelectItem value="week">Tydzień</SelectItem>
-                                <SelectItem value="month">Miesiąc</SelectItem>
-                                <SelectItem value="year">Rok</SelectItem>
+                                <SelectItem value="none">
+                                    {TIME_GRAIN_LABELS.none}
+                                </SelectItem>
+                                <SelectItem value="day">
+                                    {TIME_GRAIN_LABELS.day}
+                                </SelectItem>
+                                <SelectItem value="week">
+                                    {TIME_GRAIN_LABELS.week}
+                                </SelectItem>
+                                <SelectItem value="month">
+                                    {TIME_GRAIN_LABELS.month}
+                                </SelectItem>
+                                <SelectItem value="year">
+                                    {TIME_GRAIN_LABELS.year}
+                                </SelectItem>
                             </SelectContent>
                         </Select>
                     </div>
 
-                    {/* Miara */}
                     <div className="space-y-2">
                         <Label>Miara</Label>
                         <Select
@@ -261,19 +331,18 @@ export const PivotCard: React.FC<PivotCardProps> = ({
                             </SelectTrigger>
                             <SelectContent>
                                 <SelectItem value="sum">
-                                    Suma wartości
+                                    {MEASURE_LABELS.sum}
                                 </SelectItem>
                                 <SelectItem value="count">
-                                    Liczba pozycji
+                                    {MEASURE_LABELS.count}
                                 </SelectItem>
                                 <SelectItem value="avg">
-                                    Średnia wartości
+                                    {MEASURE_LABELS.avg}
                                 </SelectItem>
                             </SelectContent>
                         </Select>
                     </div>
 
-                    {/* Alokacja */}
                     <div className="space-y-2">
                         <Label>Alokacja ownerów</Label>
                         <Select
@@ -286,16 +355,15 @@ export const PivotCard: React.FC<PivotCardProps> = ({
                             </SelectTrigger>
                             <SelectContent>
                                 <SelectItem value="split_even">
-                                    Podział równy
+                                    {OWNER_ALLOCATION_LABELS.split_even}
                                 </SelectItem>
                                 <SelectItem value="full_value">
-                                    Pełna kwota dla każdego ownera
+                                    {OWNER_ALLOCATION_LABELS.full_value}
                                 </SelectItem>
                             </SelectContent>
                         </Select>
                     </div>
 
-                    {/* Sort + Top */}
                     <div className="grid grid-cols-3 gap-2">
                         <div className="space-y-2">
                             <Label>Sortuj po</Label>
@@ -308,8 +376,12 @@ export const PivotCard: React.FC<PivotCardProps> = ({
                                     <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    <SelectItem value="value">value</SelectItem>
-                                    <SelectItem value="count">count</SelectItem>
+                                    <SelectItem value="value">
+                                        {SORT_BY_LABELS.value}
+                                    </SelectItem>
+                                    <SelectItem value="count">
+                                        {SORT_BY_LABELS.count}
+                                    </SelectItem>
                                 </SelectContent>
                             </Select>
                         </div>
@@ -325,14 +397,18 @@ export const PivotCard: React.FC<PivotCardProps> = ({
                                     <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    <SelectItem value="asc">asc</SelectItem>
-                                    <SelectItem value="desc">desc</SelectItem>
+                                    <SelectItem value="asc">
+                                        {SORT_DIR_LABELS.asc}
+                                    </SelectItem>
+                                    <SelectItem value="desc">
+                                        {SORT_DIR_LABELS.desc}
+                                    </SelectItem>
                                 </SelectContent>
                             </Select>
                         </div>
 
                         <div className="space-y-2">
-                            <Label>Top</Label>
+                            <Label>Limit</Label>
                             <Input
                                 type="number"
                                 min={1}
@@ -341,7 +417,7 @@ export const PivotCard: React.FC<PivotCardProps> = ({
                                 onChange={(e) =>
                                     setField(
                                         "limit",
-                                        Number(e.target.value || 20)
+                                        Number(e.target.value || 20),
                                     )
                                 }
                             />
@@ -350,7 +426,6 @@ export const PivotCard: React.FC<PivotCardProps> = ({
                 </CardContent>
             </Card>
 
-            {/* Preview */}
             <Card>
                 <CardHeader className="flex flex-row items-baseline justify-between">
                     <CardTitle>Podgląd</CardTitle>

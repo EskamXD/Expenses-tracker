@@ -1,5 +1,6 @@
 import React from "react";
 import type { PivotResult } from "@/pivot-types";
+import { selectTranslationList } from "@/lib/select-option";
 
 import {
     Table,
@@ -18,10 +19,42 @@ type Props = {
 
 const fmt = new Intl.NumberFormat("pl-PL", { maximumFractionDigits: 2 });
 
+const columnLabels: Record<string, string> = {
+    category: "Kategoria",
+    shop: "Sklep",
+    payer: "Płatnik",
+    owner: "Właściciel",
+    value: "Wartość",
+    count: "Liczba pozycji",
+    period: "Okres",
+    date: "Data",
+    day: "Dzień",
+    week: "Tydzień",
+    month: "Miesiąc",
+    year: "Rok",
+};
+
+const valueLabels = Object.fromEntries(
+    selectTranslationList.map((item) => [item.value, item.label]),
+);
+
+const translate = (value: string) => {
+    return columnLabels[value] ?? valueLabels[value] ?? value;
+};
+
+const formatHeader = (col: string) => translate(col);
+
 const formatCell = (col: string, v: unknown) => {
     if (v === null || v === undefined) return "";
-    if ((col === "value" || col === "count") && typeof v === "number")
+
+    if ((col === "value" || col === "count") && typeof v === "number") {
         return fmt.format(v);
+    }
+
+    if (typeof v === "string") {
+        return translate(v);
+    }
+
     return String(v);
 };
 
@@ -51,7 +84,7 @@ export const PivotPreviewTable: React.FC<Props> = ({ result, isLoading }) => {
                     <TableRow>
                         {result.columns.map((c) => (
                             <TableHead key={c} className="whitespace-nowrap">
-                                {c}
+                                {formatHeader(c)}
                             </TableHead>
                         ))}
                     </TableRow>
