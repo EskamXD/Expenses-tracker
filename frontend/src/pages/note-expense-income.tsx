@@ -6,7 +6,7 @@ import { toast } from "sonner";
 import { useState } from "react";
 import FormOperation from "@/components/form-operation";
 import InvestForm from "@/components/invest-form";
-import { IconLeft } from "react-day-picker";
+import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useGlobalContext } from "@/context/GlobalContext";
 
@@ -46,7 +46,7 @@ const Expenses = () => {
                     variant="outline"
                     disabled={formType === ""}
                     onClick={() => setFormType("")}>
-                    <IconLeft className="w-4 h-4" />
+                    <ArrowLeft className="w-4 h-4" />
                 </Button>
                 <h1 className="text-2xl font-bold">Zanotuj</h1>
             </div>
@@ -83,4 +83,3 @@ const Expenses = () => {
 };
 
 export default Expenses;
-
