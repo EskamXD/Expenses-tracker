@@ -73,3 +73,9 @@ export interface Investment {
     current_value?: number; // property z backendu
     transactions?: InvestmentTransaction[]; // opcjonalnie, jeśli serializer zwraca transakcje
 }
+export type ImportReceiptsResponse = {
+    ok: boolean;
+    inserted: number;
+    errors: number;
+    errorSamples?: Array<{ line: number; error: string }>;
+};

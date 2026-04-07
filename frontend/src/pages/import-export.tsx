@@ -1,87 +1,72 @@
-import { useQuery, useMutation } from "@tanstack/react-query";
+import { useMutation } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Skeleton } from "@/components/ui/skeleton";
-import JSZip from "jszip";
+import { toast } from "sonner";
 
 import {
-    fetchGetReceipts,
-    fetchPostReceipt,
-    fetchDatabaseScan,
+    fetchExportReceiptsZip,
+    fetchImportReceiptsFile,
 } from "@/api/apiService";
-import { toast } from "sonner";
-import { Receipt } from "@/types";
+import { Spinner } from "@/components/ui/spinner";
 
-// Funkcja dzieląca tablicę na mniejsze kawałki o zadanej wielkości
-const chunkArray = <T,>(array: T[], chunkSize: number): T[][] => {
-    const chunks: T[][] = [];
-    for (let i = 0; i < array.length; i += chunkSize) {
-        chunks.push(array.slice(i, i + chunkSize));
-    }
-    return chunks;
+export const downloadBlob = (blob: Blob, filename: string) => {
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    a.click();
+    window.URL.revokeObjectURL(url);
 };
 
 const ImportExport = () => {
-    const { data: receipts, isFetching } = useQuery({
-        queryKey: ["receipts"],
-        queryFn: () => fetchGetReceipts(),
-        staleTime: 1000 * 60 * 5,
-    });
-
     const exportMutation = useMutation({
         mutationFn: async () => {
-            if (!receipts) throw new Error("Brak danych do eksportu");
+            const blob = await fetchExportReceiptsZip();
+            const filename = `Kopia wydatków ${new Date().toISOString().slice(0, 10)}.zip`;
 
-            const zip = new JSZip();
-            zip.file("data.json", JSON.stringify(receipts, null, 2));
-
-            const content = await zip.generateAsync({ type: "blob" });
-            const downloadLink = document.createElement("a");
-            downloadLink.href = URL.createObjectURL(content);
-            downloadLink.download = "data.zip";
-            downloadLink.click();
+            downloadBlob(blob, filename);
         },
-        onSuccess: () => {
-            toast(["Sukces", "Dane zostały pomyślnie pobrane."]);
-        },
-        onError: () => {
-            toast(["Błąd", "Nie udało się pobrać danych."]);
-        },
+        onSuccess: () => toast(["Sukces", "Plik eksportu został pobrany."]),
+        onError: () => toast(["Błąd", "Nie udało się pobrać eksportu."]),
     });
 
     const importMutation = useMutation({
         mutationFn: async (file: File) => {
-            const fileReader = new FileReader();
-            return new Promise<Receipt[]>((resolve, reject) => {
-                fileReader.onload = (e) => {
-                    if (!e.target || !e.target.result) {
-                        reject("Nie można odczytać pliku");
-                        return;
-                    }
-                    try {
-                        const content = JSON.parse(String(e.target.result));
-                        resolve(content);
-                    } catch (error) {
-                        reject("Niepoprawny format JSON");
-                    }
-                };
-                fileReader.readAsText(file);
-            });
+            // backend przyjmuje .zip lub .ndjson
+            return await fetchImportReceiptsFile(file);
         },
-        onSuccess: async (data) => {
-            // Dzielimy dane na partie po 50 paragonów
-            const chunks = chunkArray<Receipt>(data, 50);
-            for (const chunk of chunks) {
-                await fetchPostReceipt(chunk);
+        onSuccess: (res) => {
+            if (!res?.ok) {
+                toast(["Błąd", "Import nie powiódł się."]);
+                return;
             }
-            await fetchDatabaseScan();
-            toast(["Sukces", "Dane zostały pomyślnie zaimportowane."]);
-        },
-        onError: () => {
-            toast(["Błąd", "Dane nie zostały zaimportowane."]);
+
+            // sukces całkowity
+            if ((res.errors ?? 0) === 0) {
+                toast(["Sukces", `Zaimportowano: ${res.inserted}`]);
+                return;
+            }
+
+            // sukces częściowy / dużo błędów
+            const first = res.errorSamples?.[0];
+            const firstMsg = first
+                ? `Pierwszy błąd (linia ${first.line}): ${first.error}`
+                : "Brak szczegółów błędów.";
+
+            toast([
+                "Import zakończony z błędami",
+                `Zaimportowano: ${res.inserted}, błędy: ${res.errors}. ${firstMsg}`,
+            ]);
+
+            // bonus: log pełnych próbek do debug
+            console.group("Import errors (samples)");
+            console.log(res.errorSamples);
+            console.groupEnd();
         },
     });
+
+    const isBusy = exportMutation.isPending || importMutation.isPending;
 
     return (
         <>
@@ -97,34 +82,35 @@ const ImportExport = () => {
                     <h2 className="text-xl font-semibold mt-4">Eksport</h2>
                     <Button
                         onClick={() => exportMutation.mutate()}
-                        disabled={exportMutation.isPending || isFetching}
+                        disabled={isBusy}
                         className="mt-4">
-                        {exportMutation.isPending
-                            ? "Pobieranie..."
-                            : "Eksportuj dane"}
+                        {exportMutation.isPending ? (
+                            <span className="inline-flex items-center gap-2">
+                                <Spinner />
+                                Pobieranie...
+                            </span>
+                        ) : (
+                            "Pobierz eksport (ZIP)"
+                        )}
                     </Button>
-                    {(exportMutation.isPending || isFetching) && (
-                        <Skeleton className="w-40 h-10 mt-2" />
-                    )}
                 </TabsContent>
 
                 <TabsContent value="import">
                     <h2 className="text-xl font-semibold mt-4">Import</h2>
                     <div className="flex flex-col gap-3">
-                        <label className="text-gray-600">Wybierz plik:</label>
+                        <label className="text-gray-600">
+                            Wybierz plik (.zip lub .ndjson):
+                        </label>
                         <Input
                             type="file"
-                            accept="application/json"
+                            accept=".zip,.ndjson,application/zip,application/x-ndjson"
                             onChange={(e) => {
-                                if (e.target.files && e.target.files[0]) {
-                                    importMutation.mutate(e.target.files[0]);
-                                }
+                                const file = e.target.files?.[0];
+                                if (file) importMutation.mutate(file);
                             }}
-                            disabled={importMutation.isPending}
+                            disabled={isBusy}
                         />
-                        {importMutation.isPending && (
-                            <Skeleton className="w-40 h-10" />
-                        )}
+                        {importMutation.isPending && <Spinner />}
                     </div>
                 </TabsContent>
             </Tabs>

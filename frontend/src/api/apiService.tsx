@@ -7,6 +7,7 @@ import {
     Person,
     Receipt,
     Wallet,
+    ImportReceiptsResponse,
 } from "@/types";
 
 function printStatus(status: number) {
@@ -149,7 +150,7 @@ export const fetchGetReceiptsByID = async (params: {
             params.id.map(async (receiptId) => {
                 const response = await apiClient.get(`/receipts/${receiptId}/`);
                 return response.data;
-            })
+            }),
         );
 
         return responses; // Zwracamy listę paragonów
@@ -178,7 +179,7 @@ export const fetchPutReceipt = async (receiptId: number, receipt: Receipt) => {
     try {
         const response = await apiClient.put(
             `/receipts/${receiptId}/`,
-            receipt
+            receipt,
         );
         if (response.status === 200) {
             return response.data;
@@ -206,6 +207,48 @@ export const fetchDeleteReceipt = async (receipt: Receipt) => {
     }
 };
 
+export const fetchExportReceiptsZip = async () => {
+    try {
+        const response = await apiClient.get(`/receipts/export.zip`, {
+            responseType: "blob", // <- ważne
+        });
+
+        if (response.status === 200) {
+            return response.data as Blob;
+        } else {
+            printStatus(response.status);
+            throw new Error(`Export failed with status ${response.status}`);
+        }
+    } catch (error) {
+        console.error(error);
+        throw error;
+    }
+};
+
+export const fetchImportReceiptsFile = async (file: File) => {
+    try {
+        const formData = new FormData();
+        formData.append("file", file);
+
+        const response = await apiClient.post(`/receipts/import`, formData, {
+            headers: {
+                "Content-Type": "multipart/form-data",
+            },
+        });
+
+        if (response.status === 200) {
+            return response.data as ImportReceiptsResponse;
+        } else {
+            printStatus(response.status);
+            throw new Error(`Import failed with status ${response.status}`);
+        }
+    } catch (error) {
+        console.warn(`Import file: ${file?.name}`);
+        console.error(error);
+        throw error;
+    }
+};
+
 export const fetchGetItemsByID = async (params: { id: number | number[] }) => {
     if (!Array.isArray(params.id)) params.id = Array(params.id);
     if (!params.id || params.id.length === 0) return [];
@@ -216,7 +259,7 @@ export const fetchGetItemsByID = async (params: { id: number | number[] }) => {
             params.id.map(async (receiptId) => {
                 const response = await apiClient.get(`/items/${receiptId}/`);
                 return response.data;
-            })
+            }),
         );
 
         return responses; // Zwracamy listę paragonów
@@ -353,7 +396,7 @@ export const fetchGetMonthlyBalance = async (params?: Params) => {
             `/fetch/is-monthly-balance-saved/`,
             {
                 params: params,
-            }
+            },
         );
 
         if (response.status === 200) {
@@ -596,7 +639,7 @@ export const fetchGetInvestmentByWalletId = async (id: number) => {
 export const fetchGetInvestmentCurrentValue = async (id: number) => {
     try {
         const response = await apiClient.get(
-            `/investment/${id}/current_value/`
+            `/investment/${id}/current_value/`,
         );
         if (response.status === 200) {
             return response.data as {
@@ -618,7 +661,7 @@ export const fetchPostInvestment = async (
     newInvestment: Omit<
         Investment,
         "id" | "capital" | "current_value" | "transactions"
-    >
+    >,
 ) => {
     try {
         const response = await apiClient.post("/investment/", newInvestment);
@@ -637,7 +680,7 @@ export const fetchPostInvestment = async (
 
 export const fetchPutInvestment = async (
     id: number,
-    investment: Partial<Investment>
+    investment: Partial<Investment>,
 ) => {
     try {
         const response = await apiClient.put(`/investment/${id}/`, investment);
@@ -673,7 +716,7 @@ export const fetchDeleteInvestment = async (id: number) => {
 export const fetchGetInvestmentTransactions = async (investmentId: number) => {
     try {
         const response = await apiClient.get(
-            `/investment-transaction/?investment=${investmentId}`
+            `/investment-transaction/?investment=${investmentId}`,
         );
         if (response.status === 200) {
             return response.data as InvestmentTransaction[];
@@ -684,7 +727,7 @@ export const fetchGetInvestmentTransactions = async (investmentId: number) => {
     } catch (error) {
         console.warn(
             "fetchGetInvestmentTransactions investmentId:",
-            investmentId
+            investmentId,
         );
         console.error(error);
         throw error;
@@ -692,12 +735,12 @@ export const fetchGetInvestmentTransactions = async (investmentId: number) => {
 };
 
 export const fetchPostInvestmentTransaction = async (
-    newTransaction: Omit<InvestmentTransaction, "id">
+    newTransaction: Omit<InvestmentTransaction, "id">,
 ) => {
     try {
         const response = await apiClient.post(
             "/investment-transaction/",
-            newTransaction
+            newTransaction,
         );
         if (response.status === 201) {
             return response.data as InvestmentTransaction;
@@ -708,7 +751,7 @@ export const fetchPostInvestmentTransaction = async (
     } catch (error) {
         console.warn(
             "fetchPostInvestmentTransaction transaction:",
-            newTransaction
+            newTransaction,
         );
         console.error(error);
         throw error;
@@ -717,12 +760,12 @@ export const fetchPostInvestmentTransaction = async (
 
 export const fetchPutInvestmentTransaction = async (
     id: number,
-    transaction: Partial<InvestmentTransaction>
+    transaction: Partial<InvestmentTransaction>,
 ) => {
     try {
         const response = await apiClient.put(
             `/investment-transaction/${id}/`,
-            transaction
+            transaction,
         );
         if (response.status === 200) {
             return response.data as InvestmentTransaction;
@@ -735,7 +778,7 @@ export const fetchPutInvestmentTransaction = async (
             "fetchPutInvestmentTransaction id:",
             id,
             "transaction:",
-            transaction
+            transaction,
         );
         console.error(error);
         throw error;
@@ -745,7 +788,7 @@ export const fetchPutInvestmentTransaction = async (
 export const fetchDeleteInvestmentTransaction = async (id: number) => {
     try {
         const response = await apiClient.delete(
-            `/investment-transaction/${id}/`
+            `/investment-transaction/${id}/`,
         );
         if (response.status === 204) {
             return true;
