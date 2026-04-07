@@ -12,6 +12,7 @@ import Home from "@/pages/home";
 const Expenses = lazy(() => import("@/pages/expenses"));
 const Income = lazy(() => import("@/pages/income"));
 const Summary = lazy(() => import("@/pages/summary"));
+const Pivot = lazy(() => import("@/pages/pivot"));
 const Charts = lazy(() => import("@/pages/charts"));
 const Bills = lazy(() => import("@/pages/billls"));
 const Investments = lazy(() => import("@/pages/investments"));
@@ -54,6 +55,15 @@ function App() {
                                         <Suspense
                                             fallback={<div>Ładowanie...</div>}>
                                             <Summary />
+                                        </Suspense>
+                                    }
+                                />
+                                <Route
+                                    path="/pivot"
+                                    element={
+                                        <Suspense
+                                            fallback={<div>Ładowanie...</div>}>
+                                            <Pivot />
                                         </Suspense>
                                     }
                                 />
