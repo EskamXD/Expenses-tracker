@@ -42,3 +42,10 @@ export type Shops = {
     id?: number;
     name: string;
 };
+
+export type ImportReceiptsResponse = {
+    ok: boolean;
+    inserted: number;
+    errors: number;
+    errorSamples?: Array<{ line: number; error: string }>;
+};
