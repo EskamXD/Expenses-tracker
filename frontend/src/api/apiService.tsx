@@ -241,6 +241,36 @@ export const fetchImportReceiptsFile = async (file: File) => {
     }
 };
 
+export const uploadReceiptPdf = async (file: File) => {
+    try {
+        const formData = new FormData();
+        formData.append("file", file);
+
+        const response = await apiClient.post(
+            `/receipts/pdf-upload/`,
+            formData,
+            {
+                headers: {
+                    "Content-Type": "multipart/form-data",
+                },
+            },
+        );
+
+        if (response.status === 200) {
+            return response.data;
+        } else {
+            printStatus(response.status);
+            throw new Error(
+                `Receipt PDF upload failed with status ${response.status}`,
+            );
+        }
+    } catch (error) {
+        console.warn(`Receipt PDF file: ${file?.name}`);
+        console.error(error);
+        throw error;
+    }
+};
+
 export const fetchGetItemsByID = async (params: { id: number | number[] }) => {
     if (!Array.isArray(params.id)) params.id = Array(params.id);
     if (!params.id || params.id.length === 0) return [];
@@ -485,3 +515,4 @@ export const fetchSpendingRatio = async (filters: Params) => {
         throw error;
     }
 };
+

@@ -22,7 +22,10 @@ from backend_api.views import (
     SpendingRatioView,
     export_receipts_zip,
     import_receipts,
+    ReceiptPdfUploadView,
+    ReceiptCrudView,
 )
+
 
 router = DefaultRouter()
 
@@ -64,4 +67,15 @@ urlpatterns = [
     ),
     path("balance/", BalanceView.as_view(), name="balance"),
     path("spending-ratio/", SpendingRatioView.as_view(), name="spending-ratio"),
+    path("receipts/", ReceiptCrudView.as_view(), name="receipt-crud-list-create"),
+    path(
+        "receipts/<int:receipt_id>/",
+        ReceiptCrudView.as_view(),
+        name="receipt-crud-detail",
+    ),
+    path(
+        "receipts/pdf-upload/",
+        ReceiptPdfUploadView.as_view(),
+        name="receipt-pdf-upload",
+    ),
 ]

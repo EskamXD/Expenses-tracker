@@ -1,4 +1,10 @@
-import React, { useEffect, useImperativeHandle, useMemo } from "react";
+import React, {
+    useEffect,
+    useImperativeHandle,
+    useMemo,
+    useRef,
+    useState,
+} from "react";
 import { Controller, useFieldArray, useForm, useWatch } from "react-hook-form";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,14 +16,20 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
-import { X } from "lucide-react";
+import { FileUp, X } from "lucide-react";
 import PayerDropdown from "@/components/payer-dropdown";
 import OwnersDropdown from "@/components/owners-dropdown";
 import { Item, Receipt } from "@/types";
 import { categoryOptions } from "@/lib/select-option";
 import AutoSuggestInput from "@/components/auto-suggest-input";
-import { fetchSearchRecentShops, fetchItemPredictions } from "@/api/apiService";
+import {
+    fetchSearchRecentShops,
+    fetchItemPredictions,
+    uploadReceiptPdf,
+} from "@/api/apiService";
 import { calculate } from "@/lib/calculate";
+import { toast } from "sonner";
+import { useQuery } from "@tanstack/react-query";
 
 interface FormValues {
     paymentDate: string;
@@ -32,7 +44,7 @@ interface UnifiedFormProps {
     transactionType: "expense" | "income";
     buttonLabel: string;
     showQuantity: boolean;
-    receipt?: Receipt; // Jeśli edytujemy istniejący paragon
+    receipt?: Receipt;
     onSubmitReceipt?: (updatedReceipt: Receipt) => void;
     onDirtyChange?: (isDirty: boolean) => void;
     footerActions?: React.ReactNode;
@@ -53,7 +65,7 @@ const UnifiedForm = React.forwardRef<UnifiedFormRef, UnifiedFormProps>(
             onDirtyChange,
             footerActions,
         },
-        ref
+        ref,
     ) => {
         const defaultValues: FormValues = {
             paymentDate: receipt
@@ -79,6 +91,18 @@ const UnifiedForm = React.forwardRef<UnifiedFormRef, UnifiedFormProps>(
 
         const { register, control, handleSubmit, formState, reset, setValue } =
             useForm<FormValues>({ defaultValues });
+
+        const fileInputRef = useRef<HTMLInputElement | null>(null);
+        const [isUploadingReceipt, setIsUploadingReceipt] = useState(false);
+        // const [uploadReceiptError, setUploadReceiptError] = useState<
+        //     string | null
+        // >(null);
+        // const [uploadReceiptWarning, setUploadReceiptWarning] = useState<
+        //     string | null
+        // >(null);
+        const [uploadReceiptFallback, setUploadReceiptFallback] = useState<
+            string | null
+        >(null);
 
         useEffect(() => {
             if (onDirtyChange) {
@@ -107,6 +131,86 @@ const UnifiedForm = React.forwardRef<UnifiedFormRef, UnifiedFormProps>(
                 return acc + value;
             }, 0);
         }, [items]);
+
+        const handleReceiptFileChange = async (
+            event: React.ChangeEvent<HTMLInputElement>,
+        ) => {
+            const file = event.target.files?.[0];
+            if (!file) return;
+
+            setIsUploadingReceipt(true);
+            // setUploadReceiptError(null);
+            // setUploadReceiptWarning(null);
+            setUploadReceiptFallback(null);
+
+            try {
+                // const parsed = await uploadReceiptPdf(file);
+                const { data: parsed, error } = useQuery<Receipt>({
+                    queryKey: ["uploadReceipt", file.name],
+                    queryFn: async () => {
+                        return await uploadReceiptPdf(file);
+                    },
+                    enabled: !!file,
+                });
+
+                if (error) {
+                    throw new Error(
+                        error instanceof Error
+                            ? error.message
+                            : "Nie udało się przetworzyć PDF.",
+                    );
+                }
+
+                if (!parsed) {
+                    throw new Error(
+                        "Nie otrzymano danych z przetwarzania PDF.",
+                    );
+                }
+
+                if (parsed.payment_date) {
+                    setValue("paymentDate", parsed.payment_date, {
+                        shouldDirty: true,
+                        shouldValidate: true,
+                    });
+                }
+
+                if (parsed.shop) {
+                    setValue("shop", parsed.shop, {
+                        shouldDirty: true,
+                        shouldValidate: true,
+                    });
+                }
+
+                if (parsed.items?.length) {
+                    const normalizedItems = parsed.items.map((item, index) => ({
+                        id: item.id ?? index,
+                        category: item.category ?? "food_drinks",
+                        value: item.value ?? "",
+                        description: item.description ?? "",
+                        owners:
+                            item.owners && item.owners.length > 0
+                                ? item.owners
+                                : [1, 2],
+                        quantity: item.quantity ?? 1,
+                    }));
+
+                    setValue("items", normalizedItems, {
+                        shouldDirty: true,
+                        shouldValidate: true,
+                    });
+                }
+            } catch (error) {
+                toast.error(
+                    error instanceof Error
+                        ? error.message
+                        : "Nie udało się przetworzyć PDF.",
+                );
+                console.error("Błąd przetwarzania PDF:", error);
+            } finally {
+                setIsUploadingReceipt(false);
+                event.target.value = "";
+            }
+        };
 
         const handleKeyDown = (event: React.KeyboardEvent<HTMLFormElement>) => {
             if (event.key === "Enter") {
@@ -200,23 +304,61 @@ const UnifiedForm = React.forwardRef<UnifiedFormRef, UnifiedFormProps>(
                                     )}
                                 />
                             </div>
-                            <Button
-                                type="button"
-                                variant="secondary"
-                                className="flex-grow"
-                                onClick={() =>
-                                    append({
-                                        id: 0,
-                                        category: "food_drinks",
-                                        value: "",
-                                        description: "",
-                                        owners: [1, 2],
-                                        quantity: 1,
-                                    })
-                                }>
-                                Dodaj pozycję
-                            </Button>
+
+                            <div className="flex flex-col md:flex-row gap-2 flex-grow">
+                                <input
+                                    ref={fileInputRef}
+                                    type="file"
+                                    accept="application/pdf,.pdf"
+                                    className="hidden"
+                                    onChange={handleReceiptFileChange}
+                                />
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    className="flex-grow md:flex-grow-0"
+                                    onClick={() =>
+                                        fileInputRef.current?.click()
+                                    }
+                                    disabled={isUploadingReceipt}>
+                                    <FileUp className="mr-2 h-4 w-4" />
+                                    {isUploadingReceipt
+                                        ? "Przetwarzanie PDF..."
+                                        : "Wczytaj paragon PDF"}
+                                </Button>
+                                <Button
+                                    type="button"
+                                    variant="secondary"
+                                    className="flex-grow"
+                                    onClick={() =>
+                                        append({
+                                            id: 0,
+                                            category: "food_drinks",
+                                            value: "",
+                                            description: "",
+                                            owners: [1, 2],
+                                            quantity: 1,
+                                        })
+                                    }>
+                                    Dodaj pozycję
+                                </Button>
+                            </div>
                         </div>
+
+                        {/* {(uploadReceiptError || uploadReceiptWarning) && (
+                            <div className="flex flex-col gap-2">
+                                {uploadReceiptError && (
+                                    <div className="rounded-md border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-700">
+                                        {uploadReceiptError}
+                                    </div>
+                                )}
+                                {uploadReceiptWarning && (
+                                    <div className="rounded-md border border-yellow-300 bg-yellow-50 px-3 py-2 text-sm text-yellow-800">
+                                        {uploadReceiptWarning}
+                                    </div>
+                                )}
+                            </div>
+                        )} */}
                     </div>
 
                     {/* <ScrollArea> */}
@@ -274,7 +416,7 @@ const UnifiedForm = React.forwardRef<UnifiedFormRef, UnifiedFormProps>(
                                             placeholder="Kwota"
                                             {...register(
                                                 `items.${index}.value` as const,
-                                                { required: true }
+                                                { required: true },
                                             )}
                                             onBlur={(e) => {
                                                 const raw =
@@ -288,7 +430,7 @@ const UnifiedForm = React.forwardRef<UnifiedFormRef, UnifiedFormProps>(
                                                     {
                                                         shouldValidate: true,
                                                         shouldDirty: true,
-                                                    }
+                                                    },
                                                 );
                                             }}
                                         />
@@ -312,7 +454,7 @@ const UnifiedForm = React.forwardRef<UnifiedFormRef, UnifiedFormProps>(
                                                     fetcher={(query: string) =>
                                                         fetchItemPredictions(
                                                             shopValue,
-                                                            query
+                                                            query,
                                                         )
                                                     }
                                                     transformResult={(item) =>
@@ -335,7 +477,7 @@ const UnifiedForm = React.forwardRef<UnifiedFormRef, UnifiedFormProps>(
                                                 placeholder="Ilość"
                                                 {...register(
                                                     `items.${index}.quantity` as const,
-                                                    { required: true }
+                                                    { required: true },
                                                 )}
                                             />
                                         </div>
@@ -361,11 +503,11 @@ const UnifiedForm = React.forwardRef<UnifiedFormRef, UnifiedFormProps>(
                                                         []
                                                     }
                                                     setOwners={(
-                                                        newOwners: number[]
+                                                        newOwners: number[],
                                                     ) => {
                                                         // Wywołaj setter z nową tablicą ownerów
                                                         controllerField.onChange(
-                                                            newOwners
+                                                            newOwners,
                                                         );
                                                     }}
                                                 />
@@ -403,7 +545,7 @@ const UnifiedForm = React.forwardRef<UnifiedFormRef, UnifiedFormProps>(
                 </div>
             </>
         );
-    }
+    },
 );
 
 export default UnifiedForm;
