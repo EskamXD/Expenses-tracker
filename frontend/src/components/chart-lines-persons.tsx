@@ -133,7 +133,7 @@ const ChartLinesPerson: React.FC = () => {
                     </defs>
                     <Area
                         dataKey="income"
-                        type="natural"
+                        type="linear"
                         fill="url(#fillIncome)"
                         fillOpacity={0.4}
                         stroke="var(--chart-10)"
@@ -141,7 +141,7 @@ const ChartLinesPerson: React.FC = () => {
                     />
                     <Area
                         dataKey="expense"
-                        type="natural"
+                        type="linear"
                         fill="url(#fillExpense)"
                         fillOpacity={0.4}
                         stroke="var(--color-expense)"
@@ -154,4 +154,3 @@ const ChartLinesPerson: React.FC = () => {
 };
 
 export default ChartLinesPerson;
-
